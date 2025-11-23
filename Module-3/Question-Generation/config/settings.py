@@ -15,9 +15,3 @@ QUESTION_COUNT = 5
 PROMPT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "prompts")
 QG_TEMPLATE_FILE = "qg_template.txt"
 
-GLOBAL_EXPERT_PROFILE = {
-    "EXPERT_ROLE": "Senior Data Analyst",
-    "EXPERIENCE_LEVEL": "10+ years",
-    "REQUIRED_SKILLS": "Data Analysis, Machine Learning, Statistical Modeling",
-    "JOB_DESCRIPTION_FOCUS": "Technical comprehension and analytical thinking"
-}
