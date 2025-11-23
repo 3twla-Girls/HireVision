@@ -22,12 +22,12 @@ Guidelines:
 - Questions must be clear, direct, and unambiguous.
 
 Return output strictly in the following JSON format:
-{
+{{
    "questions": [
-      {
+      {{
         "id": 1,
         "question": "..."
-      }
+      }}
    ]
-}
+}}
 Only return JSON. No explanations.
