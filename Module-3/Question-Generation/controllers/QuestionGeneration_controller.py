@@ -31,32 +31,8 @@ def generate_questions_service(job_title, skills, experience_level, num_question
                 "content": final_prompt
             }
         ],
-        temperature=0
+        temperature=0.2
     )
 
     # 4. Return model output
     return completion.choices[0].message.content
-
-
-
-#from services.question_service import generate_questions_service
-
-router = APIRouter()
-
-class JobInfo(BaseModel):
-    job_title: str
-    skills: list
-    experience_level: str
-    num_questions: int
-
-@router.post("/generate-questions")
-async def generate_questions(job_info: JobInfo):
-
-    result = generate_questions_service(
-        job_title=job_info.job_title,
-        skills=job_info.skills,
-        experience_level=job_info.experience_level,
-        num_questions=job_info.num_questions
-    )
-
-    return {"questions": result}

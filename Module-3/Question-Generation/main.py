@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from controllers.QuestionGeneration_controller import router as question_router
+from controllers.routes import router as question_router
 
 app = FastAPI()
 
