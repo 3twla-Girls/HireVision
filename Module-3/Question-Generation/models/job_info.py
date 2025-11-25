@@ -6,3 +6,4 @@ class JobInfo(BaseModel):
     skills: list
     experience_level: str
     num_questions: int
+   

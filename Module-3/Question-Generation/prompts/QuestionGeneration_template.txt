@@ -18,7 +18,7 @@ Guidelines:
     - MCQ
     - Short-answer 
 
-- Do NOT generate soft-skill or behavioral questions.
+- Do NOT generate soft-skill or behavioral questions, or questions that need to write a code
 - Questions must be clear, direct, and unambiguous.
 
 Return output strictly in the following JSON format:
