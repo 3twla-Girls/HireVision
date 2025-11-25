@@ -1,2 +1,4 @@
 __pycache__/
 venv
+temp_audio
+temp_video
