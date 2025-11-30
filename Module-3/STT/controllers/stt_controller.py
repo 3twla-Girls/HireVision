@@ -7,18 +7,25 @@ router = APIRouter()
 
 @router.post("/transcribe-video")
 async def transcribe_video(file: UploadFile = File(...)):
+    """
+    Accept MP4 video → save temporarily → extract audio → transcribe → return text.
+    """
 
-    # Save uploaded file temporarily
-    temp_path = f"temp_video/{file.filename}"
+    # Save video temporarily
     os.makedirs("temp_video", exist_ok=True)
+    temp_path = f"temp_video/{file.filename}"
 
     with open(temp_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Run full pipeline
-    transcription = full_transcription_pipeline(temp_path)
+    # Run transcription pipeline
+    text = full_transcription_pipeline(temp_path)
+
+    # Cleanup video file
+    if os.path.exists(temp_path):
+        os.remove(temp_path)
 
     return {
         "status": "success",
-        "transcription": transcription
+        "transcription": text
     }

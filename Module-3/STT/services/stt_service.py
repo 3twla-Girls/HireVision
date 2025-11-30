@@ -1,9 +1,8 @@
 from groq import Groq
-import json
 from dotenv import load_dotenv
 import os
 
-load_dotenv()  
+load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
@@ -20,6 +19,5 @@ def transcribe_audio_groq(audio_path: str) -> str:
             temperature=0.0
         )
 
-    # Get transcription text only
-    # transcription is a Transcription object, NOT a dict
+    # Groq returns an object, .text contains transcript
     return transcription.text
