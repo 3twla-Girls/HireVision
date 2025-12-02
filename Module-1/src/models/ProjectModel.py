@@ -1,7 +1,6 @@
 from .BaseDataModel import BaseDataModel
 from .db_schemes import Project
 from .enums.DataBaseEnum import DataBaseEnum
-from controllers import ProcessController
 
 class ProjectModel(BaseDataModel):
 
