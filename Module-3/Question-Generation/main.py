@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from controllers.routes import router as question_router
+from routes.routes import router as question_router
+import time
 
 app = FastAPI(
     title="Interview Question Generator API",
@@ -8,7 +9,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware (optional - if you have a frontend)
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Change to specific origins in production
@@ -16,6 +17,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ⏱️ Timing Middleware - Add this AFTER CORS
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = f"{process_time:.2f}s"
+    return response
 
 # Include routers
 app.include_router(question_router)

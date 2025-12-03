@@ -1,68 +1,61 @@
-import json
+from utils.prompt_utils import SystemPromptCache
+from utils.schemas import REFERENCE_ANSWER_SCHEMA
 from groq import Groq
-from fastapi import APIRouter
-from pydantic import BaseModel
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 import models.model_factory as model_factory
+import json
 
-load_dotenv()  
+load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-
-def generate_answers_service(questions, job_title, skills, experience_level, model_key):
-    """
-    Generate reference answers for the provided questions.
+def generate_answers_service(job_title, skills, experience_level, questions, model_key):
     
-    Args:
-        questions: List of question objects with 'id' and 'question' fields
-        job_title: Job title for context
-        skills: List of relevant skills
-        experience_level: Junior/Mid/Senior
-        model_key: Model to use for generation
+    system_prompt = SystemPromptCache.load("prompts/ReferenceAnswer_system.txt")
     
-    Returns:
-        Dictionary with questions and their reference answers
-    """
-    
-    # Load answer generation prompt
-    with open("prompts/AnswerGeneration_template.txt", "r", encoding="utf-8") as f:
-        prompt_template = f.read()
-    
-    # Format questions for the prompt
-    questions_text = "\n".join([
-        f"{q['id']}. {q['question']}" 
-        for q in questions
-    ])
-    
-    final_prompt = prompt_template.format(
-        job_title=job_title,
-        skills=", ".join(skills),
-        experience_level=experience_level,
-        questions=questions_text
+    user_prompt = (
+        f"Job Role: {job_title}\n"
+        f"Skills: {', '.join(skills)}\n"
+        f"Experience Level: {experience_level}\n\n"
+        f"Questions:\n{questions}"
     )
-
-    # Call Groq model
-    completion = client.chat.completions.create(
-        model=model_factory.ModelFactory.get_model(model_key),
-        messages=[
-            {
-                "role": "user",
-                "content": final_prompt
-            }
-        ],
-        temperature=0.1
-    )
-
-    raw_output = completion.choices[0].message.content
-
     try:
-        result = json.loads(raw_output)
+        completion = client.chat.completions.create(
+            model=model_factory.ModelFactory.get_model(model_key),
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "ReferenceAnswers",
+                    "schema": REFERENCE_ANSWER_SCHEMA  
+                }
+            },
+            temperature=0.1
+        )
+        
+        raw_output = completion.choices[0].message.content
+        
+        try:
+            result = json.loads(raw_output)
+            if "answers" not in result:
+                return {
+                    "answers": [], 
+                    "error": "Invalid response structure - missing 'answers' key"
+                }
+            return result
+            
+        except json.JSONDecodeError as e:
+            return {
+                "answers": [], 
+                "error": f"JSON parsing failed: {str(e)}",
+                "raw_output": raw_output
+            }
+            
     except Exception as e:
-        result = {
+        return {
             "answers": [], 
-            "raw_output": raw_output,
-            "error": str(e)
+            "error": f"API call failed: {str(e)}"
         }
-
-    return result
