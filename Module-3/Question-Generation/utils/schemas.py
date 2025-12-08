@@ -9,12 +9,11 @@ QUESTION_SCHEMA = {
                 "type": "object",
                 "properties": {
                     "id": {"type": "integer"},
-                    "difficulty": {"type": "string", "enum": ["junior", "mid", "senior"]},
                     "type": {"type": "string", "enum": ["conceptual", "mcq", "short"]},
                     "question": {"type": "string"},
                     "options": {"type": "array", "items": {"type": "string"}}
                 },
-                "required": ["id", "difficulty", "type", "question"]
+                "required": ["id", "type", "question"]
             }
         }
     },

@@ -9,6 +9,11 @@ from utils.schemas import QUESTION_SCHEMA
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+MINIFIED_QUESTION_SCHEMA = json.loads(
+    json.dumps(QUESTION_SCHEMA, separators=(',', ':'))
+)
+
+
 def generate_questions_service(
     job_title: str, 
     skills: list[str], 
@@ -16,23 +21,15 @@ def generate_questions_service(
     num_questions: int, 
     model_key: str
 ) -> dict:
-    """
-    Generate technical interview questions using Groq LLaMA.
-    Uses cached system prompt and guided JSON schema decoding.
-    
-    Returns:
-        dict: Contains 'questions' list or 'error' message
-    """
-    
+
     system_prompt = SystemPromptCache.load("prompts/QuestionGeneration_system.txt")
     
     user_prompt = (
-        f"Job Role/Title: {job_title}\n"
-        f"Required Skills: {', '.join(skills)}\n"
-        f"Experience Level: {experience_level}\n"
-        f"Number of Questions Needed: {num_questions}"
+        f"Role: {job_title}\n"
+        f"Skills: {', '.join(skills)}\n"
+        f"Level: {experience_level}\n"
+        f"NumQ: {num_questions}"
     )
-    
 
     try:
         completion = client.chat.completions.create(
@@ -45,26 +42,32 @@ def generate_questions_service(
                 "type": "json_schema",
                 "json_schema": {
                     "name": "InterviewQuestions",
-                    "schema": QUESTION_SCHEMA  
+                    "schema": MINIFIED_QUESTION_SCHEMA
                 }
             },
             temperature=0.1
         )
-        
+
         raw_output = completion.choices[0].message.content
-        
+
+        token_usage = {
+            "prompt_tokens": completion.usage.prompt_tokens,
+            "completion_tokens": completion.usage.completion_tokens,
+            "total_tokens": completion.usage.total_tokens
+        }
+
         try:
             result = json.loads(raw_output)
-            if "questions" not in result:
-                return {"questions": [], "error": "Invalid response structure"}
+            result["token_usage"] = token_usage  
             return result
-            
+        
         except json.JSONDecodeError as e:
             return {
-                "questions": [], 
+                "questions": [],
                 "error": f"JSON parsing failed: {str(e)}",
-                "raw_output": raw_output
+                "raw_output": raw_output,
+                "token_usage": token_usage
             }
-            
+
     except Exception as e:
         return {"questions": [], "error": f"API call failed: {str(e)}"}

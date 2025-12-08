@@ -9,16 +9,22 @@ import json
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+MINIFIED_REFERENCE_ANSWER_SCHEMA = json.loads(
+    json.dumps(REFERENCE_ANSWER_SCHEMA, separators=(',', ':'))
+)
+
+
 def generate_answers_service(job_title, skills, experience_level, questions, model_key):
     
     system_prompt = SystemPromptCache.load("prompts/ReferenceAnswer_system.txt")
     
     user_prompt = (
-        f"Job Role: {job_title}\n"
+        f"Role: {job_title}\n"
         f"Skills: {', '.join(skills)}\n"
-        f"Experience Level: {experience_level}\n\n"
+        f"Level: {experience_level}\n\n"
         f"Questions:\n{questions}"
     )
+
     try:
         completion = client.chat.completions.create(
             model=model_factory.ModelFactory.get_model(model_key),
@@ -30,32 +36,33 @@ def generate_answers_service(job_title, skills, experience_level, questions, mod
                 "type": "json_schema",
                 "json_schema": {
                     "name": "ReferenceAnswers",
-                    "schema": REFERENCE_ANSWER_SCHEMA  
+                    "schema": MINIFIED_REFERENCE_ANSWER_SCHEMA
                 }
             },
             temperature=0.1
         )
-        
+
         raw_output = completion.choices[0].message.content
-        
+
+        # Extract token usage here
+        token_usage = {
+            "prompt_tokens": completion.usage.prompt_tokens,
+            "completion_tokens": completion.usage.completion_tokens,
+            "total_tokens": completion.usage.total_tokens
+        }
+
         try:
             result = json.loads(raw_output)
-            if "answers" not in result:
-                return {
-                    "answers": [], 
-                    "error": "Invalid response structure - missing 'answers' key"
-                }
+            result["token_usage"] = token_usage  # attach token usage
             return result
-            
+        
         except json.JSONDecodeError as e:
             return {
-                "answers": [], 
+                "answers": [],
                 "error": f"JSON parsing failed: {str(e)}",
-                "raw_output": raw_output
+                "raw_output": raw_output,
+                "token_usage": token_usage
             }
-            
+
     except Exception as e:
-        return {
-            "answers": [], 
-            "error": f"API call failed: {str(e)}"
-        }
+        return {"answers": [], "error": f"API call failed: {str(e)}"}
