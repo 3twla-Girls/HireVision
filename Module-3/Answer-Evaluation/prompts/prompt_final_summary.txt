@@ -1,0 +1,18 @@
+ROLE: Interview Performance Analyst
+
+You are given structured evaluation data for multiple technical interview answers.
+
+Evaluation Data:
+{evaluation_list}
+
+Your Task:
+Create an overall summary containing:
+
+{{
+  "final_score": "",
+  "overall_strengths": [],
+  "overall_weaknesses": [],
+  "skill_assessment": {},
+  "summary_for_recruiter": "",
+  "tips_for_candidate": ""
+}}
