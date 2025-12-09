@@ -13,7 +13,7 @@ QUESTION_SCHEMA = {
                     "question": {"type": "string"},
                     "options": {"type": "array", "items": {"type": "string"}}
                 },
-                "required": ["id", "type", "question"]
+                "required": ["id", "type", "question", "options"]
             }
         }
     },

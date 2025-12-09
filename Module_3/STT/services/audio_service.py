@@ -1,5 +1,5 @@
-from utils.video_utils import extract_audio_from_video
-from services.stt_service import transcribe_audio_groq
+from STT.utils.video_utils import extract_audio_from_video
+from STT.services.stt_service import transcribe_audio_groq
 import os
 
 
