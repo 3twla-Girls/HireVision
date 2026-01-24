@@ -9,9 +9,10 @@ class Asset(BaseModel):
     asset_type: str = Field(..., min_length=1)
     asset_name: str = Field(..., min_length=1)
     asset_size: int = Field(ge=0, default=None)
-    asset_config: dict = Field(default=None)
+    asset_config: dict = Field(default=None) #we can delete it if we won't use it
     asset_pushed_at: datetime = Field(default=datetime.utcnow)
-
+    #add asset_owner 
+    
     class Config:
         arbitrary_types_allowed = True
 

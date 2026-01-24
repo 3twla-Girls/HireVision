@@ -80,3 +80,5 @@ class JobController(BaseController):
             raise Exception("JOB_NOT_FOUND")
 
         return True
+    
+#get all jobs
