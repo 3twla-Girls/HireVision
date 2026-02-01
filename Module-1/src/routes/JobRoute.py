@@ -126,3 +126,15 @@ async def delete_job(request: Request, job_id: str):
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"signal": "JOB_DELETE_FAILED"}
         )
+
+# Get job's rankings
+@job_router.get("/{job_id}/rankings")
+async def get_job_rankings(request: Request, job_id: str):
+    job_controller = await JobController.create_instance(request.app.db_client)
+    try:
+        embedder = request.app.state.embedder
+        config = request.app.state.config
+        rankings = await job_controller.get_rankings(job_id, embedder, config)
+        return {"rankings": rankings}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})

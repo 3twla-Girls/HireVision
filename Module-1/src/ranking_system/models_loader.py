@@ -1,11 +1,11 @@
 import time
 from typing import List, Dict, Any, Optional, Tuple
 import numpy as np
-from cache_manager import EmbeddingCache
-from utils import time_function
+from ranking_system.cache_manager import EmbeddingCache
+from ranking_system.utils import time_function
 # Embeddings & reranker
 from sentence_transformers import SentenceTransformer, CrossEncoder
-from CONFIG import CONFIG
+from ranking_system.CONFIG import CONFIG
 # -----------------------------
 # 4) Embedding Manager with Caching
 # -----------------------------
@@ -47,7 +47,7 @@ class EmbeddingManager:
 
     @time_function
     def embed_cv(self, cv_path: str, cv_text: str) -> Tuple[str, np.ndarray]:
-        cv_key = self.cache.get_cv_key(cv_path, self.model_name)
+        cv_key = self.cache._get_key(cv_path, self.model_name)
 
         cached = self.cache.get_cv_embedding(cv_key)
         if cached:

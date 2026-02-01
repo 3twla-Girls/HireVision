@@ -1,5 +1,5 @@
 from typing import List
-from CONFIG import CONFIG
+from ranking_system.CONFIG import CONFIG
 
 # ============================================================================
 # SKILL IMPORTANCE WEIGHTING

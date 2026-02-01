@@ -2,8 +2,8 @@ from .BaseDataModel import BaseDataModel
 from .db_schemes import JobScheme
 from .enums.DataBaseEnum import DataBaseEnum
 from bson import ObjectId
-class JobModel(BaseDataModel):
 
+class JobModel(BaseDataModel):
     def __init__(self, db_client: object):
         super().__init__(db_client=db_client)
         self.collection = self.db_client[DataBaseEnum.COLLECTION_JOB_NAME.value]
@@ -26,32 +26,17 @@ class JobModel(BaseDataModel):
                     unique=index["unique"]
                 )
 
-    async def create_job(self, job: JobScheme):
-        
-        result = await self.collection.insert_one(job.dict(by_alias=True, exclude_unset=True))
-        job.id = result.inserted_id
+    async def insert_job(self, job_dict: dict):
+        return await self.collection.insert_one(job_dict)
 
-        return job
-    
-    async def get_all_project_jobs(self, job_project_id: str):
+    async def find_by_project(self, project_id: ObjectId):
+        return await self.collection.find({"job_project_id": project_id}).to_list(None)
 
-        records = await self.collection.find({
-            "job_project_id": ObjectId(job_project_id) if isinstance(job_project_id, str) else job_project_id,
-        }).to_list(length=None)
+    async def find_by_id(self, job_id: ObjectId):
+        return await self.collection.find_one({"_id": job_id})
 
-        return [
-            JobScheme(**record)
-            for record in records
-        ]
-        
-    async def get_job_record(self, job_project_id: str, job_name: str):
+    async def update_job(self, job_id: ObjectId, update_data: dict):
+        return await self.collection.update_one({"_id": job_id}, {"$set": update_data})
 
-        record = await self.collection.find_one({
-            "job_project_id": ObjectId(job_project_id) if isinstance(job_project_id, str) else job_project_id,
-            "job_name": job_name,
-        })
-
-        if record:
-            return JobScheme(**record)
-        
-        return None
+    async def delete_job(self, job_id: ObjectId):
+        return await self.collection.delete_one({"_id": job_id})

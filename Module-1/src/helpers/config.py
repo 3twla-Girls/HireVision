@@ -12,9 +12,14 @@ class Settings(BaseSettings):
 
     MONGODB_URL: str
     MONGODB_DATABASE: str
+    
+    EMBED_MODEL: str
+    CE_MODEL: str
 
-    class Config:
-        env_file = ".env"
+    CACHE_DIR: str
+    DATA_DIR: str
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 def get_settings():
     return Settings()

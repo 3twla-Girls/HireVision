@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional, Tuple
 import numpy as np
-from CONFIG import CONFIG
+from ranking_system.CONFIG import CONFIG
 # FAISS
 import faiss
 # BM25 for sparse retrieval

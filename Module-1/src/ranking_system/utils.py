@@ -2,7 +2,7 @@ import os
 import re
 import time
 from pathlib import Path
-from CONFIG import CONFIG
+from ranking_system.CONFIG import CONFIG
 # Parsing
 import docx
 from PyPDF2 import PdfReader

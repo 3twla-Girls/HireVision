@@ -3,9 +3,10 @@ import hashlib
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 import numpy as np
-from CONFIG import CONFIG
-from models_loader import EmbeddingManager
-from utils import time_function
+from ranking_system.CONFIG import CONFIG
+from ranking_system.models_loader import EmbeddingManager
+from ranking_system.utils import time_function
+from cachetools import LRUCache
 # FAISS
 import faiss
 # Fuzzy
@@ -30,8 +31,10 @@ class HybridSkillMatcher:
 
         # Multi-level caches
         self.skill_embedding_cache = {}
-        self.cv_cache = {}
-        self.fuzzy_cache = {}
+        self.cv_cache = LRUCache(maxsize=100)
+        self.fuzzy_cache = LRUCache(maxsize=5000)
+        # self.cv_cache = {}
+        # self.fuzzy_cache = {}
 
         # Signal fusion weights and thresholds
         self.weights = self.config.get("skill_signal_weights", {
@@ -43,7 +46,7 @@ class HybridSkillMatcher:
         self.fusion_threshold = 0.5
 
         # Context keywords for domain-aware matching
-        self.context_map = CONFIG.context_map
+        self.context_map = self.config.get("context_map", {})
 
 
     # -------------------------------
@@ -139,6 +142,9 @@ class HybridSkillMatcher:
     def _context_match_batch(self, skills: list[str], cv_lower: str) -> dict[str, float]:
         results = {}
         window_size = 200
+
+        if not self.context_map:
+            return {skill: 0.0 for skill in skills}
 
         for skill in skills:
             skill_lower = skill.lower()
