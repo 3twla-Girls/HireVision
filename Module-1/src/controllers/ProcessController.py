@@ -40,7 +40,9 @@ class ProcessController(BaseController):
 
         loader = self.get_file_loader(file_id=file_id)
         if loader:
-            return loader.load()
+            documents = loader.load()  
+            text = " ".join([doc.page_content for doc in documents])
+            return text
 
         return None
 

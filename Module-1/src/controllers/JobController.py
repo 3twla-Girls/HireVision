@@ -23,8 +23,12 @@ class JobController(BaseController):
         return instance
 
     async def create_job(self, project_id: str, job_data: JobScheme):
+        project_model = await ProjectModel.create_instance(db_client=self.db_client)
+        project = await project_model.get_project_or_create_one(project_id)
+
         job_dict = job_data.model_dump()
-        job_dict["job_project_id"] = ObjectId(project_id)
+        job_dict["job_project_id"] = project.id
+
         result = await self.job_model.insert_job(job_dict)
         return result
 

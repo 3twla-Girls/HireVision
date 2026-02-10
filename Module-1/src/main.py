@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from routes import base, data, JobRoute
+from routes import base, data, JobRoute,skillsRoute
 from helpers.config import get_settings
 from ranking_system.models_loader import EmbeddingManager
 from ranking_system.CONFIG import CONFIG
@@ -32,7 +32,8 @@ async def lifespan(app: FastAPI):
 # بنمرر الـ lifespan هنا
 app = FastAPI(lifespan=lifespan)
 
-# Register Routers
+
 app.include_router(base.base_router)
 app.include_router(data.data_router)
 app.include_router(JobRoute.job_router)
+app.include_router(skillsRoute.skills_router)
