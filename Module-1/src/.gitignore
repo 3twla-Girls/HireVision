@@ -159,4 +159,11 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 job_role_skills_embeddings.json
+
 Skills_Dataset
+
+candidate_clusters.pkl
+
+skill_db_relax_20.json
+
+token_dist.json

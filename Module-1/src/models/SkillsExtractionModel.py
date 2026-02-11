@@ -1,4 +1,3 @@
-import time
 import spacy
 import numpy as np
 import pandas as pd
@@ -20,88 +19,131 @@ class SkillsExtractionModel(BaseDataModel):
         self._load_models()
 
     # -----------------------------
+    # MODEL LOADING
+    # -----------------------------
     def _load_models(self):
-        """Load all required models"""
         if self.verbose:
             print("🔄 Loading models...")
 
-        # Load skill extraction models
         model_path = snapshot_download("amjad-awad/skill-extractor", repo_type="model")
         self.amjad_nlp = spacy.load(model_path)
 
         nlp_lg = spacy.load("en_core_web_lg")
         self.skillner = SkillExtractor(nlp_lg, SKILL_DB, PhraseMatcher)
 
-        # Load embedding model
         self.embedding_model = SentenceTransformer(self.embedding_model_name)
 
         if self.verbose:
             print("✅ Models loaded")
 
     # -----------------------------
-    def _extract_amjad(self, text: str) -> List[str]:
-        """Extract skills using Amjad model"""
-        return [ent.text for ent in self.amjad_nlp(text).ents if "SKILLS" in ent.label_]
-
-    def _extract_skillner(self, text: str) -> List[str]:
-        """Extract skills using SkillNER model"""
-        annotations = self.skillner.annotate(text)
-        skills = []
-        for item in annotations["results"].get("full_matches", []) + annotations["results"].get("ngram_scored", []):
-            skills.append(item["doc_node_value"])
-        return skills
+    # TEXT SANITIZER (CRASH SHIELD)
+    # -----------------------------
+    def _clean_text(self, text: str) -> str:
+        if not text:
+            return ""
+        text = text.encode("utf-8", "ignore").decode("utf-8")
+        text = text.replace("\x00", " ")
+        text = " ".join(text.split())
+        return text.strip()
 
     # -----------------------------
+    # AMJAD EXTRACTOR
+    # -----------------------------
+    def _extract_amjad(self, text: str) -> List[str]:
+        try:
+            if not text or len(text.split()) < 3:
+                return []
+            doc = self.amjad_nlp(text[:50000])  # prevent very large input
+            return [ent.text for ent in doc.ents if "SKILLS" in ent.label_]
+        except Exception as e:
+            print(f"⚠️ Amjad extractor failed: {e}")
+            return []
+
+    # -----------------------------
+    # SKILLNER EXTRACTOR (FIXED)
+    # -----------------------------
+    def _extract_skillner(self, text: str) -> List[str]:
+        try:
+            if not text or len(text.split()) < 3:
+                return []
+
+            annotations = self.skillner.annotate(text[:50000])
+
+            if not annotations or "results" not in annotations:
+                return []
+
+            skills = []
+            results = annotations["results"]
+
+            for item in results.get("full_matches", []) + results.get("ngram_scored", []):
+                val = item.get("doc_node_value")
+                if val:
+                    skills.append(val)
+
+            return skills
+
+        except Exception as e:
+            print(f"⚠️ SkillNer crashed safely: {e}")
+            return []
+
+    # -----------------------------
+    # COMBINED EXTRACTION
+    # -----------------------------
     def extract_skills_combined(self, text: str) -> List[str]:
-        """
-        Extract skills using both models and combine results.
-        Removes duplicates while preserving order.
-        """
-        skills = self._extract_amjad(text) + self._extract_skillner(text)
+        text = self._clean_text(text)
+
+        if len(text) < 10:
+            return []
+
+        skills = []
+        skills += self._extract_amjad(text)
+        skills += self._extract_skillner(text)
+
         seen = set()
         unique_skills = []
+
         for s in skills:
-            if s and s.lower().strip() not in seen:
-                seen.add(s.lower().strip())
+            key = s.lower().strip()
+            if key and key not in seen:
+                seen.add(key)
                 unique_skills.append(s.strip())
+
         return unique_skills
 
     # -----------------------------
+    # EMBEDDINGS
+    # -----------------------------
     def get_skills_embeddings(self, text: str) -> Dict:
-        """
-        Extract skills from text and generate their embeddings.
-        
-        Returns:
-            Dict with keys: 'skills', 'embeddings', 'embedding_dim'
-        """
         skills = self.extract_skills_combined(text)
-        
+        dim = self.embedding_model.get_sentence_embedding_dimension()
+
         if not skills:
             return {
-                "skills": [], 
-                "embeddings": np.empty((0, 1024)),
-                "embedding_dim": 1024
+                "skills": [],
+                "embeddings": np.zeros((0, dim)),
+                "embedding_dim": dim
             }
 
         try:
             embeddings = self.embedding_model.encode(skills, convert_to_numpy=True)
-            
             return {
-                "skills": skills, 
-                "embeddings": embeddings, 
+                "skills": skills,
+                "embeddings": embeddings,
                 "embedding_dim": embeddings.shape[1]
             }
         except Exception as e:
-            print(f"❌ Error generating embeddings: {e}")
+            print(f"❌ Embedding error: {e}")
             return {
-                "skills": [], 
-                "embeddings": np.empty((0, 1024)),
-                "embedding_dim": 1024
+                "skills": [],
+                "embeddings": np.zeros((0, dim)),
+                "embedding_dim": dim
             }
 
     # -----------------------------
+    # LOAD SKILLS DATABASE
+    # -----------------------------
     def load_skills_database(self, skill_column="Skills", embedding_column="embedding", verbose=True):
-        """Load the skills database with pre-computed embeddings"""
         try:
             df = pd.read_csv("./Skills_Dataset/skills_with_embeddings.csv")
             if verbose:
@@ -112,87 +154,47 @@ class SkillsExtractionModel(BaseDataModel):
             return pd.DataFrame()
 
     # -----------------------------
+    # SIMILARITY FILTER
+    # -----------------------------
     def filter_skills_by_similarity(self, skills_list, skills_embeddings, df,
                                     skill_column="Skills", embedding_column="embedding",
                                     similarity_threshold=0.9, verbose=True):
-        """
-        Filter extracted skills by comparing with database skills.
-        
-        Args:
-            skills_list: List of extracted skills
-            skills_embeddings: Embeddings of extracted skills
-            df: DataFrame with database skills and embeddings
-            skill_column: Column name for skills in database
-            embedding_column: Column name for embeddings in database
-            similarity_threshold: Minimum similarity score to match
-            verbose: Print debug information
-            
-        Returns:
-            Dict with matched skills and metadata
-        """
 
         if df.empty or len(skills_list) == 0 or skills_embeddings.shape[0] == 0:
-            return {
-                'matched_skills': [], 
-                'unmatched_skills': [], 
-                'skill_mappings': {}, 
-                'similarities': {}, 
-                'matched_count': 0, 
-                'unmatched_count': 0
-            }
+            return {'matched_skills': [], 'unmatched_skills': [], 'matched_count': 0}
 
         try:
-            # Convert database embeddings
             db_embeddings = np.array([ast.literal_eval(x) for x in df[embedding_column]], dtype=np.float32)
             input_embeddings = skills_embeddings.astype(np.float32)
 
-            # Calculate similarities
             similarities = util.cos_sim(torch.tensor(input_embeddings), torch.tensor(db_embeddings))
 
             matched = []
             db_skills = df[skill_column].tolist()
 
-            # Find matches above threshold
             for i, skill in enumerate(skills_list):
                 best_idx = similarities[i].argmax().item()
                 best_score = similarities[i][best_idx].item()
                 if best_score >= similarity_threshold:
                     matched.append(skill)
 
-            if verbose and matched:
+            if verbose:
                 print(f"✅ Matched {len(matched)}/{len(skills_list)} skills")
 
             return {
-                'matched_skills': matched, 
-                'unmatched_skills': [], 
-                'skill_mappings': {}, 
-                'similarities': {}, 
-                'matched_count': len(matched), 
-                'unmatched_count': 0
-            }
-            
-        except Exception as e:
-            print(f"❌ Error in filter_skills_by_similarity: {e}")
-            return {
-                'matched_skills': [], 
-                'unmatched_skills': [], 
-                'skill_mappings': {}, 
-                'similarities': {}, 
-                'matched_count': 0, 
-                'unmatched_count': 0
+                'matched_skills': matched,
+                'unmatched_skills': list(set(skills_list) - set(matched)),
+                'matched_count': len(matched)
             }
 
+        except Exception as e:
+            print(f"❌ Similarity filter error: {e}")
+            return {'matched_skills': [], 'unmatched_skills': [], 'matched_count': 0}
+
+    # -----------------------------
+    # JOB ROLE EMBEDDINGS
     # -----------------------------
     def embed_job_roles(self, job_roles):
-        """
-        Generate embeddings for job roles.
-        
-        Args:
-            job_roles: String or list of strings
-            
-        Returns:
-            numpy array of embeddings
-        """
         if isinstance(job_roles, str):
             job_roles = [job_roles]
         return self.embedding_model.encode(job_roles, convert_to_numpy=True)

@@ -47,12 +47,7 @@ class CandidateClusteringModel(BaseDataModel):
 
         # ADAPTIVE THRESHOLD
         cluster_size = len(self.cluster_members[nearest_cluster])
-        if cluster_size < 5:
-            threshold = 0.9  # Very lenient for small clusters
-        elif cluster_size < 15:
-            threshold = 0.95  # Medium
-        else:
-            threshold = 0.96  # Stricter for large, established clusters
+        threshold = 0.94
     
         print(f"🔎 Cluster {nearest_cluster} size={cluster_size}, threshold={threshold:.2f}, sim={best_sim:.4f}")
 

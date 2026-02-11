@@ -448,10 +448,8 @@ async def evaluate_clustering(file: UploadFile = File(...)):
 
 
         score1 = calculate_inverse_purity(true_labels, cluster_labels)
-        score2 = adjusted_rand_score(true_labels, cluster_labels)
         score3=normalized_mutual_info_score(true_labels, cluster_labels)
         print(f"Inverse Purity: {score1:.3f}")
-        print(f"ARI: {score2:.3f}")
         print(f"NMI: {score3:.3f}")
         
         return JSONResponse(
@@ -460,7 +458,6 @@ async def evaluate_clustering(file: UploadFile = File(...)):
                 "signal": "EVALUATION_SUCCESS",
                 "total_samples": len(true_labels),
                 "purity": round(score1, 4),
-                "ARI": round(score2, 4),
                 "NMI": round(score3, 4),
                 "interpretation": (
                     "Closer to 1 → candidates of same job roles grouped together well"

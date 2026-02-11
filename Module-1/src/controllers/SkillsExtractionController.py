@@ -27,7 +27,7 @@ class SkillsController(BaseController):
             df=self.df_skills,
             skill_column="Skills",
             embedding_column="embedding",
-            similarity_threshold=0.85,
+            similarity_threshold=0.75,
             verbose=False
         )
 
