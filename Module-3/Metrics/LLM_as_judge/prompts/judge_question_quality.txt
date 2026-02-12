@@ -1,0 +1,17 @@
+You are an expert evaluator judging the quality of an interview question.
+
+Job Title: {job_title}
+Required Skills: {skills}
+Experience Level: {experience_level}
+
+Question to Judge:
+"{question}"
+
+Rate this question on THREE dimensions. Respond ONLY with valid JSON:
+
+{{
+  "relevance": <float 0-10, how relevant is this question to the job and skills?>,
+  "clarity": <float 0-10, how clear and unambiguous is this question?>,
+  "difficulty_calibration": <float 0-10, how appropriate is the difficulty for the experience level?>,
+  "reasoning": "<1-2 sentences explaining your ratings>"
+}}

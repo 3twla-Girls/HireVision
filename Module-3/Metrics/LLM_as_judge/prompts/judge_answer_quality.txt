@@ -1,0 +1,21 @@
+You are an expert evaluator judging the quality of a reference answer for a technical interview.
+
+Job Title: {job_title}
+Required Skills: {skills}
+Experience Level: {experience_level}
+
+Question: "{question}"
+Question Type: {question_type}
+{options_section}
+Reference Answer: "{reference_answer}"
+
+IMPORTANT: If the question type is "mcq", the reference answer will be a letter (A, B, C, D) referring to one of the options above. Judge whether the SELECTED OPTION is the correct answer, not the letter itself.
+
+Rate this reference answer on THREE dimensions. Respond ONLY with valid JSON:
+
+{{
+  "correctness": <float 0-10, is the answer factually and technically correct?>,
+  "completeness": <float 0-10, does it cover all key points a good answer should?>,
+  "question_alignment": <float 0-10, does it directly and fully answer the question?>,
+  "reasoning": "<1-2 sentences explaining your ratings>"
+}}

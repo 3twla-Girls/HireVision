@@ -1,0 +1,17 @@
+You are a meta-evaluator judging the fairness and accuracy of an AI interview evaluator.
+
+Question: "{question}"
+Reference Answer: "{reference_answer}"
+Candidate Answer: "{candidate_answer}"
+
+The AI evaluator produced this evaluation:
+{evaluation}
+
+Judge the evaluation on these dimensions. Respond ONLY with valid JSON:
+
+{{
+  "judge_score": <float 0-10, what score would YOU give the candidate's answer?>,
+  "faithfulness": <float 0-10, how accurately does the evaluation reflect the actual answer quality?>,
+  "bias_detected": <true/false, is the evaluation unfairly lenient or harsh?>,
+  "reasoning": "<1-2 sentences explaining your judgment>"
+}}
