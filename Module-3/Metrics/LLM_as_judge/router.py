@@ -1,12 +1,18 @@
 """
-Audit endpoints — calls the other Module-3 services via HTTP,
-then uses LLM-as-a-Judge to score their responses.
+Audit endpoints — calls the other Module-3 services via the shared
+pipeline client, then uses LLM-as-a-Judge to score their responses.
 """
 
+import sys
 import time
-import httpx
+from pathlib import Path
+
 from fastapi import APIRouter
 
+# Add parent Metrics dir to path so we can import the shared pipeline client
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+import pipeline_client
 import judge
 from models import (
     AuditRequest,
@@ -17,10 +23,6 @@ from models import (
 )
 
 router = APIRouter()
-
-# ── Service URLs (the other Module-3 services) ───────────────
-QUESTION_SERVICE_URL = "http://localhost:8000"
-EVALUATION_SERVICE_URL = "http://localhost:8001"
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -36,18 +38,12 @@ async def audit_questions(req: AuditRequest):
     start = time.time()
 
     # 1. Call Question-Generation API
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.post(
-            f"{QUESTION_SERVICE_URL}/generate-questions",
-            json={
-                "job_title": req.job_title,
-                "skills": req.skills,
-                "experience_level": req.experience_level,
-                "num_questions": req.num_questions,
-            },
-        )
-    api_response = response.json()
-    questions = api_response.get("questions", [])
+    questions = await pipeline_client.fetch_questions(
+        job_title=req.job_title,
+        skills=req.skills,
+        experience_level=req.experience_level,
+        num_questions=req.num_questions,
+    )
 
     # 2. Judge each question
     scores = []
@@ -89,18 +85,12 @@ async def audit_answers(req: AuditRequest):
     start = time.time()
 
     # 1. Call Question-Generation API to get questions + reference answers
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.post(
-            f"{QUESTION_SERVICE_URL}/generate-questions-with-answers",
-            json={
-                "job_title": req.job_title,
-                "skills": req.skills,
-                "experience_level": req.experience_level,
-                "num_questions": req.num_questions,
-            },
-        )
-    api_response = response.json()
-    qa_pairs = api_response.get("questions_with_answers", [])
+    qa_pairs = await pipeline_client.fetch_questions_with_answers(
+        job_title=req.job_title,
+        skills=req.skills,
+        experience_level=req.experience_level,
+        num_questions=req.num_questions,
+    )
 
     # 2. Judge each reference answer
     scores = []
@@ -144,76 +134,51 @@ async def audit_answers(req: AuditRequest):
 @router.post("/evaluation", response_model=EvaluationAuditResponse)
 async def audit_evaluation(req: AuditRequest):
     """
-    Full cycle: 
+    Full cycle:
       1. Call Question-Generation to get questions + reference answers
-      2. Call Answer-Evaluation to evaluate (using reference as candidate)
+      2. Simulate candidate answers + call Answer-Evaluation
       3. Judge the evaluation for fairness
     """
     start = time.time()
 
-    # 1. Get questions + reference answers from Question-Generation API
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        qg_response = await client.post(
-            f"{QUESTION_SERVICE_URL}/generate-questions-with-answers",
-            json={
-                "job_title": req.job_title,
-                "skills": req.skills,
-                "experience_level": req.experience_level,
-                "num_questions": req.num_questions,
-            },
-        )
-    qa_pairs = qg_response.json().get("questions_with_answers", [])
+    # 1. Run the full pipeline (with simulated candidates)
+    pipeline = await pipeline_client.run_full_pipeline(
+        job_title=req.job_title,
+        skills=req.skills,
+        experience_level=req.experience_level,
+        num_questions=req.num_questions,
+        simulate_candidate_fn=judge.simulate_candidate_answer,
+    )
 
-    # 2. For each Q&A, simulate a candidate answer, evaluate it, then judge
+    # 2. Judge each evaluation
     scores = []
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        for item in qa_pairs:
-            reference = item.get("reference_answer") or ""
+    for entry in pipeline["evaluations"]:
+        eval_result = entry["eval_result"]
+        if "error" in eval_result:
+            continue
 
-            # Simulate a realistic candidate answer (instead of using reference)
-            candidate = judge.simulate_candidate_answer(
-                question=item["question"],
-                job_title=req.job_title,
-                experience_level=req.experience_level,
-            )
+        judge_result = judge.judge_evaluation(
+            question=entry["question"],
+            reference_answer=entry["reference_answer"],
+            candidate_answer=entry["candidate_answer"],
+            evaluation=eval_result,
+        )
 
-            # Call Answer-Evaluation API
-            eval_response = await client.post(
-                f"{EVALUATION_SERVICE_URL}/api/answer-evaluation",
-                json={
-                    "question": item["question"],
-                    "correct_answer": reference,
-                    "candidate_answer": candidate,
-                },
-            )
-            eval_result = eval_response.json()
+        original_score = eval_result.get("score", 0)
+        try:
+            original_score = float(str(original_score).split("-")[0])
+        except (ValueError, IndexError):
+            original_score = 0.0
 
-            if "error" in eval_result:
-                continue
-
-            # 3. Judge the evaluation
-            judge_result = judge.judge_evaluation(
-                question=item["question"],
-                reference_answer=reference,
-                candidate_answer=candidate,
-                evaluation=eval_result,
-            )
-
-            original_score = eval_result.get("score", 0)
-            try:
-                original_score = float(str(original_score).split("-")[0])
-            except (ValueError, IndexError):
-                original_score = 0.0
-
-            scores.append(EvaluationScore(
-                question=item["question"],
-                candidate_answer=candidate,
-                original_score=original_score,
-                judge_score=float(judge_result.get("judge_score", 0)),
-                faithfulness=float(judge_result.get("faithfulness", 0)),
-                bias_detected=bool(judge_result.get("bias_detected", False)),
-                reasoning=judge_result.get("reasoning", ""),
-            ))
+        scores.append(EvaluationScore(
+            question=entry["question"],
+            candidate_answer=entry["candidate_answer"],
+            original_score=original_score,
+            judge_score=float(judge_result.get("judge_score", 0)),
+            faithfulness=float(judge_result.get("faithfulness", 0)),
+            bias_detected=bool(judge_result.get("bias_detected", False)),
+            reasoning=judge_result.get("reasoning", ""),
+        ))
 
     avg_faith = sum(s.faithfulness for s in scores) / len(scores) if scores else 0
     avg_judge = sum(s.judge_score for s in scores) / len(scores) if scores else 0
@@ -234,118 +199,92 @@ async def audit_evaluation(req: AuditRequest):
 async def audit_full(req: AuditRequest):
     """
     Single connected pipeline audit:
-      1. Generate questions (Question-Gen API)
-      2. Generate answers for those SAME questions (Question-Gen API)
-      3. Simulate candidate answers
-      4. Evaluate candidates (Answer-Evaluation API)
-      5. Judge every stage + overall quality
+      1. Generate questions + answers (via shared pipeline client)
+      2. Judge questions, answers, evaluations
+      3. Judge overall system quality
     """
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    # ── Step 1: Run full pipeline ─────────────────────────────
+    pipeline = await pipeline_client.run_full_pipeline(
+        job_title=req.job_title,
+        skills=req.skills,
+        experience_level=req.experience_level,
+        num_questions=req.num_questions,
+        simulate_candidate_fn=judge.simulate_candidate_answer,
+    )
+    qa_pairs = pipeline["qa_pairs"]
 
-        # ── Step 1: Generate questions ────────────────────────
-        qg_response = await client.post(
-            f"{QUESTION_SERVICE_URL}/generate-questions-with-answers",
-            json={
-                "job_title": req.job_title,
-                "skills": req.skills,
-                "experience_level": req.experience_level,
-                "num_questions": req.num_questions,
-            },
+    # ── Step 2: Judge each question ───────────────────────────
+    q_scores = []
+    for item in qa_pairs:
+        result = judge.judge_question(
+            question=item["question"],
+            job_title=req.job_title,
+            skills=req.skills,
+            experience_level=req.experience_level,
         )
-        qa_pairs = qg_response.json().get("questions_with_answers", [])
+        q_scores.append(QuestionScore(
+            question=item["question"],
+            relevance=float(result.get("relevance", 0)),
+            clarity=float(result.get("clarity", 0)),
+            difficulty_calibration=float(result.get("difficulty_calibration", 0)),
+            reasoning=result.get("reasoning", ""),
+        ))
 
-        # ── Step 2: Judge each question ───────────────────────
-        q_scores = []
-        for item in qa_pairs:
-            result = judge.judge_question(
-                question=item["question"],
-                job_title=req.job_title,
-                skills=req.skills,
-                experience_level=req.experience_level,
-            )
-            q_scores.append(QuestionScore(
-                question=item["question"],
-                relevance=float(result.get("relevance", 0)),
-                clarity=float(result.get("clarity", 0)),
-                difficulty_calibration=float(result.get("difficulty_calibration", 0)),
-                reasoning=result.get("reasoning", ""),
-            ))
+    # ── Step 3: Judge each reference answer ──────────────────
+    a_scores = []
+    for item in qa_pairs:
+        question_type = item.get("question_type", "conceptual")
+        options = item.get("options", [])
+        ref_answer = item.get("reference_answer") or ""
 
-        # ── Step 3: Judge each reference answer ──────────────
-        a_scores = []
-        for item in qa_pairs:
-            question_type = item.get("question_type", "conceptual")
-            options = item.get("options", [])
-            ref_answer = item.get("reference_answer") or ""
+        result = judge.judge_answer(
+            question=item["question"],
+            reference_answer=ref_answer,
+            job_title=req.job_title,
+            skills=req.skills,
+            experience_level=req.experience_level,
+            question_type=question_type,
+            options=options,
+        )
+        a_scores.append(AnswerScore(
+            question=item["question"],
+            reference_answer=ref_answer,
+            correctness=float(result.get("correctness", 0)),
+            completeness=float(result.get("completeness", 0)),
+            question_alignment=float(result.get("question_alignment", 0)),
+            reasoning=result.get("reasoning", ""),
+        ))
 
-            result = judge.judge_answer(
-                question=item["question"],
-                reference_answer=ref_answer,
-                job_title=req.job_title,
-                skills=req.skills,
-                experience_level=req.experience_level,
-                question_type=question_type,
-                options=options,
-            )
-            a_scores.append(AnswerScore(
-                question=item["question"],
-                reference_answer=ref_answer,
-                correctness=float(result.get("correctness", 0)),
-                completeness=float(result.get("completeness", 0)),
-                question_alignment=float(result.get("question_alignment", 0)),
-                reasoning=result.get("reasoning", ""),
-            ))
+    # ── Step 4: Judge each evaluation ────────────────────────
+    e_scores = []
+    for entry in pipeline["evaluations"]:
+        eval_result = entry["eval_result"]
+        if "error" in eval_result:
+            continue
 
-        # ── Step 4: Simulate candidates + evaluate + judge ───
-        e_scores = []
-        for item in qa_pairs:
-            reference = item.get("reference_answer") or ""
+        judge_result = judge.judge_evaluation(
+            question=entry["question"],
+            reference_answer=entry["reference_answer"],
+            candidate_answer=entry["candidate_answer"],
+            evaluation=eval_result,
+        )
 
-            # Simulate a realistic candidate answer
-            candidate = judge.simulate_candidate_answer(
-                question=item["question"],
-                job_title=req.job_title,
-                experience_level=req.experience_level,
-            )
+        original_score = eval_result.get("score", 0)
+        try:
+            original_score = float(str(original_score).split("-")[0])
+        except (ValueError, IndexError):
+            original_score = 0.0
 
-            # Call Answer-Evaluation API
-            eval_response = await client.post(
-                f"{EVALUATION_SERVICE_URL}/api/answer-evaluation",
-                json={
-                    "question": item["question"],
-                    "correct_answer": reference,
-                    "candidate_answer": candidate,
-                },
-            )
-            eval_result = eval_response.json()
-
-            if "error" in eval_result:
-                continue
-
-            # Judge the evaluation
-            judge_result = judge.judge_evaluation(
-                question=item["question"],
-                reference_answer=reference,
-                candidate_answer=candidate,
-                evaluation=eval_result,
-            )
-
-            original_score = eval_result.get("score", 0)
-            try:
-                original_score = float(str(original_score).split("-")[0])
-            except (ValueError, IndexError):
-                original_score = 0.0
-
-            e_scores.append(EvaluationScore(
-                question=item["question"],
-                candidate_answer=candidate,
-                original_score=original_score,
-                judge_score=float(judge_result.get("judge_score", 0)),
-                faithfulness=float(judge_result.get("faithfulness", 0)),
-                bias_detected=bool(judge_result.get("bias_detected", False)),
-                reasoning=judge_result.get("reasoning", ""),
-            ))
+        e_scores.append(EvaluationScore(
+            question=entry["question"],
+            candidate_answer=entry["candidate_answer"],
+            original_score=original_score,
+            judge_score=float(judge_result.get("judge_score", 0)),
+            faithfulness=float(judge_result.get("faithfulness", 0)),
+            bias_detected=bool(judge_result.get("bias_detected", False)),
+            reasoning=judge_result.get("reasoning", ""),
+        ))
 
     # ── Compute averages ──────────────────────────────────────
     avg_rel = sum(s.relevance for s in q_scores) / len(q_scores) if q_scores else 0
