@@ -1,0 +1,100 @@
+Skills
+Dart
+"Async programming (Futures, Streams)"
+Widgets (Stateless & Stateful)
+"Layouts (Row, Column, Stack, Flex)"
+Navigation & Routing
+Forms & Input handling
+Theming & Responsive UI
+ListView / GridView
+Dependency Injection
+SOLID principles
+Clean Architecture
+MVC / MVVM
+Analytics
+Crashlytics
+Cloud Messaging
+Firestore
+Secure Storage
+Hive
+SQLite
+SharedPreferences
+"Authentication (JWT, OAuth)"
+"HTTP requests (http, Dio)"
+REST APIs
+GetX
+Bloc / Cubit
+Riverpod
+Provider
+GitHub
+Android Studio
+"Animations (Hero, Lottie, Animated widgets)"
+"Asynchronous programming (Promises, async/await, event loop)"
+NPM / Yarn
+Fastify
+GraphQL
+Clustering
+Nginx
+VPS deployment
+AWS / GCP / Azure (basic knowledge)
+CI/CD basics
+Docker
+Rate limiting
+CORS
+Password hashing (bcrypt)
+Mongoose
+Sequelize
+Prisma
+Redis
+Session management issues
+CSRF
+XSS
+SQL Injection
+OWASP Top 10
+Scanning (Nmap)
+Reconnaissance
+Log analysis
+Network monitoring
+Endpoint security
+SIEM basics
+IDS / IPS
+Patch management
+Vulnerability management
+Threat modeling
+Risk assessment
+"CIA Triad (Confidentiality, Integrity, Availability)"
+Routing & Switching basics
+VPN
+Firewalls
+"DNS, DHCP"
+TCP/IP
+Firebase
+Collections Framework
+"Design patterns (Singleton, Factory, etc.)"
+Maven / Gradle
+JPA / Hibernate
+Spring Boot
+Spring Framework
+"Java 8+ features (Streams, Lambdas)"
+File I/O
+Multithreading & concurrency
+Exception handling
+Collections Framework
+DOM manipulation
+Fetch / Axios
+Node.js
+"CSS frameworks (Bootstrap, Tailwind)"
+Power BI / Tableau
+Plotly
+Seaborn
+"Joins, Group By, Aggregations"
+Data querying
+Correlation vs causation
+Hypothesis testing
+Distributions
+Probability basics
+Kubernetes
+Cassandra
+Integration testing
+Unit testing
+Selenium
