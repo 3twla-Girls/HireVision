@@ -6,9 +6,7 @@ from dotenv import load_dotenv
 class ModelFactory:
     Models = {
         "llama_large": "llama-3.3-70b-versatile",
-        "llama_small": "llama-3.1-8b",
-        "mixtral": "mixtral-8x7b-instruct",
-        "gemma": "gemma-7b",
+        "llama_small": "llama-3.1-8b-instant",
         "gpt_oss20": "openai/gpt-oss-20b",
         "gpt_oss120": "openai/gpt-oss-120b",
     }   
