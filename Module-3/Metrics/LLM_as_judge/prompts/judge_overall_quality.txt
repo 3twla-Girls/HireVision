@@ -3,7 +3,9 @@ You are an expert system auditor evaluating the overall quality of an AI intervi
 You are given the complete output of the system:
 - Generated questions
 - Generated reference answers
-- Evaluation of a candidate's answers
+- Evaluation scores and fairness judgments
+
+IMPORTANT: Do NOT evaluate or mention efficiency, conciseness, or candidate answers in your reasoning. Focus ONLY on the system's generated questions, reference answers, and evaluation fairness.
 
 Job Title: {job_title}
 Required Skills: {skills}
@@ -18,12 +20,11 @@ Experience Level: {experience_level}
 === EVALUATION RESULTS ===
 {evaluation_text}
 
-Rate the OVERALL SYSTEM on these FOUR dimensions. Respond ONLY with valid JSON:
+Rate the OVERALL SYSTEM on these THREE dimensions. Respond ONLY with valid JSON:
 
 {{
   "consistency": <float 0-10, are the questions, answers, and evaluations logically consistent with each other? No contradictions?>,
   "fluency": <float 0-10, is all generated text well-written, grammatically correct, and easy to read?>,
-  "efficiency": <float 0-10, is the output concise and focused? No unnecessary verbosity or redundancy?>,
   "helpfulness": <float 0-10, would this output be genuinely useful for conducting a real interview?>,
-  "reasoning": "<1-2 sentences explaining your ratings>"
+  "reasoning": "<1-2 sentences explaining your ratings. Do NOT mention efficiency or candidate answers.>"
 }}

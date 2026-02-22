@@ -106,7 +106,6 @@ class FullAuditResponse(BaseModel):
     # Overall system metrics
     consistency: float = Field(description="Measures how reproducible and logically consistent the generated questions, answers, and evaluations are. Score from 0 (inconsistent) to 10 (fully consistent).")
     fluency: float = Field(description="Is all generated text well-written, grammatically correct, and easy to read? (0-10)")
-    efficiency: float = Field(description="Is the output concise and focused, without unnecessary verbosity? (0-10)")
     helpfulness: float = Field(description="Would this output be genuinely useful for conducting a real interview? (0-10)")
     overall_reasoning: str = Field(description="The judge's explanation for the overall scores")
     system_overall_score: float = Field(description="Average of all stage scores and overall metrics (0-10)")

@@ -308,7 +308,7 @@ async def audit_full(req: AuditRequest):
         f"- Q: {s.question}\n  A: {s.reference_answer}" for s in a_scores
     )
     evaluation_text = "\n".join(
-        f"- Q: {s.question}\n  Candidate: {s.candidate_answer}\n  Score: {s.original_score}"
+        f"- Q: {s.question}\n  Score: {s.original_score}\n  Faithfulness: {s.faithfulness}\n  Bias: {s.bias_detected}"
         for s in e_scores
     )
 
@@ -323,12 +323,11 @@ async def audit_full(req: AuditRequest):
 
     consistency = float(overall_result.get("consistency", 0))
     fluency = float(overall_result.get("fluency", 0))
-    efficiency = float(overall_result.get("efficiency", 0))
     helpfulness = float(overall_result.get("helpfulness", 0))
 
     system_score = round(
         (q_overall + a_overall + e_overall
-         + consistency + fluency + efficiency + helpfulness) / 7, 2
+         + consistency + fluency + helpfulness) / 6, 2
     )
 
     return FullAuditResponse(
@@ -352,7 +351,6 @@ async def audit_full(req: AuditRequest):
         ),
         consistency=consistency,
         fluency=fluency,
-        efficiency=efficiency,
         helpfulness=helpfulness,
         overall_reasoning=overall_result.get("reasoning", ""),
         system_overall_score=system_score,
