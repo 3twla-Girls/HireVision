@@ -29,32 +29,26 @@ except Exception as e:
 load_dotenv(dotenv_path=str(Path(__file__).parent.parent.parent / ".env"))
 _client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# System prompt for fallback (same as QG module)
+# System prompt for fallback (same as QG module, with JSON format instructions)
 _SYSTEM_PROMPT = (
     "You are a technical interviewer.\n"
     "Generate technical questions based on the user input (role, skills, experience, number).\n"
-    "Use the output schema strictly. No soft skills, no behavioral questions, no coding tasks."
+    "No soft skills, no behavioral questions, no coding tasks.\n"
+    "\n"
+    "You MUST respond with valid JSON in the following format:\n"
+    '{\n'
+    '  "questions": [\n'
+    '    {\n'
+    '      "id": 1,\n'
+    '      "type": "conceptual" | "mcq" | "short",\n'
+    '      "question": "...",\n'
+    '      "options": ["A", "B", "C", "D"]\n'
+    '    }\n'
+    '  ]\n'
+    '}\n'
+    "- \"options\" is only required for \"mcq\" type questions.\n"
+    "- Do not include any text outside the JSON object.\n"
 )
-
-_QUESTION_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "questions": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "id": {"type": "integer"},
-                    "type": {"type": "string", "enum": ["conceptual", "mcq", "short"]},
-                    "question": {"type": "string"},
-                    "options": {"type": "array", "items": {"type": "string"}}
-                },
-                "required": ["id", "type", "question"]
-            }
-        }
-    },
-    "required": ["questions"]
-}
 
 
 def _fallback_generate(job_title, skills, experience_level, num_questions, model_key):
@@ -63,10 +57,6 @@ def _fallback_generate(job_title, skills, experience_level, num_questions, model
     that don't support json_schema (e.g. llama).
     """
     model_id = ModelFactory.get_model(model_key)
-    schema_instruction = (
-        "\n\nYou MUST respond with valid JSON matching this schema:\n"
-        + json.dumps(_QUESTION_SCHEMA)
-    )
     user_prompt = (
         f"Role: {job_title}\n"
         f"Skills: {', '.join(skills)}\n"
@@ -77,7 +67,7 @@ def _fallback_generate(job_title, skills, experience_level, num_questions, model
     completion = _client.chat.completions.create(
         model=model_id,
         messages=[
-            {"role": "system", "content": _SYSTEM_PROMPT + schema_instruction},
+            {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt}
         ],
         response_format={"type": "json_object"},

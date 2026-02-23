@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent.parent / ".env")
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-MODEL = "llama-3.3-70b-versatile"
+MODEL = os.getenv("JUDGE_MODEL", "llama-3.3-70b-versatile")
 
 # ── Load Prompts ──────────────────────────────────────────────
 PROMPTS_DIR = Path(__file__).parent / "prompts"

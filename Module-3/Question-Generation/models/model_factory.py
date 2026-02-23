@@ -1,7 +1,7 @@
-from groq import Groq
-from fastapi import APIRouter
-from pydantic import BaseModel
+import os
 from dotenv import load_dotenv
+
+load_dotenv()
 
 class ModelFactory:
     Models = {
@@ -11,7 +11,7 @@ class ModelFactory:
         "gpt_oss120": "openai/gpt-oss-120b",
     }   
 
-    active_model_key = "gpt_oss120"
+    active_model_key = os.getenv("ACTIVE_MODEL_KEY", "gpt_oss120")
 
     @staticmethod
     def get_model(model_key: str) -> str:

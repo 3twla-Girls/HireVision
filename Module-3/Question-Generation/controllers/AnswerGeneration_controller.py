@@ -1,5 +1,4 @@
 from utils.prompt_utils import SystemPromptCache
-from utils.schemas import REFERENCE_ANSWER_SCHEMA
 from groq import Groq
 import os
 from dotenv import load_dotenv
@@ -8,10 +7,6 @@ import json
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-MINIFIED_REFERENCE_ANSWER_SCHEMA = json.loads(
-    json.dumps(REFERENCE_ANSWER_SCHEMA, separators=(',', ':'))
-)
 
 
 def generate_answers_service(job_title, skills, experience_level, questions, model_key):
@@ -32,13 +27,7 @@ def generate_answers_service(job_title, skills, experience_level, questions, mod
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            response_format={
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "ReferenceAnswers",
-                    "schema": MINIFIED_REFERENCE_ANSWER_SCHEMA
-                }
-            },
+            response_format={"type": "json_object"},
             temperature=0.1
         )
 
@@ -53,6 +42,26 @@ def generate_answers_service(job_title, skills, experience_level, questions, mod
 
         try:
             result = json.loads(raw_output)
+
+            # Validate expected structure
+            if "answers" not in result or not isinstance(result["answers"], list):
+                return {
+                    "answers": [],
+                    "error": "Invalid response structure: missing 'answers' array",
+                    "raw_output": raw_output,
+                    "token_usage": token_usage
+                }
+            
+            required_keys = {"question_id", "question_type", "reference_answer"}
+            for a in result["answers"]:
+                if not required_keys.issubset(a.keys()):
+                    return {
+                        "answers": [],
+                        "error": f"Invalid answer format: missing keys {required_keys - a.keys()}",
+                        "raw_output": raw_output,
+                        "token_usage": token_usage
+                    }
+
             result["token_usage"] = token_usage  # attach token usage
             return result
         

@@ -18,46 +18,33 @@ load_dotenv(env_path)
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# ── Exact same system prompt as the original ──────────────────
+# ── System prompt with explicit JSON format instructions ──────
 SYSTEM_PROMPT = (
     "You are an expert technical interviewer.\n"
     "\n"
     "Generate reference answers for technical questions:\n"
     "\n"
-    "- Follow the output schema exactly.\n"
     "- Adjust detail by experience level (Junior/Mid/Senior).\n"
     "- MCQs: return only the correct option (e.g., \"B\"), no explanation.\n"
     "- Conceptual/Short-answer: give clear, accurate, detailed answers.\n"
     "- No extra text, preamble, or soft/behavioral content.\n"
     "- Answers must be concise but technically correct.\n"
+    "\n"
+    "You MUST respond with valid JSON in the following format:\n"
+    '{\n'
+    '  "answers": [\n'
+    '    {\n'
+    '      "question_id": 1,\n'
+    '      "question_type": "mcq" | "conceptual" | "short",\n'
+    '      "reference_answer": "..."\n'
+    '    }\n'
+    '  ]\n'
+    '}\n'
+    "- Do not include any text outside the JSON object.\n"
 )
 
-# ── Exact same schema as REFERENCE_ANSWER_SCHEMA ──────────────
-REFERENCE_ANSWER_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "answers": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "question_id": {"type": "integer"},
-                    "question_type": {"type": "string", "enum": ["mcq", "conceptual", "short"]},
-                    "reference_answer": {"type": "string"}
-                },
-                "required": ["question_id", "question_type", "reference_answer"]
-            }
-        }
-    },
-    "required": ["answers"]
-}
-
-MINIFIED_SCHEMA = json.loads(
-    json.dumps(REFERENCE_ANSWER_SCHEMA, separators=(',', ':'))
-)
-
-# ── Exact same model as the original (active_model_key = "gpt_oss120") ──
-MODEL = "openai/gpt-oss-120b"
+# ── Model (reads from .env, falls back to gpt-oss-120b) ──
+MODEL = os.getenv("ACTIVE_MODEL", "openai/gpt-oss-120b")
 
 
 def generate_answers(
@@ -98,13 +85,7 @@ def generate_answers(
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
-            response_format={
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "ReferenceAnswers",
-                    "schema": MINIFIED_SCHEMA,
-                }
-            },
+            response_format={"type": "json_object"},
             temperature=0.1,
         )
 
