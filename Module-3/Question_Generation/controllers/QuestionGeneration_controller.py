@@ -4,14 +4,9 @@ from dotenv import load_dotenv
 import os
 import models.model_factory as model_factory
 from utils.prompt_utils import SystemPromptCache
-from utils.schemas import QUESTION_SCHEMA
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-MINIFIED_QUESTION_SCHEMA = json.loads(
-    json.dumps(QUESTION_SCHEMA, separators=(',', ':'))
-)
 
 
 def generate_questions_service(
@@ -38,13 +33,7 @@ def generate_questions_service(
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            response_format={
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "InterviewQuestions",
-                    "schema": MINIFIED_QUESTION_SCHEMA
-                }
-            },
+            response_format={"type": "json_object"},
             temperature=0.1
         )
 
@@ -58,6 +47,26 @@ def generate_questions_service(
 
         try:
             result = json.loads(raw_output)
+
+            # Validate expected structure
+            if "questions" not in result or not isinstance(result["questions"], list):
+                return {
+                    "questions": [],
+                    "error": "Invalid response structure: missing 'questions' array",
+                    "raw_output": raw_output,
+                    "token_usage": token_usage
+                }
+            
+            required_keys = {"id", "type", "question"}
+            for q in result["questions"]:
+                if not required_keys.issubset(q.keys()):
+                    return {
+                        "questions": [],
+                        "error": f"Invalid question format: missing keys {required_keys - q.keys()}",
+                        "raw_output": raw_output,
+                        "token_usage": token_usage
+                    }
+
             result["token_usage"] = token_usage  
             return result
         
