@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from routes.routes import router as question_router
+from  Question_Generation.routes.routes import router as question_router
 import time
 
 app = FastAPI(

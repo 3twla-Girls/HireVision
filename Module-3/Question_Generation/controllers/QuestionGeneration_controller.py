@@ -1,10 +1,14 @@
 import json
+import os
 from groq import Groq
 from dotenv import load_dotenv
-import os
-import models.model_factory as model_factory
-from utils.prompt_utils import SystemPromptCache
-from utils.schemas import QUESTION_SCHEMA
+import Question_Generation.models.model_factory as model_factory
+from Question_Generation.utils.prompt_utils import SystemPromptCache
+from Question_Generation.utils.schemas import QUESTION_SCHEMA
+
+# DB repositories
+from DB.repositories.job_repo import get_job_by_id
+from DB.repositories.question_repo import save_generated_questions
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -15,15 +19,28 @@ MINIFIED_QUESTION_SCHEMA = json.loads(
 
 
 def generate_questions_service(
-    job_title: str, 
-    skills: list[str], 
-    experience_level: str, 
-    num_questions: int, 
+    job_id: str,
+    num_questions: int,
     model_key: str
 ) -> dict:
+    """
+    Generates interview questions using AI
+    and stores them in MongoDB.
+    """
 
+    # 🔹 1. Get job data from DB
+    job = get_job_by_id(job_id)
+
+    if not job:
+        return {"error": "Job not found"}
+
+    job_title = job["job_role"]
+    skills = job["req_skills"]
+    experience_level = job["experience_level"]
+
+    # 🔹 2. Load system prompt
     system_prompt = SystemPromptCache.load("prompts/QuestionGeneration_system.txt")
-    
+
     user_prompt = (
         f"Role: {job_title}\n"
         f"Skills: {', '.join(skills)}\n"
@@ -58,9 +75,18 @@ def generate_questions_service(
 
         try:
             result = json.loads(raw_output)
-            result["token_usage"] = token_usage  
+
+            # 🔹 3. Save questions to DB via repository
+            db_id = save_generated_questions(
+                job_id=job_id,
+                questions=result.get("questions", [])
+            )
+
+            result["db_id"] = db_id
+            result["token_usage"] = token_usage
+
             return result
-        
+
         except json.JSONDecodeError as e:
             return {
                 "questions": [],
@@ -70,4 +96,7 @@ def generate_questions_service(
             }
 
     except Exception as e:
-        return {"questions": [], "error": f"API call failed: {str(e)}"}
+        return {
+            "questions": [],
+            "error": f"API call failed: {str(e)}"
+        }
