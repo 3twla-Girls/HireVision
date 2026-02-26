@@ -1,8 +1,8 @@
 from fastapi import APIRouter
-from controllers.QuestionGeneration_controller import generate_questions_service
-from controllers.AnswerGeneration_controller import generate_answers_service
-from models.job_info import JobInfo
-import models.model_factory as model_factory
+from Module_3.Question_Generation.controllers.QuestionGeneration_controller import generate_questions_service
+from Module_3.Question_Generation.controllers.AnswerGeneration_controller import generate_answers_service
+from Module_3.Question_Generation.models.job_info import JobInfo
+import Module_3.Question_Generation.models.model_factory as model_factory
 from fastapi import Response
 
 
