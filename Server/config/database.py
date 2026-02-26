@@ -2,7 +2,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 
-load_dotenv("/home/bebo/Documents/HireVision-GP/HireVision/Module-3/.env")
+load_dotenv("/home/bebo/Documents/HireVision-GP/HireVision/Server/.env")
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client[os.getenv("DB_NAME")]
 
