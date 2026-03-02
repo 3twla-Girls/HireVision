@@ -11,10 +11,17 @@ from pathlib import Path
 from groq import Groq
 from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).parent.parent.parent / ".env")
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+_ENV_PATH = Path(__file__).parent.parent.parent / ".env"
 
-MODEL = os.getenv("JUDGE_MODEL", "llama-3.3-70b-versatile")
+
+def _get_client() -> Groq:
+    """Create a fresh Groq client, reloading .env each time."""
+    load_dotenv(_ENV_PATH, override=True)
+    return Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+
+def _get_model() -> str:
+    return os.getenv("JUDGE_MODEL", "llama-3.3-70b-versatile")
 
 # ── Load Prompts ──────────────────────────────────────────────
 PROMPTS_DIR = Path(__file__).parent / "prompts"
@@ -26,8 +33,8 @@ PROMPT_OVERALL = (PROMPTS_DIR / "judge_overall_quality.txt").read_text(encoding=
 
 def _call_llm(prompt: str) -> dict:
     """Send prompt to LLM, parse JSON response."""
-    response = client.chat.completions.create(
-        model=MODEL,
+    response = _get_client().chat.completions.create(
+        model=_get_model(),
         messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
         response_format={"type": "json_object"},
@@ -107,8 +114,8 @@ def simulate_candidate_answer(question: str, job_title: str, experience_level: s
         f"Question: {question}\n\n"
         f"Your answer:"
     )
-    response = client.chat.completions.create(
-        model=MODEL,
+    response = _get_client().chat.completions.create(
+        model=_get_model(),
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
     )

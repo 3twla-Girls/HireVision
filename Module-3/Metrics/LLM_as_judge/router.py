@@ -214,6 +214,14 @@ async def audit_full(req: AuditRequest):
     )
     qa_pairs = pipeline["qa_pairs"]
 
+    # DEBUG: Print pipeline results
+    print(f"[DEBUG] qa_pairs count: {len(qa_pairs)}")
+    print(f"[DEBUG] evaluations count: {len(pipeline['evaluations'])}")
+    if qa_pairs:
+        print(f"[DEBUG] First qa_pair keys: {list(qa_pairs[0].keys())}")
+    else:
+        print("[DEBUG] WARNING: qa_pairs is EMPTY!")
+
     # ── Step 2: Judge each question ───────────────────────────
     q_scores = []
     for item in qa_pairs:
