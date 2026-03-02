@@ -1,0 +1,30 @@
+import React from 'react'
+import { Route, Routes } from 'react-router-dom'
+import {Toaster} from 'react-hot-toast'
+import Home from './pages/JobSeeker/Home'
+import Job from './pages/JobSeeker/Job'
+import Layout from './pages/shared/Layout'
+import Login from './pages/shared/Login'
+import Applications from './pages/JobSeeker/Applications'
+import Interviews from './pages/JobSeeker/Interviews'
+import Interview from './pages/JobSeeker/Interview'
+
+const App = () => {
+  const user = true
+  return (
+    <>
+      <Toaster />
+      <Routes>
+        <Route path='/' element={ !user? <Login />:<Layout/>}>
+          <Route index element={<Home />} />
+          <Route path='job/:jobId' element={<Job />} />
+          <Route path='applications' element={<Applications />} />
+          <Route path='interviews' element={<Interviews />} />
+          <Route path='interview' element={<Interview />} />
+        </Route>
+      </Routes>
+    </>
+  )
+}
+
+export default App

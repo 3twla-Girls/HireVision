@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*{
+  font-family: "Inter", sans-serif;
+}
+
+@theme {
+  --color-dark-blue: #1B3C53;
+  --color-light-blue: #456882;
+  --color-light-gray1: #F5F5F5;
+  --color-light-gray2: #D3D3D3;
+  --color-dark-gray3: #5F5F5F;
+  --color-dark-gray4: #303030;
+  --color-orange: #FF914D;
+  --color-light-orange: #FAB95B;
+  --color-logo-blue: #063192;
+
+  --font-sans: "Inter", sans-serif;
+}
+
+.no-scrollbar::-webkit-scrollbar{
+  display: none;
+}
