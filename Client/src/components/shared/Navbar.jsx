@@ -4,7 +4,7 @@ const Navbar = ({ role }) => {
   return (
     <nav className="flex justify-between p-4 bg-slate-900 border-b border-slate-800">
       <div className="logo font-bold text-blue-500">HireVision</div>
-      
+
       <div className="menu">
         {role === 'recruiter' ? (
           // Recruiter navbar
