@@ -23,7 +23,7 @@ const FilterSidebar = () => {
         <aside className="rounded-xl bg-white p-5 h-full sticky top-24">
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2 text-dark-blue font-semibold text-2xl">
+                <div className="flex items-center gap-2 text-dark-blue font-semibold text-xl">
                     <SlidersHorizontal size={22} className="text-dark-blue" />
                     Filter
                 </div>

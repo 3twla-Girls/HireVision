@@ -16,7 +16,7 @@ const Home = () => {
 
         {/* Center – Job Listings (6 cols) */}
         <main className="col-span-6">
-          <h1 className="text-3xl font-bold text-dark-blue mb-6">
+          <h1 className="text-2xl font-bold text-dark-blue mb-6">
             Recommended for you!
           </h1>
 
