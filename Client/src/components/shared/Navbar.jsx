@@ -1,25 +1,26 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { assets } from '../../assets/assets';
+import { Link } from 'react-router-dom';
 
 const Navbar = ({ role }) => {
+  const [selectedTab, setSelectedTab] = useState(role === 'jobseeker' ? 'JOBS' : 'DASHBOARD');
   const selectedTabStyle = "font-bold p-2 border-b-4 border-dark-blue";
   const defaultTabStyle = "p-2 hover:text-gray-900";
-  const selectedTab = role === 'jobseeker' ? 'JOBS' : 'DASHBOARD';
   return (
-    <nav className="flex justify-between p-4 px-20 border-b border-slate-800 h-[100px]">
-      <div className="logo flex items-center font-bold text-3xl">
+    <nav className="flex sticky top-0 z-10 bg-light-gray1 justify-between p-4 px-20 border-b border-light-gray2 ">
+      <Link to="/" onClick={()=>setSelectedTab('JOBS')} className="logo flex items-center font-bold text-3xl cursor-pointer">
         <img src={assets.logo} alt="HireVision Logo" className='w-8'/>
         <span className='text-logo-blue'>Hire</span>
         <span className="text-orange">Vision</span>
-      </div>
+      </Link>
       
       {role === 'jobseeker' ? (
         // Jobseeker navbar
         <div className='menu flex-1 flex gap-10 items-center justify-evenly'>
           <div className="flex gap-20 text-lg text-dark-blue">
-            <span className={selectedTab === 'JOBS' ? selectedTabStyle : defaultTabStyle}>JOBS</span>
-            <span className={selectedTab === 'APPLICATIONS' ? selectedTabStyle : defaultTabStyle}>APPLICATIONS</span>
-            <span className={selectedTab === 'INTERVIEWS' ? selectedTabStyle : defaultTabStyle}>INTERVIEWS</span>
+            <Link to="/" onClick={() => setSelectedTab('JOBS')} className={selectedTab === 'JOBS' ? selectedTabStyle : defaultTabStyle}>JOBS</Link>
+            <Link to="/applications" onClick={() => setSelectedTab('APPLICATIONS')} className={selectedTab === 'APPLICATIONS' ? selectedTabStyle : defaultTabStyle}>APPLICATIONS</Link>
+            <Link to="/interviews" onClick={() => setSelectedTab('INTERVIEWS')} className={selectedTab === 'INTERVIEWS' ? selectedTabStyle : defaultTabStyle}>INTERVIEWS</Link>
           </div>
           {/* search bar for jobseeker */}
           <div>
@@ -34,9 +35,9 @@ const Navbar = ({ role }) => {
         // Recruiter navbar
         <div className='menu flex-1 flex gap-10 items-center justify-evenly'>
           <div className="flex gap-20 text-lg text-dark-blue">
-            <span className={selectedTab === 'DASHBOARD' ? selectedTabStyle : defaultTabStyle}>DASHBOARD</span>
-            <span className={selectedTab === 'APPLICATIONS' ? selectedTabStyle : defaultTabStyle}>APPLICATIONS</span>
-            <span className={selectedTab === 'INTERVIEWS' ? selectedTabStyle : defaultTabStyle}>INTERVIEWS</span>
+            <Link to="/dashboard" onClick={() => setSelectedTab('DASHBOARD')} className={selectedTab === 'DASHBOARD' ? selectedTabStyle : defaultTabStyle}>DASHBOARD</Link>
+            <Link to="/applications" onClick={() => setSelectedTab('APPLICATIONS')} className={selectedTab === 'APPLICATIONS' ? selectedTabStyle : defaultTabStyle}>APPLICATIONS</Link>
+            <Link to="/interviews" onClick={() => setSelectedTab('INTERVIEWS')} className={selectedTab === 'INTERVIEWS' ? selectedTabStyle : defaultTabStyle}>INTERVIEWS</Link>
           </div>
           <div className='flex items-center gap-10'>
             {/* Post a job button for recruiter */}

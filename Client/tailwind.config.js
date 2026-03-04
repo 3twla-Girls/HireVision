@@ -15,6 +15,7 @@ export default {
         'dark-gray4': '#303030',
         'orange': '#FF914D',
         'light-orange': '#FAB95B',
+        'dark-orange': '#EE6C4D',
         'logo-blue': '#063192',
       },
       fontFamily: {
