@@ -1,9 +1,9 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { assets } from '../../assets/assests'
+import { assets } from '../../assets/assets'
 
 const RightSidebar = () => (
-    <aside className="flex flex-col gap-5 h-fit">
+    <aside className="flex flex-col gap-5 h-fit lg:sticky lg:top-28">
         {/* Interviews */}
         <div className="rounded-2xl bg-white px-6 py-14 flex flex-col items-center text-center">
             <img src={assets.interviewIcon} alt="Interviews" className="w-16 h-16 object-contain mb-4" />

@@ -1,5 +1,4 @@
 import React from 'react'
-import { assets } from '../../assets/assests'
 import JOBS from '../../data/jobs'
 import FilterSidebar from '../../components/JobSeeker/FilterSidebar'
 import JobCard from '../../components/JobSeeker/JobCard'
@@ -7,7 +6,7 @@ import RightSidebar from '../../components/JobSeeker/RightSidebar'
 
 const Home = () => {
   return (
-    <div className="min-h-screen bg-light-gray1">
+    <div className="min-h-screen">
       <div className="mx-auto px-[60px] py-8 grid grid-cols-12 gap-5 items-stretch">
         {/* Left – Filters (3 cols) */}
         <div className="col-span-3 pb-8">

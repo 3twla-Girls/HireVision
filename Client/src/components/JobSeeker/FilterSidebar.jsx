@@ -20,7 +20,7 @@ const FilterSidebar = () => {
     ]
 
     return (
-        <aside className="rounded-xl bg-white p-5 h-full sticky top-24">
+        <aside className="rounded-xl bg-white p-5 h-fit lg:sticky lg:top-28">
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2 text-dark-blue font-semibold text-xl">

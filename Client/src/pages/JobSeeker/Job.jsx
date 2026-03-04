@@ -6,7 +6,6 @@ import ApplyModal from '../../components/JobSeeker/ApplyModal'
 import USERS from '../../data/user'
 
 const Job = () => {
-  // استخدام أول يوزر من الداتا للتيست
   const user = USERS[1]; 
   const matchingScore = 80; 
   const radius = 54;
@@ -15,7 +14,6 @@ const Job = () => {
 
   const [showApply, setShowApply] = useState(false);
 
-  // بيانات الوظيفة الحالية (يمكن جلبها بـ ID لاحقاً)
   const job = {
     id: 1,
     title: "Senior Front-End Developer",
@@ -30,7 +28,27 @@ const Job = () => {
     type: "Full Time",
     workplace: "Remote",
     skills: ["React", "HTML", "CSS", "Node", "Python"],
-    description: `Join our innovative team as a Senior Front-end React.js / Next.js Developer and shape the future of our cutting-edge technology solutions in Saudi Arabia! ...`
+    description: `Join our innovative team as a Senior Front-end React.js / Next.js Developer and shape the future of our cutting-edge technology solutions in Saudi Arabia!
+      We are seeking a highly skilled and passionate Senior Front-end Developer to join our dynamic team. In this role, you will be responsible for developing and implementing user interface components using React.js and Next.js concepts. You will be a key player in crafting exceptional user experiences and driving the success of our projects in the Telecom/Technology sector.
+      Responsibilities:
+      Develop and maintain high-performance, reusable, and reliable front-end code using React.js and Next.js.
+      Collaborate with cross-functional teams including designers, product managers, and backend developers to deliver exceptional user experiences.
+      Implement responsive designs and ensure cross-browser compatibility.
+      Optimize applications for maximum speed and scalability.
+      Participate in code reviews and contribute to improving our development processes.
+      Stay up-to-date with the latest industry trends and technologies.
+      Skills & Technologies:
+      Expertise in React.js and Next.js.
+      Strong proficiency in JavaScript, HTML, and CSS.
+      Experience with RESTful APIs.
+      Solid understanding of UI/UX principles.
+      Familiarity with Agile development methodologies.
+      Growth Opportunities:
+      This role offers significant opportunities for professional growth. You will have the chance to work on challenging projects, learn new technologies, and advance your career within a rapidly growing organization. We provide mentorship, training, and resources to help you reach your full potential.
+      Team & Culture:
+      Our team is composed of talented and passionate individuals who are dedicated to innovation and excellence. We foster a collaborative and supportive environment where everyone's ideas are valued. We believe in work-life balance and provide a Remote work environment based in Riyadh, Saudi Arabia.
+      Impact:
+      As a Senior Front-end Developer, you will play a critical role in shaping the user experience of our products and services. Your contributions will directly impact the success of our projects and the satisfaction of our customers. You will be part of a team that is making a difference in the Telecom/Technology industry in Saudi Arabia.`
   };
 
   return (
@@ -46,7 +64,7 @@ const Job = () => {
         <aside className="order-2 lg:order-3 lg:col-span-3 md:col-span-2 space-y-4 h-fit lg:sticky lg:top-28 w-full">
           
           {/* Matching Score Widget */}
-          <div className="bg-white p-6 md:p-8 rounded-[32px] shadow-sm flex flex-col items-center text-center border border-gray-50 transition-transform hover:scale-[1.02]">
+          <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm flex flex-col items-center text-center border border-gray-50 transition-transform hover:scale-[1.02]">
             <div className="relative w-28 h-28 md:w-32 md:h-32 flex items-center justify-center mb-6">
               <svg className="absolute w-full h-full animate-[spin_4s_linear_infinite]" viewBox="0 0 128 128">
                 <circle cx="64" cy="64" r={radius} stroke="#F1F5F9" strokeWidth="12" fill="transparent" />
@@ -73,7 +91,7 @@ const Job = () => {
           </div>
 
           {/* Company Info Card */}
-          <div className="bg-white p-6 md:p-8 rounded-[32px] shadow-sm border border-gray-50">
+          <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-50">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-dark-blue rounded-lg flex items-center justify-center text-white text-[10px] font-bold">LOGO</div>
               <h3 className="text-lg font-bold text-dark-blue truncate">{job.company}</h3>
@@ -99,7 +117,7 @@ const Job = () => {
                 <div 
                   onClick={() => window.location.href = `/job/${jobItem.id}`} 
                   key={jobItem.id} 
-                  className="flex flex-col gap-3 bg-white p-4 rounded-2xl shadow-sm border border-transparent hover:border-gray-200 transition-all cursor-pointer group"
+                  className="flex flex-col gap-3 bg-white p-4 rounded-3xl shadow-sm border border-transparent hover:border-gray-200 transition-all cursor-pointer group"
                 >
                   <div className='flex gap-2'>
                     <div className="w-10 h-10 md:w-12 md:h-12 bg-light-gray1 rounded-xl flex items-center justify-center text-gray-400 shrink-0">

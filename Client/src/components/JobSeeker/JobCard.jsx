@@ -5,7 +5,7 @@ import { MapPin, Clock, Bookmark, Send } from 'lucide-react'
 const JobCard = ({ job }) => (
     <Link
         to={`/job/${job.id}`}
-        className="block rounded-xl border border-gray-200 bg-white p-5 hover:shadow-lg transition-shadow group"
+        className="block rounded-3xl border border-gray-200 bg-white p-5 hover:shadow-lg transition-shadow group"
     >
         <div className="flex gap-4">
             {/* Company Logo Placeholder */}
@@ -16,14 +16,14 @@ const JobCard = ({ job }) => (
             {/* Main info */}
             <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between">
-                    <h3 className="font-bold text-dark-blue text-base group-hover:text-orange transition-colors leading-tight">
+                    <h3 className="font-bold text-dark-blue text-base group-hover:text-dark-orange transition-colors leading-tight">
                         {job.title}
                     </h3>
                     <button
                         onClick={(e) => e.preventDefault()}
-                        className="text-orange hover:scale-110 transition-transform ml-2 shrink-0"
+                        className="text-dark-orange hover:scale-110 transition-transform ml-2 shrink-0"
                     >
-                        <Bookmark size={18} fill="#FF914D" />
+                        <Bookmark size={18} className='fill-current' />
                     </button>
                 </div>
 
@@ -61,7 +61,7 @@ const JobCard = ({ job }) => (
             </p>
             <button
                 onClick={(e) => e.preventDefault()}
-                className="text-dark-blue hover:text-orange transition-colors shrink-0 ml-2"
+                className="text-dark-blue hover:text-drak-orange transition-colors shrink-0 ml-2"
             >
                 <Send size={16} />
             </button>

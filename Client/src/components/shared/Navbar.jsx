@@ -28,7 +28,7 @@ const Navbar = ({ role }) => {
 
         {/* Logo Section */}
         <div className="col-span-6 lg:col-span-3">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center">
             <img src={assets.logo} alt="HireVision" className="h-8 object-contain" />
             <span className="text-2xl font-bold tracking-tight">
               <span className="text-logo-blue">Hire</span>
