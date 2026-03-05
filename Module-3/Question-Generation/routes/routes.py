@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from controllers.QuestionGeneration_controller import generate_questions_service
 from controllers.AnswerGeneration_controller import generate_answers_service
-from models.job_info import JobInfo
+from models.job_info import JobInfo, AnswerGenerationRequest
 import models.model_factory as model_factory
 from fastapi import Response
 
@@ -76,4 +76,27 @@ async def generate_questions_with_answers(job_info: JobInfo, response: Response)
 
     return {
         "questions_with_answers": questions_with_answers,
+    }
+
+
+@router.post("/generate-answers")
+async def generate_answers(req: AnswerGenerationRequest, response: Response):
+    """Generate reference answers for pre-existing questions"""
+
+    answers_result = generate_answers_service(
+        questions=req.questions,
+        job_title=req.job_title,
+        skills=req.skills,
+        experience_level=req.experience_level,
+        model_key=model_factory.ModelFactory.active_model_key
+    )
+
+    token_usage = answers_result.get("token_usage", {})
+
+    response.headers["X-Total-Tokens"] = str(token_usage.get("total_tokens", 0))
+    response.headers["X-Prompt-Tokens"] = str(token_usage.get("prompt_tokens", 0))
+    response.headers["X-Completion-Tokens"] = str(token_usage.get("completion_tokens", 0))
+
+    return {
+        "answers": answers_result.get("answers", []),
     }
