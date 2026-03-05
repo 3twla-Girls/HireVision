@@ -29,7 +29,7 @@ const ApplyModal = ({ setShowApply, jobTitle }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       {/* Modal Container */}
-      <div className="bg-white w-full max-w-2xl rounded-[24px] shadow-2xl overflow-hidden relative animate-in fade-in zoom-in duration-300">
+      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden relative animate-in fade-in zoom-in duration-300">
         
         {/* Header */}
         <div className="flex justify-between items-center px-10 py-6 border-b border-gray-100">
@@ -38,9 +38,9 @@ const ApplyModal = ({ setShowApply, jobTitle }) => {
           </h2>
           <button 
             onClick={onClose}
-            className="text-2xl font-bold text-gray-800 hover:text-red-500 transition-colors"
+            className="text-3xl font-bold text-dark-blue hover:text-red-500 transition-colors"
           >
-            X
+            &times;
           </button>
         </div>
 

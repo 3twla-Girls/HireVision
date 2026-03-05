@@ -1,5 +1,5 @@
 import React from 'react'
-import JOBS from '../../data/jobs'
+import {JOBS} from '../../data/jobs'
 import FilterSidebar from '../../components/JobSeeker/FilterSidebar'
 import JobCard from '../../components/JobSeeker/JobCard'
 import RightSidebar from '../../components/JobSeeker/RightSidebar'

@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import { Bookmark, CircleAlertIcon, CircleCheckIcon, Clock, ExternalLinkIcon, MapPinIcon } from "lucide-react";
 import USERS from "../../data/user";
 
@@ -7,6 +6,7 @@ const JobDetails = ({ job, setShowApply }) => {
     const user = USERS[1]; // Assuming the second user is the job seeker
     const userSkills = ["React", "HTML", "CSS", "Node"]; // Example user skills, replace with actual logic
     const isApplied = user.applications?.some(app => app.jobId === job.id);
+    const isSaved = user.savedJobs?.includes(job.id);
 
   return (
     <div className="space-y-6">
@@ -15,7 +15,9 @@ const JobDetails = ({ job, setShowApply }) => {
       <div className="shadow-md border-l-[12px] border-dark-blue bg-white sticky top-[100px] z-10 p-5 rounded-3xl flex flex-col lg:flex-row lg:justify-between gap-6">
         {/* LEFT SIDE */}
         <div className="flex gap-4 flex-1">
-            <div className="w-24 h-24 bg-gray-200 rounded-xl shrink-0"></div>
+            <div className="w-24 h-24 bg-gray-200 rounded-xl shrink-0">
+                <span className="text-[70px]">🏢</span>
+            </div>
             <div className="flex flex-col justify-between">
             <h2 className="text-2xl font-semibold text-dark-blue break-words">
                 {job.title}
@@ -39,25 +41,40 @@ const JobDetails = ({ job, setShowApply }) => {
             </span>
 
             {/* ACTIONS */}
-            <div className="flex sm:flex-row gap-2 w-full sm:w-auto items-start">
-            <button>
-                <Bookmark
-                className={`w-8 h-8 text-dark-blue hover:scale-110 
-                hover:text-light-blue transition-transform
-                ${isApplied ? "fill-current" : "fill-none"}`}
-                />
-            </button>
-
-            <button onClick={() => setShowApply(true)}
-                className="bg-dark-orange text-lg hover:bg-orange transition text-white py-2 px-4 rounded-xl font-medium w-auto whitespace-nowrap">
-                {isApplied ? "Applied" : "Apply Now"}
-            </button>
+            <div className="flex sm:flex-row gap-2 w-full sm:w-auto">
+                <button>
+                    <Bookmark className={`w-8 h-8 text-dark-blue hover:scale-110 hover:text-light-blue transition-transform ${isSaved ? 'fill-current' : ''}`}/>
+                </button>
+                {/* 
+                <button onClick={() => setShowApply(true)}
+                    className="bg-dark-orange shadow-lg text-lg hover:bg-orange transition text-white py-2 px-4 rounded-xl font-medium w-auto whitespace-nowrap">
+                    {isApplied ? "Applied" : "Apply Now"}
+                </button> */}
+                <button
+                onClick={() => !isApplied && setShowApply(true)}
+                disabled={isApplied}
+                className={`
+                    relative group overflow-hidden shadow-lg
+                    px-5 py-3 rounded-2xl font-bold text-lg
+                    transition-all duration-300 ease-out
+                    ${isApplied 
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200" 
+                    : "bg-dark-orange text-white shadow-[0_4px_0_rgb(194,65,12)] active:shadow-none active:translate-y-[4px] hover:bg-[#ff7b4d]"}
+                `}
+                >
+                    {!isApplied && (
+                        <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] transition-transform"></span>
+                    )}
+                    <span className="relative flex items-center justify-center gap-2">
+                        {isApplied ? "Application Sent ✓" : "Apply Now"}
+                    </span>
+                </button>
             </div>
         </div>
         </div>
 
       {/* ================= JOB DETAILS ================= */}
-      <div className="bg-white rounded-3xl p-6 space-y-5 shadow-sm">
+      <div className="bg-white rounded-3xl p-6 space-y-5 shadow-md">
         <div className="flex items-center">
             <h3 className="text-dark-orange font-semibold text-xl">
             Job Details
@@ -117,7 +134,7 @@ const JobDetails = ({ job, setShowApply }) => {
             </span>
         </div>
         {/* ================= SKILLS ================= */}
-        <div className="bg-slate-600 rounded-xl p-5">
+        <div className="bg-light-blue rounded-3xl text-xl p-5">
             <h3 className="text-white font-semibold mb-4">
             Skills & Tools:
             </h3>
@@ -141,7 +158,7 @@ const JobDetails = ({ job, setShowApply }) => {
 
 
       {/* ================= DESCRIPTION ================= */}
-      <div className="bg-white rounded-3xl p-6 space-y-3 shadow-sm">
+      <div className="bg-white rounded-3xl p-6 space-y-3 shadow-md">
         <h3 className="text-dark-orange font-semibold text-xl mb-2">
           Job Description
         </h3>
