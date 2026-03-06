@@ -3,8 +3,8 @@ import USERS from "../../data/user";
 
 const JobDetails = ({ job, setShowApply }) => {
     if (!job) return null;
-    const user = USERS[1]; // Assuming the second user is the job seeker
-    const userSkills = ["React", "HTML", "CSS", "Node"]; // Example user skills, replace with actual logic
+    const user = USERS[1];
+    const userSkills = ["React", "HTML", "CSS", "Node"];
     const isApplied = user.applications?.some(app => app.jobId === job.id);
     const isSaved = user.savedJobs?.includes(job.id);
 
@@ -45,17 +45,12 @@ const JobDetails = ({ job, setShowApply }) => {
                 <button>
                     <Bookmark className={`w-8 h-8 text-dark-blue hover:scale-110 hover:text-light-blue transition-transform ${isSaved ? 'fill-current' : ''}`}/>
                 </button>
-                {/* 
-                <button onClick={() => setShowApply(true)}
-                    className="bg-dark-orange shadow-lg text-lg hover:bg-orange transition text-white py-2 px-4 rounded-xl font-medium w-auto whitespace-nowrap">
-                    {isApplied ? "Applied" : "Apply Now"}
-                </button> */}
                 <button
                 onClick={() => !isApplied && setShowApply(true)}
                 disabled={isApplied}
                 className={`
-                    relative group overflow-hidden shadow-lg
-                    px-5 py-3 rounded-2xl font-bold text-lg
+                    relative group overflow-hidden
+                    px-4 py-3 rounded-2xl font-bold text-lg
                     transition-all duration-300 ease-out
                     ${isApplied 
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200" 
@@ -65,6 +60,7 @@ const JobDetails = ({ job, setShowApply }) => {
                     {!isApplied && (
                         <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] transition-transform"></span>
                     )}
+                    
                     <span className="relative flex items-center justify-center gap-2">
                         {isApplied ? "Application Sent ✓" : "Apply Now"}
                     </span>
