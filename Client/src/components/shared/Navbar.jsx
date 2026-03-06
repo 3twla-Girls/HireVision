@@ -22,7 +22,7 @@ const Navbar = ({ role }) => {
   const links = role === 'recruiter' ? recruiterLinks : jobSeekerLinks
 
   return (
-    <nav className="bg-white sticky top-0 z-50 border-b border-light-gray2 shadow-sm">
+    <nav className="bg-dark-blue sticky top-0 z-50 shadow-md">
       {/* Desktop Navbar */}
       <div className="px-4 md:px-8 lg:px-[60px] grid grid-cols-12 items-center h-20">
 
@@ -31,25 +31,24 @@ const Navbar = ({ role }) => {
           <Link to="/" className="flex items-center">
             <img src={assets.logo} alt="HireVision" className="h-8 object-contain" />
             <span className="text-2xl font-bold tracking-tight">
-              <span className="text-logo-blue">Hire</span>
+              <span className="text-white">Hire</span>
               <span className="text-orange">Vision</span>
             </span>
           </Link>
         </div>
 
         {/* Navigation Links - Center */}
-        <div className="hidden lg:flex col-span-6 justify-center items-center h-full gap-10">
+        <div className="hidden lg:flex col-span-6 justify-center items-center h-full gap-3">
           {links.map((link) => {
             const isActive = location.pathname === link.path
             return (
               <Link
                 key={link.label}
                 to={link.path}
-                className={`text-[16px] tracking-wide h-full flex items-center px-2 transition-all border-b-4 ${
-                  isActive
-                    ? 'text-dark-blue border-dark-blue font-bold'
-                    : 'text-dark-gray3 border-transparent font-medium  hover:text-dark-blue hover:border-light-blue'
-                }`}
+                className={`text-[15px] tracking-wide px-5 py-2 rounded-full transition-all duration-200 ${isActive
+                  ? 'bg-white text-dark-blue font-bold shadow-sm'
+                  : 'text-white/70 font-medium hover:bg-white/10 hover:text-white'
+                  }`}
               >
                 {link.label}
               </Link>
@@ -59,23 +58,23 @@ const Navbar = ({ role }) => {
 
         {/* Right Side - Actions & Profile */}
         <div className="col-span-6 lg:col-span-3 flex items-center justify-end gap-6">
-          
+
           {/* Search Bar - Shown for Jobseeker on desktop */}
           {role !== 'recruiter' && (
-            <div className="hidden xl:flex items-center gap-2 bg-light-gray1 border border-light-gray2 rounded-full px-4 py-2 w-48 transition-focus-within focus-within:ring-2 focus-within:ring-light-blue">
-              <Search size={18} className="text-dark-gray3" />
+            <div className="hidden xl:flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2 w-48 focus-within:ring-2 focus-within:ring-white/30">
+              <Search size={18} className="text-white/60" />
               <input
                 type="text"
                 placeholder="Search jobs..."
-                className="bg-transparent outline-none text-xs text-dark-blue w-full"
+                className="bg-transparent outline-none text-xs text-white placeholder-white/50 w-full"
               />
             </div>
           )}
 
           {/* Post a Job Button - Only for Recruiter */}
           {role === 'recruiter' && (
-            <Link 
-              to="/post-job" 
+            <Link
+              to="/post-job"
               className="hidden md:flex items-center gap-2 bg-dark-blue text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-light-blue transition-colors shadow-md"
             >
               <PlusCircle size={18} />
@@ -85,17 +84,17 @@ const Navbar = ({ role }) => {
 
           {/* User Avatar */}
           <Link to="/profile" className="flex-shrink-0">
-            <img 
-              src={assets.profileIcon || "https://via.placeholder.com/40"} 
-              alt="Profile" 
-              className="w-10 h-10 rounded-full border-2 border-light-gray2 object-cover hover:border-dark-blue transition-colors bg-light-gray1"
+            <img
+              src={assets.profileIcon || "https://via.placeholder.com/40"}
+              alt="Profile"
+              className="w-10 h-10 rounded-full border-2 border-white/30 object-cover hover:border-white transition-colors bg-white/10"
             />
           </Link>
 
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden text-dark-blue p-1 hover:bg-light-gray1 rounded-md"
+            className="lg:hidden text-white p-1 hover:bg-white/10 rounded-md"
           >
             {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
@@ -113,17 +112,16 @@ const Navbar = ({ role }) => {
                   key={link.label}
                   to={link.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`py-3 px-4 rounded-xl text-[16px] font-bold transition-all ${
-                    isActive
-                      ? 'bg-light-gray1 text-dark-blue shadow-sm'
-                      : 'text-dark-gray3 hover:bg-gray-50'
-                  }`}
+                  className={`py-3 px-4 rounded-xl text-[16px] font-bold transition-all ${isActive
+                    ? 'bg-light-gray1 text-dark-blue shadow-sm'
+                    : 'text-dark-gray3 hover:bg-gray-50'
+                    }`}
                 >
                   {link.label}
                 </Link>
               )
             })}
-            
+
             {/* Mobile-only action for Recruiter */}
             {role === 'recruiter' && (
               <Link

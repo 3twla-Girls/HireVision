@@ -16,6 +16,8 @@ export default {
         'orange': '#FF914D',
         'light-orange': '#FAB95B',
         'dark-orange': '#EE6C4D',
+        'teal': '#5BBFBA',
+        'light-teal': '#E8F6F5',
         'logo-blue': '#063192',
       },
       fontFamily: {
