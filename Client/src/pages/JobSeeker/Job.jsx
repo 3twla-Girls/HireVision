@@ -16,7 +16,7 @@ const Job = () => {
   const [showApply, setShowApply] = useState(false);
   
   return (
-    <div className="min-h-screen bg-[#F7F9FB]">
+    <div className="min-h-screen">
       <div className="mx-auto px-4 md:px-8 lg:px-[60px] py-8 grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-6 items-start">
         
         {/* --- Center: Main Job Content (Order 1 on mobile) --- */}
