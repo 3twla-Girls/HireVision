@@ -9,7 +9,6 @@ import Applications from './pages/JobSeeker/Applications'
 import Interviews from './pages/JobSeeker/Interviews'
 import InterviewLive from './pages/JobSeeker/InterviewLive'
 import InterviewSetup from './pages/JobSeeker/InterviewSetup'
-import Interview from './pages/JobSeeker/Interview'
 
 const App = () => {
   const user = true
