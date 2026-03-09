@@ -7,7 +7,8 @@ import Layout from './pages/shared/Layout'
 import Login from './pages/shared/Login'
 import Applications from './pages/JobSeeker/Applications'
 import Interviews from './pages/JobSeeker/Interviews'
-import Interview from './pages/JobSeeker/Interview'
+import InterviewLive from './pages/JobSeeker/InterviewLive'
+import InterviewSetup from './pages/JobSeeker/InterviewSetup'
 
 const App = () => {
   const user = true
@@ -20,7 +21,8 @@ const App = () => {
           <Route path='job/:jobId' element={<Job />} />
           <Route path='applications' element={<Applications />} />
           <Route path='interviews' element={<Interviews />} />
-          <Route path='interview' element={<Interview />} />
+          <Route path='interview/:type/:jobName?' element={<InterviewSetup />} />
+          <Route path='interview/:id/live' element={<InterviewLive />} />
         </Route>
       </Routes>
     </>
