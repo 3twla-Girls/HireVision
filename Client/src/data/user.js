@@ -13,7 +13,7 @@ const USERS = [
         location: "Cairo, Egypt",
         company_name: "Giza System",
         company_web_link: "https://gizasysems.com",
-        jobs:[],
+        jobs: [],
         created_at: "2026-03-04T14:40:24.853Z"
     },
     {
@@ -22,7 +22,7 @@ const USERS = [
         name: "Omar Khaled",
         password: "hashed_password_456",
         role: "jobseeker", // Job Seeker
-        profile_image_url: "https://res.cloudinary.com/dzufxvqbb/image/upload/v1772635229/images/omar.png",
+        profile_image_url: "https://res.cloudinary.com/dzufxvqbb/image/upload/v1773087564/download_6_jkvzjn.jpg",
         profile_image_public_id: "images/omar_id",
         education: "Information Systems",
         job_title: "Frontend Developer",
@@ -33,6 +33,18 @@ const USERS = [
         ],
         date_of_birth: "2004-06-15",
         applications: [], // To store job applications
+        skills: ['React', 'HTML', 'CSS', 'Node', 'JavaScript', 'Python', 'Tailwind', 'REST APIs', 'AWS', 'Android', 'Kotlin'],
+        socials: {
+            github: "https://github.com/omar_khaled",
+            linkedin: "https://linkedin.com/in/omar_khaled",
+            website: "https://omarkhaled.dev",
+            phone: "+971 50 123 4567"
+        },
+        stats: {
+            totalApplications: 24,
+            interviews: 8,
+            accepted: 3
+        },
         created_at: "2026-02-15T10:20:00.000Z"
     },
 ];
