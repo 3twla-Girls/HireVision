@@ -3,7 +3,7 @@ import Navbar from '../../components/shared/Navbar'
 import { Outlet } from 'react-router-dom'
 
 const Layout = () => {
-    const role = 'jobseeker'; // Change to 'recruiter' to test recruiter navbar
+    const role = 'recruiter'; // Change to 'recruiter' to test recruiter navbar
   return (
     <div className="min-h-screen bg-light-gray1">
         <Navbar role={role} />

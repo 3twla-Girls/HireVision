@@ -9,6 +9,14 @@ import Applications from './pages/JobSeeker/Applications'
 import Interviews from './pages/JobSeeker/Interviews'
 import InterviewLive from './pages/JobSeeker/InterviewLive'
 import InterviewSetup from './pages/JobSeeker/InterviewSetup'
+import Profile from './pages/JobSeeker/Profile'
+import CandidateProfile from './pages/Recruiter/CandidateProfile'
+import Dashboard from './pages/Recruiter/Dashboard'
+import JobManagement from './pages/Recruiter/JobManagement'
+import PostJob from './pages/Recruiter/PostJob'
+import JobPreview from './pages/Recruiter/JobPreview'
+import JobApplications from './pages/Recruiter/JobApplications'
+import RecruiterProfile from './pages/Recruiter/RecruiterProfile'
 
 const App = () => {
   const user = true
@@ -24,7 +32,19 @@ const App = () => {
           <Route path='interview/:type/:jobName?' element={<InterviewSetup />} />
           <Route path='interview/:id/live' element={<InterviewLive />} />
           <Route path='interview/mock' element={<InterviewSetup type='mock' />} />
-          <Route path='interview/mock/live' element={<InterviewLive type='mock' />} />
+
+          <Route path='profile' element={<Profile />} />
+
+          {/* recruiter */}
+          <Route path='candidate-profile/:applicationId' element={<CandidateProfile />} />
+          <Route path='dashboard' element={<Dashboard />} />
+          <Route path='job-management' element={<JobManagement />} />
+          <Route path='post-job' element={<PostJob />} />
+          <Route path='job-preview/:jobId' element={<JobPreview />} />
+          <Route path='job-applications/:jobId' element={<JobApplications />} />
+          <Route path='recruiter-profile' element={<RecruiterProfile />} />
+
+
         </Route>
       </Routes>
     </>
