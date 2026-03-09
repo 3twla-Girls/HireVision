@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   CalendarCheck,
   History,
@@ -38,6 +39,7 @@ const useLiveCounts = () => {
 }
 
 const Interviews = () => {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('upcoming')
   const [searchQuery, setSearchQuery] = useState('')
   const tabCounts = useLiveCounts()
@@ -81,6 +83,7 @@ const Interviews = () => {
 
           {/* Start Mock Interview CTA */}
           <button
+            onClick={() => navigate('/interview/mock')}
             className="flex items-center gap-2 px-8 py-4 rounded-3xl bg-light-blue text-white
                        font-semibold text-[14px] shadow-xl md:mt-8 
                        hover:bg-dark-blue/90 hover:shadow-lg hover:-translate-y-0.5
@@ -89,6 +92,7 @@ const Interviews = () => {
             <Play size={16} className="fill-white" />
             Start Mock Interview
           </button>
+
         </div>
 
         {/* ── Stats Row ── */}

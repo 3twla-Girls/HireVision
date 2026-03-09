@@ -23,6 +23,8 @@ const App = () => {
           <Route path='interviews' element={<Interviews />} />
           <Route path='interview/:type/:jobName?' element={<InterviewSetup />} />
           <Route path='interview/:id/live' element={<InterviewLive />} />
+          <Route path='interview/mock' element={<InterviewSetup type='mock' />} />
+          <Route path='interview/mock/live' element={<InterviewLive type='mock' />} />
         </Route>
       </Routes>
     </>

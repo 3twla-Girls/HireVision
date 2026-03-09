@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapPin, Clock, CalendarDays, Star, ChevronRight, CheckCircle2, XCircle, Loader2, FileText } from 'lucide-react'
 import FeedbackModal from './FeedbackModal'
 
@@ -94,6 +95,7 @@ const Stars = ({ rating }) => (
 
 // ── Upcoming card ──────────────────────────────────────────────
 const UpcomingCard = ({ interview }) => {
+    const navigate = useNavigate()
     const { h, m, s, ready } = useCountdown(interview.scheduledAt)
 
     return (
@@ -143,6 +145,7 @@ const UpcomingCard = ({ interview }) => {
                     {/* Start / Not now */}
                     {ready ? (
                         <button
+                            onClick={() => navigate(`/interview/mock`)}
                             className="px-5 py-2 rounded-xl bg-dark-blue text-white text-[13px] font-semibold
                          hover:bg-dark-blue/90 hover:shadow-md active:scale-95 transition-all duration-200 shrink-0"
                         >
