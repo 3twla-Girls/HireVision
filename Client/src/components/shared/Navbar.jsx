@@ -19,8 +19,7 @@ const Navbar = ({ role }) => {
 
   const recruiterLinks = [
     { label: 'DASHBOARD', path: '/dashboard' },
-    { label: 'APPLICATIONS', path: '/applications' },
-    { label: 'INTERVIEWS', path: '/interviews' },
+    { label: 'JOB MANAGEMENT', path: '/job-management' },
   ]
 
   const links = role === 'recruiter' ? recruiterLinks : jobSeekerLinks
@@ -79,7 +78,7 @@ const Navbar = ({ role }) => {
           {role === 'recruiter' && (
             <Link
               to="/post-job"
-              className="hidden md:flex items-center gap-2 bg-dark-blue text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-light-blue transition-colors shadow-md"
+              className="hidden md:flex items-center gap-2 bg-light-blue text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:scale-110 transition shadow-md"
             >
               <PlusCircle size={18} />
               Post a Job
@@ -131,7 +130,7 @@ const Navbar = ({ role }) => {
               <Link
                 to="/post-job"
                 onClick={() => setMobileMenuOpen(false)}
-                className="mt-2 flex items-center justify-center gap-2 bg-dark-blue text-white py-4 rounded-xl font-bold shadow-lg"
+                className="mt-2 flex items-center justify-center gap-2 bg-light-blue text-white py-4 rounded-xl font-bold shadow-lg"
               >
                 Post a Job
               </Link>
