@@ -232,7 +232,7 @@ const Profile = () => {
           <div className="lg:col-span-2 flex flex-col gap-6">
 
             {/* Header Card */}
-            <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-light-gray2/60">
+            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-light-gray2/60">
               <div className="flex flex-col md:flex-row gap-6 items-start">
                 <img
                   src={currentUser?.profile_image_url || assets?.profileIcon || "https://via.placeholder.com/256"}
@@ -270,7 +270,7 @@ const Profile = () => {
             </div>
 
             {/* Skills & Tools */}
-            <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-light-gray2/60">
+            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-light-gray2/60">
               <div className="flex justify-between items-center mb-5">
                 <h2 className="text-xl font-bold text-dark-blue">Skills & Tools</h2>
                 {!isAddingSkill && (
@@ -313,7 +313,7 @@ const Profile = () => {
             </div>
 
             {/* Education 1 */}
-            <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-light-gray2/60">
+            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-light-gray2/60">
               <h2 className="text-xl font-bold text-dark-blue mb-4">Education</h2>
               <div>
                 <h3 className="text-[16px] font-bold text-dark-blue">{currentUser?.education}</h3>
@@ -341,7 +341,7 @@ const Profile = () => {
             {isNamePromptOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={handleCancelUpload}>
                 <div
-                  className="bg-white rounded-2xl p-6 w-[90%] max-w-sm shadow-xl animate-[fadeInScale_0.2s_ease-out]"
+                  className="bg-white rounded-3xl p-6 w-[90%] max-w-sm shadow-xl animate-[fadeInScale_0.2s_ease-out]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h3 className="text-lg font-bold text-dark-blue mb-4">Name your resume</h3>
@@ -373,7 +373,7 @@ const Profile = () => {
             )}
 
             {/* Resumes */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-light-gray2/60">
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-light-gray2/60">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-[17px] font-bold text-dark-blue">Resumes</h2>
                 <button
@@ -409,7 +409,7 @@ const Profile = () => {
             </div>
 
             {/* Contact Info */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-light-gray2/60">
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-light-gray2/60">
               <h2 className="text-[17px] font-bold text-dark-blue mb-5">Contact Info</h2>
               <div className="flex flex-col gap-4">
                 <ContactItem icon={Mail} value={currentUser?.email || "N/A"} />
@@ -419,7 +419,7 @@ const Profile = () => {
             </div>
 
             {/* Profile Stats */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-light-gray2/60">
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-light-gray2/60">
               <h2 className="text-[17px] font-bold text-dark-blue mb-5">Profile Stats</h2>
               <div className="flex flex-col gap-4">
                 <StatItem icon={Briefcase} label="Applications" value={currentUser?.stats?.totalApplications || 0} iconBg="bg-light-gray1" iconColor="text-dark-blue/70" />
