@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "react-country-flag": "^3.1.0",
+    "react-select": "^5.10.2",
+    "react-select-country-list": "^2.2.3"
+  }
+}
