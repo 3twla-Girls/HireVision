@@ -4,9 +4,10 @@ import USERS from "../../data/user";
 const JobDetails = ({ job, setShowApply }) => {
     if (!job) return null;
     const user = USERS[1];
-    const userSkills = ["React", "HTML", "CSS", "Node"];
+    const userSkills = ["React", "HTML", "CSS", "Node", "TypeScript", "JavaScript","Node.js","Tailwind"]; // Mocked user skills, ideally should come from user data
     const isApplied = user.applications?.some(app => app.jobId === job.id);
     const isSaved = user.savedJobs?.includes(job.id);
+    job.description = "We are looking for a skilled Frontend Developer to join our dynamic team. The ideal candidate will have experience in building responsive web applications using React and TypeScript. You will work closely with our design and backend teams to create seamless user experiences. If you are passionate about frontend development and eager to work on exciting projects, we would love to hear from you!";
 
   return (
     <div className="space-y-6">
@@ -28,7 +29,7 @@ const JobDetails = ({ job, setShowApply }) => {
             </p>
             <p className="text-sm text-light-blue mt-auto break-words">
                 <MapPinIcon className="inline w-4 h-4 mr-1" />
-                {job.location}
+                {job.country}, {job.city}
             </p>
             </div>
         </div>
@@ -91,21 +92,21 @@ const JobDetails = ({ job, setShowApply }) => {
                 Required Experience:
             </span>
             <span className="text-light-blue">
-                {job.experience}
+                {job.yearsOfExp}
             </span>
 
             <span className="font-medium text-dark-blue">
                 Career Level:
             </span>
             <span className="text-light-blue">
-                {job.careerLevel}
+                {job.experience}
             </span>
 
             <span className="font-medium text-dark-blue">
                 Required Education:
             </span>
             <span className="text-light-blue">
-                {job.education}
+                {job.education || "Not specified"}
             </span>
 
             <span className="font-medium text-dark-blue">

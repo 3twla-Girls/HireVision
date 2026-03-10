@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import CircularScore from '../../components/shared/CircularScore'
 
 const JobPreview = ({ job = {
-    title: "Senior Software Engineer",
+    title: "Frontend Developer",
     company: "Tech Innovators Inc.",
     recruiter: "John Doe",
     location: "San Francisco, CA",

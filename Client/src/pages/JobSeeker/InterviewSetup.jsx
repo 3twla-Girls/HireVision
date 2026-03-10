@@ -53,7 +53,8 @@ const InterviewSetup = () => {
 
           {/* Form Section */}
           <form className="space-y-6 w-full" onSubmit={(e) => handleStartInterview(e)}>
-            <div className="grid grid-cols-1 gap-2">
+            {isMock && (
+              <div className="grid grid-cols-1 gap-2">
               <label className="text-dark-blue font-semibold text-sm ml-1">Job role:</label>
               <input 
                 type="text" 
@@ -66,7 +67,9 @@ const InterviewSetup = () => {
                 }`} 
                 />
             </div>
+            )}
             
+            {isMock && (
             <div className="grid grid-cols-1 gap-2">
               <label className="text-dark-blue font-semibold text-sm ml-1">Job description:</label>
               <textarea 
@@ -77,9 +80,10 @@ const InterviewSetup = () => {
                 required={isMock}
                 className={`w-full border border-light-blue rounded-lg p-3 outline-none transition-all ${
                   !isMock ? 'bg-light-gray1 cursor-not-allowed opacity-70' : 'focus:ring-2 focus:ring-logo-blue/20'
-                }`}
-              ></textarea>
+                  }`}
+                  ></textarea>
             </div>
+                )}
 
             {/* Start Button */}
             <div className="flex justify-center mt-12 w-full">

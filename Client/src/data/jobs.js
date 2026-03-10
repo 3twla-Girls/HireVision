@@ -14,6 +14,7 @@ const JOBS = [
         experience: 'Mid-level',
         yearsOfExp: '3 years of exp',
         skills: ['React', 'TypeScript', 'Tailwind', 'Node.js', 'GraphQL', 'REST APIs'],
+        status: 'Open',
     },
     {
         id: 2,

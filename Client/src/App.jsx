@@ -32,7 +32,6 @@ const App = () => {
           <Route path='profile' element={<Profile />} />
           <Route path='interview/:type/:jobName?' element={<InterviewSetup />} />
           <Route path='interview/:id/live' element={<InterviewLive />} />
-          <Route path='interview/mock' element={<InterviewSetup type='mock' />} />
 
           <Route path='profile' element={<Profile />} />
 

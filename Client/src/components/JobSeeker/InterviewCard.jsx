@@ -145,7 +145,7 @@ const UpcomingCard = ({ interview }) => {
                     {/* Start / Not now */}
                     {ready ? (
                         <button
-                            onClick={() => navigate(`/interview/mock`)}
+                            onClick={() => navigate(`/interview/real/${interview.jobTitle}`)}
                             className="px-5 py-2 rounded-xl bg-dark-blue text-white text-[13px] font-semibold
                          hover:bg-dark-blue/90 hover:shadow-md active:scale-95 transition-all duration-200 shrink-0"
                         >

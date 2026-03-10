@@ -27,7 +27,7 @@ const JobManagement = () => {
         {/* Header */}
         <div className="col-span-12 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-3xl font-black text-[#1B3C53] flex items-center gap-3  tracking-tight">
+            <h1 className="text-3xl font-black text-dark-blue flex items-center gap-3  tracking-tight">
               <Briefcase className="bg-[#FF914D] text-white p-1.5 rounded-lg shadow-lg" size={36} />
               JOB MANAGEMENT
             </h1>
