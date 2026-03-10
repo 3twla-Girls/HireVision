@@ -1,7 +1,7 @@
 import React from 'react'
 import { X, Download } from 'lucide-react'
 
-const FeedbackModal = ({ isOpen, onClose, feedbackFile, jobTitle }) => {
+const FeedbackModal = ({ isOpen, onClose, feedbackFile, jobTitle, modalTitle = "Feedback for:", downloadName }) => {
     if (!isOpen) return null
 
     const handleDownload = async () => {
@@ -12,7 +12,7 @@ const FeedbackModal = ({ isOpen, onClose, feedbackFile, jobTitle }) => {
             const url = window.URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
-            a.download = `${jobTitle}-feedback.pdf`
+            a.download = downloadName || `${jobTitle}-feedback.pdf`
             document.body.appendChild(a)
             a.click()
 
@@ -49,7 +49,7 @@ const FeedbackModal = ({ isOpen, onClose, feedbackFile, jobTitle }) => {
                         </button>
 
                         <h2 className="text-lg text-dark-gray3 font-medium">
-                            Feedback for:{' '}
+                            {modalTitle}{' '}
                             <span className="font-bold text-dark-blue text-xl">
                                 {jobTitle}
                             </span>

@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom'
 
 const Layout = () => {
     // const role = 'jobseeker'; 
-    const role = 'recruiter'; // Change to 'recruiter' to test recruiter navbar
+    const role = 'jobseeker'; // Change to 'recruiter' to test recruiter navbar
   return (
     <div className="min-h-screen bg-light-gray1">
         <Navbar role={role} />

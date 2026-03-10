@@ -20,12 +20,16 @@ import {
   Terminal,
   Wind,
   Database,
-  Trash2
+  Trash2,
+  Upload,
+  Edit3
 } from 'lucide-react';
 import { assets } from '../../assets/assets';
 
 
 import USERS from '../../data/user';
+import FeedbackModal from '../../components/JobSeeker/FeedbackModal';
+import safwaResume from '../../data/Safwa Ibrahim Resume (1).pdf';
 
 // Mock finding the current logged-in user
 const currentUser = USERS.find((user) => user.role === 'jobseeker');
@@ -92,7 +96,25 @@ const Profile = () => {
     localStorage.setItem('user_skills', JSON.stringify(skills));
   }, [skills]);
 
-  const [resumes, setResumes] = React.useState(currentUser?.resumes || []);
+  const [resumes, setResumes] = React.useState(() => {
+    const savedResumes = localStorage.getItem('user_resumes');
+    if (savedResumes) {
+      return JSON.parse(savedResumes);
+    }
+    return currentUser?.resumes || [];
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('user_resumes', JSON.stringify(resumes));
+  }, [resumes]);
+  const [isResumeModalOpen, setIsResumeModalOpen] = React.useState(false);
+  const [selectedResume, setSelectedResume] = React.useState(null);
+
+  const [pendingUploadFile, setPendingUploadFile] = React.useState(null);
+  const [uploadName, setUploadName] = React.useState("");
+  const [isNamePromptOpen, setIsNamePromptOpen] = React.useState(false);
+
+  const fileInputRef = React.useRef(null);
 
   const handleDeleteResume = (id) => {
     setResumes(resumes.filter(resume => resume.id !== id));
@@ -102,19 +124,36 @@ const Profile = () => {
     }
   };
 
-  const handleDownloadResume = (resumeName) => {
-    // Basic implementation for a local demo pdf
+  const handleRenameResume = (id, newName) => {
+    setResumes(resumes.map(resume =>
+      resume.id === id ? { ...resume, name: newName } : resume
+    ));
+    // Simulate updating mock data
+    if (currentUser) {
+      const match = currentUser.resumes.find(r => r.id === id);
+      if (match) match.name = newName;
+    }
+  };
+
+  const handleDownloadResume = (resumeId, resumeName) => {
+    const resumeToDownload = resumes.find(r => r.id === resumeId);
+    let hrefToUse = safwaResume; // fallback to the static one
+
+    if (resumeToDownload && resumeToDownload.data) {
+      hrefToUse = resumeToDownload.data;
+    }
+
     const link = document.createElement('a');
-    link.href = '/Safwa Ibrahim Resume (1).pdf';
+    link.href = hrefToUse;
     link.download = resumeName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const handleViewResume = () => {
-    // Open the local demo pdf in a new browser tab
-    window.open('/Safwa Ibrahim Resume (1).pdf', '_blank');
+  const handleViewResume = (resume) => {
+    setSelectedResume(resume);
+    setIsResumeModalOpen(true);
   };
 
   const handleAddSkill = () => {
@@ -137,6 +176,52 @@ const Profile = () => {
       setIsAddingSkill(false);
       setNewSkill("");
     }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPendingUploadFile(file);
+      setUploadName(file.name.replace(/\.[^/.]+$/, "")); // Strip extension for default name
+      setIsNamePromptOpen(true);
+    }
+    // reset input
+    e.target.value = '';
+  };
+
+  const handleConfirmUpload = () => {
+    if (pendingUploadFile) {
+      const fileUrl = URL.createObjectURL(pendingUploadFile);
+
+      const newName = uploadName.trim() || pendingUploadFile.name;
+      const finalName = newName.toLowerCase().endsWith('.pdf') ? newName : `${newName}.pdf`;
+
+      const newResume = {
+        id: `temp_${Date.now()}`,
+        name: finalName,
+        created_at: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric', year: 'numeric' }),
+        data: fileUrl // storing the local url temporarily
+      };
+
+      setResumes([...resumes, newResume]);
+
+      if (currentUser && currentUser.resumes) {
+        currentUser.resumes.push(newResume);
+      }
+    }
+    setIsNamePromptOpen(false);
+    setPendingUploadFile(null);
+    setUploadName("");
+  };
+
+  const handleCancelUpload = () => {
+    setIsNamePromptOpen(false);
+    setPendingUploadFile(null);
+    setUploadName("");
   };
 
   return (
@@ -240,9 +325,72 @@ const Profile = () => {
           {/* Sidebar (Right) */}
           <div className="lg:col-span-1 flex flex-col gap-6">
 
+            <FeedbackModal
+              isOpen={isResumeModalOpen}
+              onClose={() => {
+                setIsResumeModalOpen(false);
+                setSelectedResume(null);
+              }}
+              feedbackFile={selectedResume?.data || safwaResume}
+              jobTitle={selectedResume?.name || "Resume"}
+              modalTitle="Resume:"
+              downloadName={selectedResume?.name || "Resume.pdf"}
+            />
+
+            {/* Rename Prompt Modal */}
+            {isNamePromptOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={handleCancelUpload}>
+                <div
+                  className="bg-white rounded-2xl p-6 w-[90%] max-w-sm shadow-xl animate-[fadeInScale_0.2s_ease-out]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="text-lg font-bold text-dark-blue mb-4">Name your resume</h3>
+                  <input
+                    type="text"
+                    value={uploadName}
+                    onChange={(e) => setUploadName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleConfirmUpload()}
+                    autoFocus
+                    placeholder="e.g. Frontend Resume"
+                    className="w-full border border-light-gray2 rounded-lg px-3 py-2 text-dark-blue mb-5 outline-none focus:border-orange focus:ring-1 focus:ring-orange transition-all"
+                  />
+                  <div className="flex justify-end gap-3">
+                    <button
+                      onClick={handleCancelUpload}
+                      className="px-4 py-2 text-sm font-semibold text-dark-gray3 hover:text-dark-blue hover:bg-light-gray1 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleConfirmUpload}
+                      className="px-4 py-2 text-sm font-semibold text-white bg-orange hover:bg-dark-orange rounded-lg transition-colors"
+                    >
+                      Save & Upload
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Resumes */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-light-gray2/60">
-              <h2 className="text-[17px] font-bold text-dark-blue mb-4">Resumes</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-[17px] font-bold text-dark-blue">Resumes</h2>
+                <button
+                  onClick={handleUploadClick}
+                  className="flex items-center gap-1.5 text-[13px] font-semibold text-orange hover:bg-orange/10 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  <Upload size={14} />
+                  <span>Upload</span>
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept=".pdf"
+                  className="hidden"
+                />
+              </div>
               <div className="flex flex-col gap-3">
                 {resumes.map((resume) => (
                   <ResumeItem
@@ -250,7 +398,7 @@ const Profile = () => {
                     name={resume.name}
                     date={`Uploaded ${resume.created_at}`}
                     onView={() => handleViewResume(resume)}
-                    onDownload={() => handleDownloadResume(resume.name)}
+                    onDownload={() => handleDownloadResume(resume.id, resume.name)}
                     onDelete={() => handleDeleteResume(resume.id)}
                   />
                 ))}

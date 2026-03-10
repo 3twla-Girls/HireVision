@@ -28,8 +28,8 @@ const USERS = [
         job_title: "Frontend Developer",
         location: "Dubai, UAE",
         resumes: [ // إضافة اختيارية للتيست في الـ Modal
-            { id: "r1", name: "My_Resume2.pdf", created_at: "20/2/2026" },
-            { id: "r2", name: "My_Resume.pdf", created_at: "15/1/2026" }
+            { id: "r1", name: "My_Resume2.pdf", created_at: "20/2/2026",data:'/resume.pdf' },
+            { id: "r2", name: "My_Resume.pdf", created_at: "15/1/2026" ,data:'/resume.pdf' }
         ],
         date_of_birth: "2004-06-15",
         applications: [], // To store job applications
@@ -45,6 +45,7 @@ const USERS = [
             interviews: 8,
             accepted: 3
         },
+        
         created_at: "2026-02-15T10:20:00.000Z"
     },
 ];
