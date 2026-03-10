@@ -52,6 +52,38 @@ export default function InterviewLive() {
   const [showGap,     setShowGap]     = useState(false);
   const [gapTime,     setGapTime]     = useState(GAP_TIME);
 
+  //for recording answer videos and send it to the backend, we can use the MediaRecorder API on streamRef.current and handle the dataavailable event to collect the recorded chunks. Once recording is stopped, we can create a Blob from the chunks and send it to the backend using fetch or axios. This would allow us to save the candidate's answers for later review by recruiters.
+  const mediaRecorderRef = useRef(null);
+  const videoChunksRef = useRef([]);
+
+  const startRecording = useCallback((stream) => { // أضفنا useCallback
+    videoChunksRef.current = [];
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) videoChunksRef.current.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
+      const url = URL.createObjectURL(videoBlob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      // ملحوظة: currentStep هنا ممكن تكون قديمة، الأفضل نعتمد على رقم السؤال الحالي
+      a.download = `Interview-Q${currentStep + 1}.webm`; 
+      document.body.appendChild(a);
+      a.click(); 
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+    };
+
+    mediaRecorder.start();
+    mediaRecorderRef.current = mediaRecorder;
+  }, [currentStep]); // تعتمد على currentStep لتسمية الملف صح
+
   // ── Audio Analyser ─────────────────────────────────────────────────────────
   const stopAudioAnalyser = useCallback(() => {
     cancelAnimationFrame(animFrameRef.current);
@@ -92,23 +124,46 @@ export default function InterviewLive() {
     setCameraOn(false);
   }, []);
 
+  // const startCamera = useCallback(async () => {
+  //   try {
+  //     const stream = await navigator.mediaDevices.getUserMedia({
+  //       video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+  //       audio: true,
+  //     });
+  //     streamRef.current?.getVideoTracks().forEach((t) => t.stop());
+  //     streamRef.current = stream;
+  //     if (videoRef.current) {
+  //       videoRef.current.srcObject = stream;
+  //       videoRef.current.onloadedmetadata = () => videoRef.current.play().catch(() => {});
+  //     }
+  //     startRecording(stream);
+  //     setCameraOn(true);
+  //   } catch {
+  //     setCameraOn(false);
+  //   }
+  // }, [currentStep, startRecording]);
   const startCamera = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      streamRef.current?.getVideoTracks().forEach((t) => t.stop());
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => videoRef.current.play().catch(() => {});
-      }
-      setCameraOn(true);
-    } catch {
-      setCameraOn(false);
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: true, 
+    });
+    streamRef.current?.getVideoTracks().forEach((t) => t.stop());
+    streamRef.current = stream;
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.onloadedmetadata = () => videoRef.current.play().catch(() => {});
     }
-  }, []);
+
+    // startRecording(stream);
+    startAudioAnalyser(stream);
+    setCameraOn(true);
+    setMicOn(true);
+  } catch (err) {
+    console.error("Camera Error:", err);
+    setCameraOn(false);
+  }
+}, [startRecording, startAudioAnalyser]);
 
   // ── Mic ────────────────────────────────────────────────────────────────────
   const stopMic = useCallback(() => {
@@ -142,15 +197,19 @@ export default function InterviewLive() {
   // ── Mount: start devices; unmount: full cleanup ────────────────────────────
   useEffect(() => {
     startCamera();
-    startMic();
+    // startMic();
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      cleanup()
       stopAudioAnalyser();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── handleNext: pause devices → show gap → resume devices ─────────────────
   const handleNext = useCallback(() => {
+    // if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+    //   mediaRecorderRef.current.stop();
+    // }
     if (currentStep < QUESTIONS.length - 1) {
       stopCamera();
       stopMic();
