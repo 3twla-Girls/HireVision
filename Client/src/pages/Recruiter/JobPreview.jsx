@@ -1,5 +1,5 @@
 import React from 'react'
-import { ExternalLinkIcon, MapPinIcon, Clock, Edit, DeleteIcon, Trash, Trash2, CircleCheckIcon, BrainCircuitIcon, MessagesSquareIcon, MessageSquareCheckIcon } from 'lucide-react'
+import { ExternalLinkIcon, MapPinIcon, Clock, Edit, DeleteIcon, Trash, Trash2, CircleCheckIcon, BrainCircuitIcon, MessagesSquareIcon, MessageSquareCheckIcon, PenIcon } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import CircularScore from '../../components/shared/CircularScore'
 
@@ -39,7 +39,7 @@ const JobPreview = ({ job = {
     <div className="min-h-screen">
       <div className="mx-auto px-4 md:px-8 lg:px-[60px] py-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
 
-        <div className="md:col-span-9 space-y-6">
+        <div className="md:col-span-8 lg:col-span-9 space-y-6">
             {/* ================= HEADER ================= */}
             <div className="shadow-md border-l-[12px] border-dark-blue bg-white sticky top-[100px] z-10 p-5 rounded-3xl flex flex-col lg:flex-row lg:justify-between gap-6">
                 <div className="flex gap-4 flex-1">
@@ -63,11 +63,13 @@ const JobPreview = ({ job = {
                     </span>
                     {/* add edit and detelte buttons */}
                     <div className="flex gap-2">
-                        <button onClick={()=>handleEdit()} className="bg-dark-blue hover:bg-light-blue text-white px-4 py-2 rounded-lg transition-colors">
-                            <Edit  className="w-5 h-5  inline" />
+                        <button onClick={()=>handleEdit()} className="bg-light-blue hover:bg-dark-blue text-white px-4 py-2 rounded-lg transition-colors">
+                            <PenIcon  className="w-6 h-6 pr-2  inline" />
+                            Edit Job
                         </button>
                         <button onClick={()=>handleDelete()} className="bg-dark-orange hover:bg-orange text-white px-4 py-2 rounded-lg transition-colors">
-                            <Trash2  className="w-5 h-5 inline" />
+                            <Trash2  className="w-6 h-6 pr-2 inline" />
+                            Delete Job
                         </button>
                     </div>
                 </div>
@@ -129,7 +131,7 @@ const JobPreview = ({ job = {
         {/* <div className='lg:col-span-1'></div> */}
 
         {/* ================= SIDEBAR ANALYTICS (col-span-4) ================= */}
-        <div className="md:col-span-3 space-y-6 lg:sticky lg:top-28 h-fit">
+        <div className="md:col-span-4 lg:col-span-3 space-y-6 lg:sticky lg:top-28 h-fit">
             
             {/* 1. AI Matching Overview Card */}
             <div className="bg-white rounded-3xl p-6 shadow-md border-t-8 border-dark-blue">
@@ -171,20 +173,6 @@ const JobPreview = ({ job = {
                     <MessageSquareCheckIcon size={100} />
                 </div>
             </div>
-
-            {/* 3. Quick Action Card */}
-            {/* <div className="bg-light-blue rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
-                <div className="relative z-10">
-                    <h4 className="font-bold text-lg mb-2">Need to close soon?</h4>
-                    <p className="text-xs opacity-90 mb-4">You have 12 high-match candidates ready for the final technical round.</p>
-                    <button className="bg-white text-light-blue px-4 py-2 rounded-lg text-xs font-bold hover:bg-orange-50 transition-colors">
-                        Notify Recruiter
-                    </button>
-                </div>
-                <div className="absolute -right-4 -bottom-4 text-white/10 rotate-12">
-                    <CircleCheckIcon size={100} />
-                </div>
-            </div> */}
         </div>
       </div>
     </div>
