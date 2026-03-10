@@ -1,9 +1,211 @@
 import React from 'react'
+import { ExternalLinkIcon, MapPinIcon, Clock, Edit, DeleteIcon, Trash, Trash2, CircleCheckIcon, BrainCircuitIcon, MessagesSquareIcon, MessageSquareCheckIcon } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import CircularScore from '../../components/shared/CircularScore'
 
-const JobPreview = () => {
+const JobPreview = ({ job = {
+    title: "Senior Software Engineer",
+    company: "Tech Innovators Inc.",
+    recruiter: "John Doe",
+    location: "San Francisco, CA",
+    status: "Active",
+    experience: "5+ years",
+    careerLevel: "Senior",
+    education: "Bachelor's Degree in Computer Science",
+    salary: "$120,000 - $150,000",
+    type: "Full-time",
+    workplace: "On-site",
+    skills: ["JavaScript", "React", "Node.js", "AWS"],
+    description: "We are looking for a Senior Software Engineer to join our dynamic team... lorem lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+}}) => {
+
+    const navigate = useNavigate();
+    const { jobId } = useParams();
+    const avgMatchingScore = 78; 
+
+    const handleEdit = () => {
+        // Navigate to edit page (you can create this page later)
+        // navigate(`/edit-job/${jobId}`);
+    }
+    const handleDelete = () => {
+        // Show confirmation and handle deletion logic
+        if (window.confirm("Are you sure you want to delete this job?")) {
+            // Call API to delete job, then navigate back to job management
+            navigate('/job-management');
+        }
+    }
+
   return (
-    <div>JobPreview</div>
+    <div className="min-h-screen">
+      <div className="mx-auto px-4 md:px-8 lg:px-[60px] py-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+
+        <div className="md:col-span-9 space-y-6">
+            {/* ================= HEADER ================= */}
+            <div className="shadow-md border-l-[12px] border-dark-blue bg-white sticky top-[100px] z-10 p-5 rounded-3xl flex flex-col lg:flex-row lg:justify-between gap-6">
+                <div className="flex gap-4 flex-1">
+                    <div className="w-24 h-24 bg-gray-200 rounded-xl shrink-0 flex items-center justify-center text-4xl">
+                        🏢
+                    </div>
+                    <div className="flex flex-col justify-center">
+                        <h2 className="text-2xl font-bold text-dark-blue">
+                            {job.title}
+                        </h2>
+                        <p className="text-sm text-light-blue mt-2">
+                            <MapPinIcon className="inline w-4 h-4 mr-1" />
+                            {job.location}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex lg:flex-col items-start lg:items-end justify-between gap-3">
+                    <span className="px-4 py-1 text-xs font-bold bg-green-50 text-green-600 rounded-full uppercase tracking-wider">
+                        {job.status}
+                    </span>
+                    {/* add edit and detelte buttons */}
+                    <div className="flex gap-2">
+                        <button onClick={()=>handleEdit()} className="bg-dark-blue hover:bg-light-blue text-white px-4 py-2 rounded-lg transition-colors">
+                            <Edit  className="w-5 h-5  inline" />
+                        </button>
+                        <button onClick={()=>handleDelete()} className="bg-dark-orange hover:bg-orange text-white px-4 py-2 rounded-lg transition-colors">
+                            <Trash2  className="w-5 h-5 inline" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* ================= JOB DETAILS ================= */}
+            <div className="bg-white rounded-3xl p-8 space-y-6 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between border-b pb-4">
+                    <h3 className="text-dark-orange font-bold text-lg uppercase tracking-tight">
+                        Job Details
+                    </h3>
+                    <div className="flex items-center gap-4">
+                        <div className="text-sm text-gray-400 flex items-center">
+                            <Clock className="w-4 h-4 mr-1"/>
+                            3 days ago
+                        </div>
+                        <div className="bg-blue-50 px-3 py-1 rounded-lg text-sm text-light-blue font-bold border border-blue-100">
+                            120 applicants
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 ml-2">
+                    <DetailItem label="Required Experience" value={job.experience} />
+                    <DetailItem label="Career Level" value={job.careerLevel} />
+                    <DetailItem label="Required Education" value={job.education} />
+                    <DetailItem label="Salary" value={job.salary} />
+                    <DetailItem label="Job Type" value={job.type} />
+                    <DetailItem label="Workplace" value={job.workplace} />
+                </div>
+
+                {/* ================= SKILLS ================= */}
+                <div className="bg-light-blue rounded-3xl p-6 mt-8">
+                    <h3 className="text-white font-bold mb-4 flex items-center gap-2 text-lg">
+                        Skills & Tools
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                        {job.skills.map((skill, index) => (
+                            <span key={index} className="bg-white text-dark-blue text-sm px-5 py-1.5 rounded-full hover:bg-white hover:text-dark-blue transition-colors cursor-default">
+                                {skill}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* ================= DESCRIPTION ================= */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                <h3 className="text-dark-orange font-bold text-lg mb-4">
+                    Job Description
+                </h3>
+                <p className="text-gray-600 leading-relaxed text-md">
+                    {job.description}
+                </p>
+            </div>
+        </div>
+
+        {/* adding gap 1 col */}
+        {/* <div className='lg:col-span-1'></div> */}
+
+        {/* ================= SIDEBAR ANALYTICS (col-span-4) ================= */}
+        <div className="md:col-span-3 space-y-6 lg:sticky lg:top-28 h-fit">
+            
+            {/* 1. AI Matching Overview Card */}
+            <div className="bg-white rounded-3xl p-6 shadow-md border-t-8 border-dark-blue">
+                <h3 className="text-dark-blue font-bold text-lg flex items-center gap-2">
+                    <span className="bg-orange-100">
+                        <BrainCircuitIcon size={20} className="text-dark-orange" />
+                    </span>
+                    AI Insights
+                </h3>
+                <div className="flex flex-col items-center py-4">
+                    <CircularScore score={avgMatchingScore} size={120} strokeWidth={10} dur={1500} />
+                    <p className="text-sm font-medium text-gray-500 mt-3">Avg. Match Score</p>
+                </div>
+                <div className="space-y-3 mt-4">
+                    <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Candidate Quality</span>
+                        <span className="text-green-600 font-bold text-xs bg-green-50 px-2 py-0.5 rounded-md">HIGH</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* 2. Applicant Pipeline Stats */}
+            <div className="bg-light-blue rounded-3xl p-6 shadow-md space-y-4">
+                <h3 className="text-white font-bold text-lg border-b pb-3">Hiring Pipeline</h3>
+                
+                <StatRow label="Total Applicants" value="120" color="bg-blue-400" />
+                <StatRow label="Interviewed" value="45" color="bg-purple-400" />
+                <StatRow label="Shortlisted (Passed)" value="12" color="bg-emerald-400" />
+                <StatRow label="Rejected" value="63" color="bg-red-400" />
+
+                <button 
+                onClick={() => navigate(`/job-applications/${jobId}`)}
+                className="mx-auto w-fit mt-4 bg-white text-light-blue p-3 rounded-xl font-bold hover:scale-105 transition-all flex items-center justify-center gap-2 shadow-lg">
+                    Manage Applicants
+                    <ExternalLinkIcon size={16} />
+                </button>
+                <div className="absolute -right-4 -bottom-4 text-white/10 rotate-12">
+                    {/* <CircleCheckIcon size={100} /> */}
+                    <MessageSquareCheckIcon size={100} />
+                </div>
+            </div>
+
+            {/* 3. Quick Action Card */}
+            {/* <div className="bg-light-blue rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
+                <div className="relative z-10">
+                    <h4 className="font-bold text-lg mb-2">Need to close soon?</h4>
+                    <p className="text-xs opacity-90 mb-4">You have 12 high-match candidates ready for the final technical round.</p>
+                    <button className="bg-white text-light-blue px-4 py-2 rounded-lg text-xs font-bold hover:bg-orange-50 transition-colors">
+                        Notify Recruiter
+                    </button>
+                </div>
+                <div className="absolute -right-4 -bottom-4 text-white/10 rotate-12">
+                    <CircleCheckIcon size={100} />
+                </div>
+            </div> */}
+        </div>
+      </div>
+    </div>
   )
 }
 
-export default JobPreview
+const DetailItem = ({ label, value }) => (
+    <div className="flex flex-col">
+        <span className="text-xs font-medium text-light-blue uppercase mb-1">{label}</span>
+        <span className="text-dark-blue font-semibold">{value}</span>
+    </div>
+)
+
+const StatRow = ({ label, value, color }) => (
+    <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${color}`}></div>
+            <span className="text-sm font-medium text-white">{label}</span>
+        </div>
+        <span className="text-sm font-bold text-white">{value}</span>
+    </div>
+)
+
+export default JobPreview;

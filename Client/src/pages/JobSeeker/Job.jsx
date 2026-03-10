@@ -1,20 +1,18 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import JobDetails from '../../components/JobSeeker/JobDetails'
 import {job,JOBS} from '../../data/jobs'
 import { BookmarkIcon, Clock, MapPin, SendHorizonalIcon } from 'lucide-react'
 import ApplyModal from '../../components/JobSeeker/ApplyModal'
 import USERS from '../../data/user'
 import SimilarJobCard from '../../components/JobSeeker/SimilarJobCard'
+import CircularScore from '../../components/shared/CircularScore'
 
 const Job = () => {
   const user = USERS[1]; 
   const matchingScore = 80; 
-  const radius = 54;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (matchingScore / 100) * circumference;
 
   const [showApply, setShowApply] = useState(false);
-  
+
   return (
     <div className="min-h-screen">
       <div className="mx-auto px-4 md:px-8 lg:px-[60px] py-8 grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-6 items-start">
@@ -29,21 +27,9 @@ const Job = () => {
           
           {/* Matching Score Widget */}
           <div className="bg-white p-6 md:p-8 rounded-3xl shadow-md flex flex-col items-center text-center border border-gray-50 transition-transform hover:scale-[1.02]">
-            <div className="relative w-28 h-28 md:w-32 md:h-32 flex items-center justify-center mb-6">
-              <svg className="absolute w-full h-full animate-[spin_4s_linear_infinite]" viewBox="0 0 128 128">
-                <circle cx="64" cy="64" r={radius} stroke="#F1F5F9" strokeWidth="12" fill="transparent" />
-                <circle 
-                  cx="64" cy="64" r={radius} strokeWidth="12" fill="transparent" 
-                  strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
-                  style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
-                  className="stroke-dark-blue transition-all duration-1000 ease-in-out" 
-                />
-              </svg>
-              <span className="text-2xl md:text-3xl font-extrabold text-dark-orange">
-                {matchingScore}%
-              </span>
-            </div>
-            
+
+            <CircularScore score={matchingScore} />
+
             <h3 className="text-lg md:text-xl font-bold text-dark-blue">
               {matchingScore >= 75 ? "Good Matching" : matchingScore >= 50 ? "Average Matching" : "Low Matching"}
             </h3>
