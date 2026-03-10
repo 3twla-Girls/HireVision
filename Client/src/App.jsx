@@ -42,7 +42,7 @@ const App = () => {
           <Route path='job-management' element={<JobManagement />} />
           <Route path='post-job' element={<PostJob />} />
           <Route path='job-preview/:jobId' element={<JobPreview />} />
-          <Route path='job-applications/:jobId' element={<JobApplications />} />
+          <Route path='job-applications/:jobId' element={<JobApplications/>} />
           <Route path='recruiter-profile' element={<RecruiterProfile />} />
 
 
