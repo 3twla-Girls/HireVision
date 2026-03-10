@@ -133,10 +133,6 @@ const JobApplications = () => {
                         <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-light-blue hover:scale-105 text-white text-xs font-semibold rounded-lg transition">
                             <Eye className="w-3.5 h-3.5" /> View 
                         </button>
-                        <a href={app.cv_feedback_url} target="_blank" rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg transition">
-                            <MessageSquare className="w-3.5 h-3.5" />CV Feedback
-                        </a>
                     </div>
                 </td>
             </tr>
@@ -179,10 +175,6 @@ const JobApplications = () => {
                     <button className="inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-light-blue text-white text-xs font-semibold rounded-lg transition">
                         <Eye className="w-2.5 h-2.5" /> View
                     </button>
-                    <a href={app.cv_feedback_url} target="_blank" rel="noreferrer"
-                        className="inline-flex items-center justify-center gap-1 px-2 py-1.5 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition">
-                        <MessageSquare className="w-2.5 h-2.5" />CV Feedback
-                    </a>
                 </div>
             </div>
         )
