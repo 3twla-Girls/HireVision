@@ -1,24 +1,23 @@
 import requests
 from bson import ObjectId
+from fastapi import Response
 from Server.config.database import db
 from Server.config.settings import MODULE3_URL
 from Server.models.question_schema import *
+from Module_3.Question_Generation.routes.routes import generate_questions_with_answers
+from Module_3.Question_Generation.models.job_info import JobInfo
 
 
-def generate_and_store(job_info: dict):
+async def generate_and_store(job_info: dict):
 
-    # Call Module-3
-    response = requests.post(
-        f"{MODULE3_URL}/generate-questions-with-answers",
-        json=job_info
-    )
+    # Convert dict → JobInfo model
+    job_info_obj = JobInfo(**job_info)
 
-    if response.status_code != 200:
-        raise Exception(
-            f"Module-3 failed: {response.status_code} - {response.text}"
-        )
+    # Create dummy Response object
+    response = Response()
 
-    data = response.json()
+    # Call Module-3 function
+    data = await generate_questions_with_answers(job_info_obj, response)
 
     questions_with_answers = []
 
@@ -31,7 +30,7 @@ def generate_and_store(job_info: dict):
             "reference_answer": q.get("reference_answer")
         })
 
-    # Build document using model layer
+    # Build document
     document, new_job_id = build_questions_with_answers_document(
         job_info,
         questions_with_answers
@@ -42,5 +41,5 @@ def generate_and_store(job_info: dict):
     return {
         "inserted_id": str(result.inserted_id),
         "job_id": str(new_job_id),
-        "count": len(questions_with_answers)
+        "count": len(questions_with_answers),
     }
