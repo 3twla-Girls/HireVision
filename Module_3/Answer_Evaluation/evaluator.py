@@ -43,6 +43,18 @@ def evaluate_single_answer(question, correct_answer, candidate_answer):
     except json.JSONDecodeError:
         return {"error": "Invalid JSON", "raw": raw_output}
 
+import json
+
+def clean_llm_json(text: str):
+    text = text.strip()
+
+    # remove ```json or ``` wrappers
+    if text.startswith("```"):
+        text = text.replace("```json", "")
+        text = text.replace("```", "")
+
+    return text.strip()
+
 
 def generate_final_summary(evaluations_list):
     """
@@ -51,8 +63,6 @@ def generate_final_summary(evaluations_list):
 
     eval_json_str = json.dumps(evaluations_list, indent=2)
 
-    #prompt = PROMPT_SUMMARY.format(evaluation_list=eval_json_str)
-    # Safely replace placeholder in prompt
     prompt = PROMPT_SUMMARY.replace("{evaluation_list}", eval_json_str)
 
     response = client.chat.completions.create(
@@ -62,7 +72,10 @@ def generate_final_summary(evaluations_list):
 
     raw_output = response.choices[0].message.content
 
+    # ✅ clean the model output
+    cleaned_output = clean_llm_json(raw_output)
+
     try:
-        return json.loads(raw_output)
+        return json.loads(cleaned_output)
     except json.JSONDecodeError:
         return {"error": "Invalid JSON", "raw": raw_output}
