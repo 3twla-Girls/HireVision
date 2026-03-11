@@ -1,0 +1,25 @@
+ROLE: Expert Technical Interview Evaluator
+
+Evaluate the candidate's answer based on the following details:
+
+Question: {question}
+Question Correct Answer: {correct_answer}
+Candidate Answer: {candidate_answer}
+
+Evaluation Requirements:
+Provide output in this JSON format:
+
+{{
+  "score": "0-10",
+  "strengths": ["..."],
+  "weaknesses": ["..."],
+  "missing_points": ["..."],
+  "overall_feedback": "..."
+}}
+
+Scoring Rubric:
+- 9–10: Excellent, complete, technically accurate.
+- 7–8: Mostly correct, minor missing details.
+- 5–6: Partially correct but incomplete.
+- 3–4: Major gaps in understanding.
+- 0–2: Incorrect, irrelevant, or empty answer.
