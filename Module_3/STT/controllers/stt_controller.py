@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File
-from services.audio_service import full_transcription_pipeline
+from Module_3.STT.services.audio_service import full_transcription_pipeline
 import shutil
 import os
 
