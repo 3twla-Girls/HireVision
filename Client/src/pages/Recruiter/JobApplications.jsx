@@ -13,24 +13,53 @@ import { FilterBtn } from '../../components/Recruiter/FilterBtn'
 import { Pagination } from '../../components/Recruiter/Pagination'
 import { useNavigate } from 'react-router-dom'
 import { getScoreColor, getStatusColor, STATUS_LABEL, STATUS_LABEL_TO_KEY, timeAgo } from '../../components/Recruiter/JobApplicationsHelpers'
+import { useDeleteJob } from '../../hooks/useDeleteJob'
+import api from '../../api/axios'
+import toast from 'react-hot-toast'
 
 // ── Component ─────────────────────────────────────────────────
 const JobApplications = () => {
+
     const { jobId } = useParams()
     const navigate = useNavigate()
     const [filterPanelOpen, setFilterPanelOpen] = useState(false)
+
+    const { deleteJob, isDeleting } = useDeleteJob()
 
     // Unified filter state — shape: { sort, status, country, city }
     // sort:    string  e.g. 'Highest Score'
     // status:  object  e.g. { Completed: true, Pending: false }
     // country: string
     // city:    string
+    const [job, setJob] = useState(null)
     const [filters, setFilters] = useState({ sort: '', status: {}, country: '', city: '' })
 
-    const job = useMemo(
-        () => JOBS.find(j => j._id === jobId) ?? JOBS[0],
-        [jobId]
-    )
+    useEffect(() => {
+        const fetchJobData = async () => {
+        try {
+            const response = await api.get(`/job/${jobId}`);
+            setJob(response.data);
+
+            // const locationParts = job.location ? job.location.split(', ') : ["", ""];
+            // const country = locationParts[1] || "";
+            // const city = locationParts[0] || "";
+
+        } catch (error) {
+            console.error("Error fetching job:", error);
+            toast.error("Failed to load job data");
+            navigate('/job-management');
+        }
+        };
+
+        fetchJobData();
+    }, [jobId, navigate]);
+
+
+
+    // const job = useMemo(
+    //     () => JOBS.find(j => j._id === jobId) ?? JOBS[0],
+    //     [jobId]
+    // )
 
     const enriched = useMemo(() =>
         APPLICATIONS
@@ -221,12 +250,15 @@ const JobApplications = () => {
                                 <div>
                                     <h1 className="text-2xl font-bold text-gray-900">{job?.job_title ?? 'Job Title'}</h1>
                                     <p className="text-sm text-gray-500 flex items-center gap-1.5 mt-1">
-                                        <Building2 className="w-3.5 h-3.5 shrink-0" />
-                                        Recruitment Company · {job?.location ?? ''}
+                                        <MapPin className="w-3.5 h-3.5 shrink-0" />
+                                        {job?.location ?? ''}
                                     </p>
                                     <div className="mt-3 flex flex-wrap items-center gap-3">
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-700 font-semibold text-xs border border-green-100">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full 
+                                            ${job?.status === 'open' ? 'bg-green-50 text-green-700' : job?.status === 'closed' ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700'}
+                                            font-semibold text-xs border border-green-100`}>
+                                            {/* if job is open it will be gren if closed it will be reed if expired it will be yellow */}
+                                            <span className={`w-1.5 h-1.5 rounded-full ${job?.status === 'open' ? 'bg-green-500' : job?.status === 'closed' ? 'bg-red-500' : 'bg-yellow-500'} inline-block`} />
                                             {job?.status === 'open' ? 'Active' : (job?.status ?? 'Active')}
                                         </span>
                                         <span className="text-sm text-gray-500">Total Applicants: <strong className="text-dark-orange">{enriched.length}</strong></span>
@@ -237,10 +269,10 @@ const JobApplications = () => {
                             <div className="col-span-4 flex flex-col items-end gap-2">
                                 <span className="text-sm font-bold text-gray-900">Manage Job</span>
                                 <div className="flex gap-2">
-                                    <button className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-white bg-dark-orange rounded-lg hover:scale-105 font-medium text-sm transition">
+                                    <button onClick={()=> navigate(`/edit-job/${jobId}`)} className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-white bg-dark-orange rounded-lg hover:scale-105 font-medium text-sm transition">
                                         <Pencil className="w-3.5 h-3.5" /> Edit Job
                                     </button>
-                                    <button className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-white bg-light-blue hover:scale-105 rounded-lg font-medium text-sm transition">
+                                    <button onClick={() => deleteJob(jobId)} className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-white bg-light-blue hover:scale-105 rounded-lg font-medium text-sm transition">
                                         <Trash2 className="w-3.5 h-3.5" /> Delete Job
                                     </button>
                                 </div>

@@ -17,6 +17,7 @@ import PostJob from './pages/Recruiter/PostJob'
 import JobPreview from './pages/Recruiter/JobPreview'
 import JobApplications from './pages/Recruiter/JobApplications'
 import RecruiterProfile from './pages/Recruiter/RecruiterProfile'
+import EditJob from './pages/Recruiter/EditJob'
 
 const App = () => {
   const user = true
@@ -40,6 +41,7 @@ const App = () => {
           <Route path='dashboard' element={<Dashboard />} />
           <Route path='job-management' element={<JobManagement />} />
           <Route path='post-job' element={<PostJob />} />
+          <Route path='edit-job/:jobId' element={<EditJob />} />
           <Route path='job-preview/:jobId' element={<JobPreview />} />
           <Route path='job-applications/:jobId' element={<JobApplications/>} />
           <Route path='recruiter-profile' element={<RecruiterProfile />} />

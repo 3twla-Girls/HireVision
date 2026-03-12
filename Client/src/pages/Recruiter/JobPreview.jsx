@@ -2,6 +2,9 @@ import React from 'react'
 import { ExternalLinkIcon, MapPinIcon, Clock, Edit, DeleteIcon, Trash, Trash2, CircleCheckIcon, BrainCircuitIcon, MessagesSquareIcon, MessageSquareCheckIcon, PenIcon } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import CircularScore from '../../components/shared/CircularScore'
+import api from '../../api/axios'
+import { useDeleteJob } from '../../hooks/useDeleteJob'
+import toast from 'react-hot-toast'
 
 const JobPreview = ({ job = {
     title: "Frontend Developer",
@@ -25,15 +28,9 @@ const JobPreview = ({ job = {
 
     const handleEdit = () => {
         // Navigate to edit page (you can create this page later)
-        // navigate(`/edit-job/${jobId}`);
+        navigate(`/edit-job/${jobId}`);
     }
-    const handleDelete = () => {
-        // Show confirmation and handle deletion logic
-        if (window.confirm("Are you sure you want to delete this job?")) {
-            // Call API to delete job, then navigate back to job management
-            navigate('/job-management');
-        }
-    }
+    const { deleteJob, isDeleting } = useDeleteJob();
 
   return (
     <div className="min-h-screen">
@@ -67,7 +64,7 @@ const JobPreview = ({ job = {
                             <PenIcon  className="w-6 h-6 pr-2  inline" />
                             Edit Job
                         </button>
-                        <button onClick={()=>handleDelete()} className="bg-dark-orange hover:bg-orange text-white px-4 py-2 rounded-lg transition-colors">
+                        <button onClick={() => deleteJob(jobId)} className="bg-dark-orange hover:bg-orange text-white px-4 py-2 rounded-lg transition-colors">
                             <Trash2  className="w-6 h-6 pr-2 inline" />
                             Delete Job
                         </button>

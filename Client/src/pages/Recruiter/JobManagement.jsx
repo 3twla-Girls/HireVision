@@ -154,7 +154,7 @@ const JobDetailPanel = ({ job, onToggleStatus, onBack }) => {
         {/* CTA */}
         <div className="pt-6 border-t border-gray-200">
           <button
-             onClick={() => navigate(`/job-preview/69aae77ddef3bd659ee84eac`)}
+             onClick={() => navigate(`/job-applications/69aae77ddef3bd659ee84eac`)}
             className="w-full bg-[#FF914D] hover:bg-[#1B3C53] text-white font-semibold py-3 rounded-2xl flex items-center justify-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg text-base uppercase tracking-widest group">
             <Users size={16} className="group-hover:scale-110 transition-transform" />
             Review {job.applicants} Applicants
