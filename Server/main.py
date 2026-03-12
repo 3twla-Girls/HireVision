@@ -22,6 +22,7 @@ from .helpers.config import get_settings
 from Module_1.src.helpers.app_factory import create_app_services
 from Module_1.src.ranking_system.CONFIG import CONFIG
 
+from fastapi.middleware.cors import CORSMiddleware
 
 # ============================================================================
 # LOGGER & CONSTANTS
@@ -71,6 +72,14 @@ async def lifespan(app: FastAPI):
 # ============================================================================
 app = FastAPI(lifespan=lifespan)
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 # ============================================================================
 # ROUTE REGISTRATION

@@ -2,38 +2,40 @@ import React from 'react'
 import { ExternalLinkIcon, MapPinIcon, Clock, Edit, DeleteIcon, Trash, Trash2, CircleCheckIcon, BrainCircuitIcon, MessagesSquareIcon, MessageSquareCheckIcon, PenIcon } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import CircularScore from '../../components/shared/CircularScore'
+import api from '../../api/axios'
+import { useDeleteJob } from '../../hooks/useDeleteJob'
+import toast from 'react-hot-toast'
+import { useEffect, useState } from 'react'
 
-const JobPreview = ({ job = {
-    title: "Frontend Developer",
-    company: "Tech Innovators Inc.",
-    recruiter: "John Doe",
-    location: "San Francisco, CA",
-    status: "Active",
-    experience: "5+ years",
-    careerLevel: "Senior",
-    education: "Bachelor's Degree in Computer Science",
-    salary: "$120,000 - $150,000",
-    type: "Full-time",
-    workplace: "On-site",
-    skills: ["JavaScript", "React", "Node.js", "AWS"],
-    description: "We are looking for a Senior Software Engineer to join our dynamic team... lorem lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
-}}) => {
+
+const JobPreview = () => {
 
     const navigate = useNavigate();
     const { jobId } = useParams();
     const avgMatchingScore = 78; 
 
     const handleEdit = () => {
-        // Navigate to edit page (you can create this page later)
-        // navigate(`/edit-job/${jobId}`);
+        navigate(`/edit-job/${jobId}`);
     }
-    const handleDelete = () => {
-        // Show confirmation and handle deletion logic
-        if (window.confirm("Are you sure you want to delete this job?")) {
-            // Call API to delete job, then navigate back to job management
-            navigate('/job-management');
-        }
-    }
+    const { deleteJob, isDeleting } = useDeleteJob();
+
+    const [job, setJob] = useState(null)
+    useEffect(() => {
+        const fetchJobData = async () => {
+            try {
+                const response = await api.get(`/job/${jobId}`);
+                setJob(response.data);
+
+            } catch (error) {
+                console.error("Error fetching job:", error);
+                toast.error("Failed to load job data");
+                navigate('/job-management');
+            }
+        };
+
+        fetchJobData();
+    }, [jobId, navigate]);
+
 
   return (
     <div className="min-h-screen">
@@ -48,18 +50,18 @@ const JobPreview = ({ job = {
                     </div>
                     <div className="flex flex-col justify-center">
                         <h2 className="text-2xl font-bold text-dark-blue">
-                            {job.title}
+                            {job?.job_title}
                         </h2>
                         <p className="text-sm text-light-blue mt-2">
                             <MapPinIcon className="inline w-4 h-4 mr-1" />
-                            {job.location}
+                            {job?.location}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex lg:flex-col items-start lg:items-end justify-between gap-3">
                     <span className="px-4 py-1 text-xs font-bold bg-green-50 text-green-600 rounded-full uppercase tracking-wider">
-                        {job.status}
+                        {job?.status}
                     </span>
                     {/* add edit and detelte buttons */}
                     <div className="flex gap-2">
@@ -67,7 +69,7 @@ const JobPreview = ({ job = {
                             <PenIcon  className="w-6 h-6 pr-2  inline" />
                             Edit Job
                         </button>
-                        <button onClick={()=>handleDelete()} className="bg-dark-orange hover:bg-orange text-white px-4 py-2 rounded-lg transition-colors">
+                        <button onClick={() => deleteJob(job?._id)} className="bg-dark-orange hover:bg-orange text-white px-4 py-2 rounded-lg transition-colors">
                             <Trash2  className="w-6 h-6 pr-2 inline" />
                             Delete Job
                         </button>
@@ -84,7 +86,7 @@ const JobPreview = ({ job = {
                     <div className="flex items-center gap-4">
                         <div className="text-sm text-gray-400 flex items-center">
                             <Clock className="w-4 h-4 mr-1"/>
-                            3 days ago
+                            {new Date(job?.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                         <div className="bg-blue-50 px-3 py-1 rounded-lg text-sm text-light-blue font-bold border border-blue-100">
                             120 applicants
@@ -93,12 +95,12 @@ const JobPreview = ({ job = {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 ml-2">
-                    <DetailItem label="Required Experience" value={job.experience} />
-                    <DetailItem label="Career Level" value={job.careerLevel} />
-                    <DetailItem label="Required Education" value={job.education} />
-                    <DetailItem label="Salary" value={job.salary} />
-                    <DetailItem label="Job Type" value={job.type} />
-                    <DetailItem label="Workplace" value={job.workplace} />
+                    <DetailItem label="Required Experience" value={job?.required_experience} />
+                    <DetailItem label="Career Level" value={job?.careerLevel || "Not specified"} />
+                    <DetailItem label="Required Education" value={job?.required_education} />
+                    <DetailItem label="Salary" value={job?.salary || "Not specified"} />
+                    <DetailItem label="Job Type" value={job?.job_type} />
+                    <DetailItem label="Workplace" value={job?.workplace} />
                 </div>
 
                 {/* ================= SKILLS ================= */}
@@ -107,7 +109,7 @@ const JobPreview = ({ job = {
                         Skills & Tools
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                        {job.skills.map((skill, index) => (
+                        {job?.required_skills.map((skill, index) => (
                             <span key={index} className="bg-white text-dark-blue text-sm px-5 py-1.5 rounded-full hover:bg-white hover:text-dark-blue transition-colors cursor-default">
                                 {skill}
                             </span>
@@ -122,7 +124,7 @@ const JobPreview = ({ job = {
                     Job Description
                 </h3>
                 <p className="text-gray-600 leading-relaxed text-md">
-                    {job.description}
+                    {job?.job_description}
                 </p>
             </div>
         </div>

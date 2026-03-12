@@ -103,7 +103,7 @@ class InterviewController(BaseController):
         file
     ) -> Dict[str, Any]:
         # Step 1: Convert video/audio to text
-        speech_to_text = transcribe_video(file)
+        speech_to_text = await transcribe_video(file)
 
         # Step 2: Retrieve the question from DB
         job_questions = await self.questions_collection.find_one({

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, MapPin, GraduationCap, Clock, Send, Plus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../api/axios';
 
 const JOB_TYPES = [
   { value: "full_time", label: "Full Time" },
@@ -38,8 +39,11 @@ const PostJob = () => {
     country: "",
     city: "",
     job_type: "full_time",
-    workplace: "on_site"
+    workplace: "on_site",
+    num_questions: 5, 
+    number_of_questions_per_interview: 3
   });
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -74,22 +78,37 @@ const PostJob = () => {
     }
     
     setLoading(true);
+    const recruiterId = "69aa302c63b720c25373f034"; 
+
     const finalData = {
       ...formData,
+      num_questions: parseInt(formData.num_questions),
+      number_of_questions_per_interview: parseInt(formData.number_of_questions_per_interview),
       location: `${formData.city}, ${formData.country}`,
-      created_at: { "$date": new Date().toISOString() },
-      job_recruiter_id: { "$oid": "69aa302c63b720c25373f034" },
-      cluster_id: 0
+      job_recruiter_id: recruiterId 
     };
 
-    console.log("Submitting Data:", finalData);
-    
-    setTimeout(() => {
-      toast.success('Job posted successfully!');
+    try {
+      const response = await api.post(`/job/create/${recruiterId}`, finalData);
+      
+      if (response.data.signal === "JOB_CREATED_SUCCESSFULLY") {
+        const newJobId = response.data.job_id;
+        toast.success('Job posted successfully!');
+        setTimeout(() => {
+          navigate(`/job-preview/${newJobId}`);
+        }, 1500);
+      } else {
+        toast.error("Something went wrong");
+      }
+    } catch (error) {
+      console.error("Full Error:", error);
+      const errorMsg = error.response?.data?.detail || "Failed to post job";
+      toast.error(typeof errorMsg === 'string' ? errorMsg : "Check required fields");
+    } finally {
       setLoading(false);
-      navigate('/recruiter/dashboard');
-    }, 1500);
+    }
   };
+
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-20 font-sans">

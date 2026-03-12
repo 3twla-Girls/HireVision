@@ -4,6 +4,7 @@ import { Camera, Headphones, Eye, Timer } from 'lucide-react';
 import InterviewSetupModal from '../../components/JobSeeker/InterviewSetupModal';
 import { INSTRUCTIONS_DATA } from '../../data/interviewInstruction';
 import toast from 'react-hot-toast';
+import api from '../../api/axios';
 
 const InterviewSetup = () => {
   const { type, jobName } = useParams();
@@ -13,7 +14,7 @@ const InterviewSetup = () => {
   const isMock = type === 'mock';
   const displayTitle = isMock ? "Mock Interview" : `Interview for: ${jobName}`;
 
-  const handleStartInterview = (e) => {
+  const handleStartInterview = async(e) => {
     e.preventDefault();
     toast.success('Interview setup is complete! Starting your session...', { duration: 3000 });
     setShowSetup(true);
