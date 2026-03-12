@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Camera, CameraOff, Mic, MicOff, Timer, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import api from '../../api/axios';
 
 // ─── Volume Meter ─────────────────────────────────────────────────────────────
 const VolumeMeter = ({ level }) => (
@@ -20,13 +22,13 @@ const VolumeMeter = ({ level }) => (
 );
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const QUESTIONS = [
-  "Tell us about your background and your role in HireVision.",
-  "What are the main technical challenges you faced with the MERN stack?",
-  "How do you ensure the quality of your code in a team environment?",
-  "Describe your experience with AI integration in web applications.",
-  "Why are you interested in becoming a Frontend Developer?",
-];
+// const QUESTIONS = [
+//   "Tell us about your background and your role in HireVision.",
+//   "What are the main technical challenges you faced with the MERN stack?",
+//   "How do you ensure the quality of your code in a team environment?",
+//   "Describe your experience with AI integration in web applications.",
+//   "Why are you interested in becoming a Frontend Developer?",
+// ];
 
 const QUESTION_TIME = 120;
 const GAP_TIME      = 5;
@@ -56,6 +58,34 @@ export default function InterviewLive() {
   const mediaRecorderRef = useRef(null);
   const videoChunksRef = useRef([]);
 
+  const location = useLocation();
+
+  const [QUESTIONS, setQUESTIONS] = useState([]);
+  const questionsRef = useRef([]);
+  const jobId = '69b1e7b711c65e4fb7ec2f55'
+  //getinterview questions from the backend and set it to the QUESTIONS constant, we can use useEffect to fetch the questions when the component mounts. We can make an API call to the backend endpoint that provides the interview questions, and then update the QUESTIONS constant with the received data. This way, we can dynamically load different sets of questions based on the job role or other criteria.
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      console.log("Fetching questions for job ID:", jobId);
+      try {
+        const response = await api.get(`/interview/questions/${jobId}`); // Adjust the endpoint as needed
+        if (response.status === 200) {
+          const data = response.data;
+          console.log("Fetched questions:", data);
+          const questionsFromBackend = data.questions; // Adjust based on actual response structure
+          setQUESTIONS(questionsFromBackend);
+          questionsRef.current = questionsFromBackend; // Store in ref for later use
+          } else {
+            console.error("Invalid questions format:", response.data);
+          }
+        }catch (error) {
+        console.error("Error fetching questions:", error);
+      }
+    };
+
+    fetchQuestions();
+  }, []);
+
   const startRecording = useCallback((stream) => { // أضفنا useCallback
     videoChunksRef.current = [];
     const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
@@ -64,25 +94,66 @@ export default function InterviewLive() {
       if (e.data.size > 0) videoChunksRef.current.push(e.data);
     };
 
-    mediaRecorder.onstop = () => {
+    // mediaRecorder.onstop = () => {
+    //   const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
+    //   const url = URL.createObjectURL(videoBlob);
+    //   const a = document.createElement('a');
+    //   a.style.display = 'none';
+    //   a.href = url;
+    //   // ملحوظة: currentStep هنا ممكن تكون قديمة، الأفضل نعتمد على رقم السؤال الحالي
+    //   a.download = `Interview-Q${currentStep + 1}.webm`; 
+    //   document.body.appendChild(a);
+    //   a.click(); 
+    //   setTimeout(() => {
+    //     document.body.removeChild(a);
+    //     window.URL.revokeObjectURL(url);
+    //   }, 100);
+    // };
+
+    mediaRecorder.onstop = async () => {
       const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
-      const url = URL.createObjectURL(videoBlob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      // ملحوظة: currentStep هنا ممكن تكون قديمة، الأفضل نعتمد على رقم السؤال الحالي
-      a.download = `Interview-Q${currentStep + 1}.webm`; 
-      document.body.appendChild(a);
-      a.click(); 
-      setTimeout(() => {
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }, 100);
+      
+      // 1. استخراج الـ IDs بشكل آمن
+      const sId = location.state?.sessionId || localStorage.getItem('sessionId');
+      
+      // تأكدي من مسمى الـ ID هنا بناءً على الـ Response اللي جالك
+      const currentQuestion = questionsRef.current[currentStep];
+      const qId =  currentQuestion?.question_id || currentQuestion?._id || currentQuestion?.id
+
+      console.log("Debug IDs:", { sessionId: sId, questionId: qId });
+
+      if (!qId || !sId) {
+        toast.error("Missing Session or Question ID!");
+        return;
+      }
+
+      const formData = new FormData();
+      // تأكدي إن اسم الحقل 'file' هو اللي الباك إند مستنيه
+      formData.append('file', videoBlob, `answer_q${currentStep + 1}.webm`);
+
+      try {
+        const response = await api.post('/interview/submit-answer', formData, {
+          params: {
+            session_id: sId,   // الـ Key ده لازم يطابق اسم الـ Argument في الـ FastAPI
+            question_id: qId   // الـ Key ده لازم يطابق اسم الـ Argument في الـ FastAPI
+          },
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        if (response.status === 200) {
+          console.log("✅ Answer uploaded successfully for:", qId);
+        }
+      } catch (error) {
+        console.error("❌ Upload failed:", error.response?.data || error.message);
+        // لو لسه 422، الكونسول هنا هيطبع لك الـ detail اللي جاي من FastAPI بالظبط
+      }
     };
 
     mediaRecorder.start();
     mediaRecorderRef.current = mediaRecorder;
-  }, [currentStep]); // تعتمد على currentStep لتسمية الملف صح
+  }, [currentStep, QUESTIONS, location]); // تعتمد على currentStep و QUESTIONS و location
 
   // ── Audio Analyser ─────────────────────────────────────────────────────────
   const stopAudioAnalyser = useCallback(() => {
@@ -144,6 +215,9 @@ export default function InterviewLive() {
   // }, [currentStep, startRecording]);
   const startCamera = useCallback(async () => {
   try {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
       audio: true, 
@@ -155,7 +229,7 @@ export default function InterviewLive() {
       videoRef.current.onloadedmetadata = () => videoRef.current.play().catch(() => {});
     }
 
-    // startRecording(stream);
+    startRecording(stream);
     startAudioAnalyser(stream);
     setCameraOn(true);
     setMicOn(true);
@@ -163,7 +237,8 @@ export default function InterviewLive() {
     console.error("Camera Error:", err);
     setCameraOn(false);
   }
-}, [startRecording, startAudioAnalyser]);
+}, [startRecording, startAudioAnalyser, currentStep]);
+
 
   // ── Mic ────────────────────────────────────────────────────────────────────
   const stopMic = useCallback(() => {
@@ -192,35 +267,71 @@ export default function InterviewLive() {
   const cleanup = useCallback(() => {
     stopCamera();
     stopMic();
+    localStorage.removeItem('sessionId');
   }, [stopCamera, stopMic]);
 
   // ── Mount: start devices; unmount: full cleanup ────────────────────────────
   useEffect(() => {
-    startCamera();
+    if (QUESTIONS.length > 0) {
+      startCamera();
+    }
     // startMic();
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       cleanup()
       stopAudioAnalyser();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [QUESTIONS?.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── handleNext: pause devices → show gap → resume devices ─────────────────
-  const handleNext = useCallback(() => {
-    // if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-    //   mediaRecorderRef.current.stop();
-    // }
-    if (currentStep < QUESTIONS.length - 1) {
-      stopCamera();
-      stopMic();
+  // const handleNext = useCallback(() => {
+  //   if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+  //     mediaRecorderRef.current.stop();
+  //   }
+  //   if (currentStep < QUESTIONS.length - 1) {
+  //     stopCamera();
+  //     stopMic();
 
-      setGapTime(GAP_TIME);
-      setShowGap(true);
-    } else {
+  //     setGapTime(GAP_TIME);
+  //     setShowGap(true);
+  //   } else {
+  //     cleanup();
+  //     navigate("/interviews");
+  //   }
+  // }, [currentStep, stopCamera, stopMic, cleanup, navigate, QUESTIONS.length]);
+
+  const handleNext = useCallback(async () => { // خليها async
+  if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+    mediaRecorderRef.current.stop();
+  }
+
+  if (currentStep < QUESTIONS.length - 1) {
+    stopCamera();
+    stopMic();
+    setGapTime(GAP_TIME);
+    setShowGap(true);
+  } else {
+    // اللحظة الحاسمة: إنهاء الانترفيو وطلب الملخص
+    const sId = location.state?.sessionId || localStorage.getItem('sessionId');
+    
+    try {
+      toast.loading("Generating your interview summary...", { id: "summary" });
+      
+      // نادى على API الملخص النهائي
+      await api.post(`/interview/final-summary/${sId}`);
+      
+      toast.success("Interview completed! Redirecting...", { id: "summary" });
       cleanup();
+      
+      // اطلعي على صفحة النتائج أو صفحة الانترفيوهات
+      navigate("/interviews"); 
+    } catch (error) {
+      console.error("Summary generation failed:", error);
+      toast.error("Error generating summary, but your answers are saved.", { id: "summary" });
       navigate("/interviews");
     }
-  }, [currentStep, stopCamera, stopMic, cleanup, navigate]);
+  }
+}, [currentStep, stopCamera, stopMic, cleanup, navigate, QUESTIONS.length, location.state?.sessionId]);
 
   // ── Question timer ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -317,11 +428,18 @@ export default function InterviewLive() {
           </div>
         </div>
         <div className="w-full h-3 bg-white rounded-full flex overflow-hidden shadow-inner border border-gray-200">
-          {QUESTIONS.map((_, i) => (
+          {/* {QUESTIONS.map((_, i) => (
             <div
               key={i}
               className={`h-full transition-all duration-500 ${i <= currentStep ? "bg-dark-blue" : "bg-transparent"}`}
               style={{ width: `${100 / QUESTIONS.length}%`, borderRight: "1px solid #e2e8f0" }}
+            />
+          ))} */}
+          {QUESTIONS?.map((q, i) => (
+            <div
+              key={q.question_id}
+              className={`h-full transition-all duration-500 ${i <= currentStep ? "bg-dark-blue" : "bg-transparent"}`}
+              style={{ width: `${100 / QUESTIONS?.length}%`, borderRight: "1px solid #e2e8f0" }}
             />
           ))}
         </div>
@@ -334,10 +452,10 @@ export default function InterviewLive() {
         <div className="space-y-8">
           <div>
             <p className="mt-2 text-sm font-semibold text-dark-blue/50 uppercase tracking-wider mb-2">
-              Question {currentStep + 1} of {QUESTIONS.length}
+              Question {currentStep + 1} of {QUESTIONS?.length}
             </p>
             <h2 className="mt-10 mb-28 text-2xl font-extrabold leading-snug min-h-[100px]">
-              {QUESTIONS[currentStep]}
+              {QUESTIONS[currentStep]?.question}
             </h2>
           </div>
 

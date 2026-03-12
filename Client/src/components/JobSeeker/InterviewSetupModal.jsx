@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Camera, CameraOff, Mic, MicOff, Volume2, Wifi, CheckCircle2, XCircle, Loader2, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import api from "../../api/axios";
+import toast from "react-hot-toast";
 
 // ─── Volume Meter ─────────────────────────────────────────────────────────────
 const VolumeMeter = ({ level }) => (
@@ -233,7 +235,35 @@ export default function InterviewSetupModal({ setShowSetup }) {
   const cleanup = () => { stopCamera(); stopMic(); };
 
   const handleClose   = () => { cleanup(); setShowSetup(false); };
-  const handleConfirm = () => { cleanup(); setShowSetup(false); setTimeout(() => navigate(`/interview/${type}/live`), 150); };
+  // const handleConfirm = () => { cleanup(); setShowSetup(false); setTimeout(() => navigate(`/interview/${type}/live`), 150); };
+
+  const applicantId =  '69ab2892e134199955ba9655'
+  const handleConfirm = async () => {
+    try {
+      const response = await api.post(`/interview/start-session/${applicantId}`);
+      
+      if (response.status === 201) {
+        const sessionData = response.data; 
+        
+        cleanup(); 
+        setShowSetup(false);
+        console.log("Session started with ID:", sessionData.session_id);
+        localStorage.setItem('sessionId', response.data.session_id);
+        console.log("Session :", sessionData);
+        setTimeout(() => {
+          navigate(`/interview/${type}/live`, { 
+            state: { 
+              sessionId: sessionData.session_id,
+              questions: sessionData.questions
+            } 
+          });
+        }, 150);
+      }
+    } catch (error) {
+      console.error("Failed to start interview session:", error);
+      toast.error("Failed to start interview session. Please try again.", { duration: 3000 });
+    }
+  };
 
   useEffect(() => {
     checkNetwork();
