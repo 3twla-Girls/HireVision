@@ -1,0 +1,104 @@
+{
+  "session_id": "demo-session",
+  "interview_id": "demo-interview",
+  "submitted_at": "2026-03-13T00:49:09.287757Z",
+  "total_warnings": 4,
+  "total_duration": 39.2,
+  "events": [
+    {
+      "type": "log_event",
+      "at": "00:05",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "00:08",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Up",
+      "warning_number": 1
+    },
+    {
+      "type": "log_event",
+      "at": "00:10",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "00:23",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "00:28",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "log_event",
+      "at": "00:37",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "00:40",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 2
+    },
+    {
+      "type": "log_event",
+      "at": "00:42",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "00:57",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "01:11",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "warning",
+      "at": "01:14",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 3
+    },
+    {
+      "type": "log_event",
+      "at": "01:16",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "01:19",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 4
+    }
+  ]
+}
