@@ -11,7 +11,7 @@ load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
-def generate_questions_service(
+async def generate_questions_service(
     job_title: str,
     skills: list[str],
     experience_level: str,

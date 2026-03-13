@@ -28,7 +28,7 @@ const STATUS_STYLES = {
   idle:     { bg: "bg-gray-50 border-gray-200",     icon: null },
   checking: { bg: "bg-blue-50 border-blue-200",     icon: <Loader2 size={20} className="text-blue-500 animate-spin" /> },
   ok:       { bg: "bg-emerald-50 border-emerald-200", icon: <CheckCircle2 size={20} className="text-emerald-500" /> },
-  error:    { bg: "bg-red-50 border-red-200",        icon: <XCircle size={20} className="text-red-500" /> },
+  error:    { bg: "bg-red-50 border-red-200",         icon: <XCircle size={20} className="text-red-500" /> },
 };
 
 const CheckRow = ({ icon: Icon, label, status, detail, onAction, actionLabel }) => {
@@ -66,18 +66,18 @@ const ToggleBtn = ({ onClick, active, loading, IconOn, IconOff, labelOn, labelOf
 );
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function InterviewSetupModal({ setShowSetup }) {
+export default function InterviewSetupModal({ setShowSetup, isMock = false, jobInfo }) {
   const navigate = useNavigate();
   const { type } = useParams();
 
-  const videoRef        = useRef(null);
-  const streamRef       = useRef(null);
+  const videoRef         = useRef(null);
+  const streamRef        = useRef(null);
   const audioContextRef = useRef(null);
-  const analyserRef     = useRef(null);
-  const animFrameRef    = useRef(null);
+  const analyserRef      = useRef(null);
+  const animFrameRef     = useRef(null);
 
-  const [cameraOn,   setCameraOn]   = useState(false);
-  const [micOn,      setMicOn]      = useState(false);
+  const [cameraOn,    setCameraOn]   = useState(false);
+  const [micOn,       setMicOn]      = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
 
   const [camStatus,     setCamStatus]     = useState(STATUS.IDLE);
@@ -91,6 +91,7 @@ export default function InterviewSetupModal({ setShowSetup }) {
   const [networkDetail, setNetworkDetail] = useState("Checking connection…");
 
   const [speakerTesting, setSpeakerTesting] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
 
   // ── Audio Analyser ─────────────────────────────────────────────────────────
   const stopAudioAnalyser = useCallback(() => {
@@ -235,33 +236,56 @@ export default function InterviewSetupModal({ setShowSetup }) {
   const cleanup = () => { stopCamera(); stopMic(); };
 
   const handleClose   = () => { cleanup(); setShowSetup(false); };
-  // const handleConfirm = () => { cleanup(); setShowSetup(false); setTimeout(() => navigate(`/interview/${type}/live`), 150); };
 
-  const applicantId =  '69ab2892e134199955ba9655'
+  const applicantId = '69ab2892e134199955ba9655'
+  const candidateId = '69aa315763b720c25373f035'
+
   const handleConfirm = async () => {
+    setIsStarting(true);
     try {
-      const response = await api.post(`/interview/start-session/${applicantId}`);
-      
-      if (response.status === 201) {
-        const sessionData = response.data; 
-        
-        cleanup(); 
+      // Step 1: Start the session first to get session_id
+      const sessionResponse = isMock
+        ? await api.post(`/interview/start-mock-session/${candidateId}`)
+        : await api.post(`/interview/start-session/${applicantId}`);
+
+      if (sessionResponse.status === 201) {
+        const sessionData = sessionResponse.data;
+        let generatedQuestions = [];
+
+        // Step 2: If mock, generate questions and wait for them
+        if (isMock) {
+          const mockRequestData = {
+            candidate_id: candidateId,
+            job_title: jobInfo?.job_title || "Software Engineer",
+            skills: jobInfo?.required_skills || [],
+            experience_level: jobInfo?.experience_level || "Junior",
+            num_questions: jobInfo?.num_questions || 5
+          };
+
+          const questionsResponse = await api.post('/questions/generate-mock-questions', mockRequestData);
+          if (questionsResponse.status === 201) {
+            generatedQuestions = questionsResponse.data.questions || [];
+          }
+        }
+
+        cleanup();
         setShowSetup(false);
-        console.log("Session started with ID:", sessionData.session_id);
-        localStorage.setItem('sessionId', response.data.session_id);
-        console.log("Session :", sessionData);
+        localStorage.setItem('sessionId', sessionData.session_id);
+
         setTimeout(() => {
-          navigate(`/interview/${type}/live`, { 
-            state: { 
+          navigate(`/interview/${type}/live`, {
+            state: {
               sessionId: sessionData.session_id,
-              questions: sessionData.questions
-            } 
+              questions: generatedQuestions.length > 0 ? generatedQuestions : sessionData.questions
+            }
           });
         }, 150);
       }
     } catch (error) {
-      console.error("Failed to start interview session:", error);
-      toast.error("Failed to start interview session. Please try again.", { duration: 3000 });
+      console.error("Failed to setup interview:", error);
+      toast.error("Something went wrong. Please try again.", { duration: 3000 });
+    } finally {
+      setIsStarting(false);
     }
   };
 
@@ -280,7 +304,7 @@ export default function InterviewSetupModal({ setShowSetup }) {
             <h2 className="text-xl font-bold text-gray-900">Ready to join?</h2>
             <p className="text-sm text-gray-500 mt-0.5">Check your devices before entering.</p>
           </div>
-          <button onClick={handleClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors mt-1">
+          <button onClick={handleClose} disabled={isStarting} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors mt-1 disabled:opacity-50">
             <X size={15} className="text-gray-500" />
           </button>
         </div>
@@ -338,7 +362,7 @@ export default function InterviewSetupModal({ setShowSetup }) {
 
             {/* Check rows */}
             <div className="flex flex-col gap-3">
-              <CheckRow icon={Camera}  label="Camera"     status={camStatus}     detail={camDetail} />
+              <CheckRow icon={Camera}  label="Camera"         status={camStatus}     detail={camDetail} />
               <CheckRow icon={Mic}     label="Microphone" status={micStatus}     detail={micDetail} />
               <CheckRow
                 icon={Volume2} label="Speaker" status={speakerStatus} detail={speakerDetail}
@@ -359,19 +383,30 @@ export default function InterviewSetupModal({ setShowSetup }) {
           </div>
 
           <div className="flex gap-3 mt-6">
-            <button onClick={handleClose} className="flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors">
+            <button 
+              onClick={handleClose} 
+              disabled={isStarting}
+              className="flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
+            >
               Go Back
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!(cameraOn && micOn)}
-              className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all ${
-                cameraOn && micOn
+              disabled={!(cameraOn && micOn) || isStarting}
+              className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                cameraOn && micOn && !isStarting
                   ? "bg-[#FF914D] text-white hover:bg-[#f07d38] active:scale-[0.98]"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
             >
-              {cameraOn && micOn ? "Join Interview" : "Checking devices…"}
+              {isStarting ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  {isMock ? "Generating Questions..." : "Starting..."}
+                </>
+              ) : (
+                cameraOn && micOn ? "Join Interview" : "Checking devices…"
+              )}
             </button>
           </div>
         </div>

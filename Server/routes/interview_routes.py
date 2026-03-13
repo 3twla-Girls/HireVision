@@ -34,13 +34,36 @@ async def start_session(request: Request, applicant_id: str):
         request.app.db_client
         )
         application = await app_controller.get_application_by_id(applicant_id)
-        result = await controller.start_session(application.candidate_id, application.job_id)
+        result = await controller.start_session(application.candidate_id, application.job_id, False)
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
             content=result
         )
     except Exception as e:
         logger.error(f"Error starting interview session: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"error": str(e)}
+        )
+
+
+# ============================================================================
+# CREATE - Mock Interview Session
+# ============================================================================
+@interview_router.post("/start-mock-session/{candidate_id}")
+async def start_mock_session(request: Request, candidate_id: str):
+    try:
+        controller = await InterviewController.create_instance(
+            request.app.db_client
+        )
+
+        result = await controller.start_session(candidate_id, None , True)
+        return JSONResponse(
+            status_code=status.HTTP_201_CREATED,
+            content=result
+        )
+    except Exception as e:
+        logger.error(f"Error starting mock interview session: {e}")
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"error": str(e)}

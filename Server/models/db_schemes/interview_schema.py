@@ -32,7 +32,8 @@ class InterviewQuestion(BaseModel):
 class InterviewScheme(BaseModel):
     id: Optional[PyObjectId] = Field(None, alias="_id")
     candidate_id: PyObjectId
-    job_id: PyObjectId
+    # job_id: PyObjectId
+    job_id: Optional[PyObjectId] = None
     status: str = "started"
 
     created_at: datetime = Field(default_factory=datetime.utcnow)

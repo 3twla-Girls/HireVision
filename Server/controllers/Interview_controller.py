@@ -44,10 +44,11 @@ class InterviewController(BaseController):
         ]
 
     # ========== CREATE ==========
-    async def start_session(self, candidate_id: str, job_id: str) -> Dict[str, Any]:
+    async def start_session(self, candidate_id: str, job_id: Optional[str] = None, is_mock: bool = False) -> Dict[str, Any]:
         session = {
             "candidate_id": candidate_id,
             "job_id": job_id,
+            "is_mock": is_mock,
             "session_date": datetime.utcnow(),
             "answers": [],
             "final_summary": None
@@ -62,18 +63,22 @@ class InterviewController(BaseController):
 
     # ========== READ ==========
     async def get_questions(self, job_id: str) -> Dict[str, Any]:
-        job_questions = await self.questions_collection.find_one(
+        cursor = self.questions_collection.find(
             {"job_id": ObjectId(job_id)}
-        )
+        ).sort("created_at", -1).limit(1)
+
+        results = await cursor.to_list(length=1)
+        job_questions = results[0] if results else None
 
         if not job_questions:
-            raise Exception(f"No questions found for job {job_id}")
+            raise Exception(f"No questions found for ID {job_id}")
 
         questions = job_questions.get("questions_w_answers", [])
 
         # Convert ObjectId to string for API response
         for q in questions:
-            q["question_id"] = str(q.get("question_id", ""))
+            q_id = q.get("question_id")
+            q["question_id"] = str(q_id) if q_id else ""
 
         return {
             "job_id": job_id,

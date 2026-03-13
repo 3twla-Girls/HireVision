@@ -34,25 +34,83 @@ async def generate_questions(job_info: JobInfo, response: Response):
 
 
 
+# @router.post("/generate-questions-with-answers")
+# async def generate_questions_with_answers(job_info: JobInfo, response: Response):
+#     # Step 1: Generate questions
+#     questions_result = generate_questions_service(
+#         job_title=job_info.job_title,
+#         skills=job_info.required_skills,
+#         experience_level=job_info.required_experience,
+#         num_questions=job_info.num_questions,
+#         model_key=model_factory.ModelFactory.active_model_key
+#     )
+
+#     q_tokens = questions_result.get("token_usage", {})
+#     total_tokens = q_tokens.get("total_tokens", 0)
+
+#     answers_result = generate_answers_service(
+#         questions=questions_result.get("questions", []),
+#         job_title=job_info.job_title,
+#         skills=job_info.required_skills,
+#         experience_level=job_info.required_experience,
+#         model_key=model_factory.ModelFactory.active_model_key
+#     )
+#     a_tokens = answers_result.get("token_usage", {})
+#     total_tokens += a_tokens.get("total_tokens", 0)
+
+#     questions_with_answers = []
+#     for question in questions_result.get("questions", []):
+#         q_id = question["id"]
+#         answer = next((a for a in answers_result.get("answers", []) if a["question_id"] == q_id), None)
+#         questions_with_answers.append({
+#             **question,
+#             "question_type": answer["question_type"] if answer else question.get("type", "unknown"),
+#             "reference_answer": answer["reference_answer"] if answer else None
+#         })
+
+#     # Add custom headers
+#     response.headers["X-Total-Tokens"] = str(total_tokens)
+#     response.headers["X-Prompt-Tokens"] = str(q_tokens.get("prompt_tokens", 0) + a_tokens.get("prompt_tokens", 0))
+#     response.headers["X-Completion-Tokens"] = str(q_tokens.get("completion_tokens", 0) + a_tokens.get("completion_tokens", 0))
+
+#     return {
+#         "questions_with_answers": questions_with_answers,
+#     }
+    
+    
 @router.post("/generate-questions-with-answers")
-async def generate_questions_with_answers(job_info: JobInfo, response: Response):
+async def generate_questions_with_answers(job_info, response: Response):
+    # Utility function to extract values from either dict or object
+    def get_val(obj, key, default=None):
+        if isinstance(obj, dict):
+            return obj.get(key, default)
+        return getattr(obj, key, default)
+
+    # Extracting necessary info from job_info, with flexibility for both JobScheme and dict formats
+    job_title = get_val(job_info, "job_title")
+    # For skills and experience, we check multiple possible keys to maintain compatibility with both formats
+    skills = get_val(job_info, "required_skills") or get_val(job_info, "skills")
+    exp = get_val(job_info, "required_experience") or get_val(job_info, "experience_level", "Junior")
+    num_q = get_val(job_info, "num_questions", 5)
+
     # Step 1: Generate questions
-    questions_result = generate_questions_service(
-        job_title=job_info.job_title,
-        skills=job_info.required_skills,
-        experience_level=job_info.required_experience,
-        num_questions=job_info.num_questions,
+    questions_result = await generate_questions_service(
+        job_title=job_title,
+        skills=skills,
+        experience_level=exp,
+        num_questions=num_q,
         model_key=model_factory.ModelFactory.active_model_key
     )
 
     q_tokens = questions_result.get("token_usage", {})
     total_tokens = q_tokens.get("total_tokens", 0)
 
-    answers_result = generate_answers_service(
+    # Step 2: Generate answers
+    answers_result = await generate_answers_service(
         questions=questions_result.get("questions", []),
-        job_title=job_info.job_title,
-        skills=job_info.required_skills,
-        experience_level=job_info.required_experience,
+        job_title=job_title,
+        skills=skills,
+        experience_level=exp,
         model_key=model_factory.ModelFactory.active_model_key
     )
     a_tokens = answers_result.get("token_usage", {})
@@ -76,3 +134,4 @@ async def generate_questions_with_answers(job_info: JobInfo, response: Response)
     return {
         "questions_with_answers": questions_with_answers,
     }
+    

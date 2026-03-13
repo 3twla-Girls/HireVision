@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
+import { useParams } from 'react-router-dom';
 
 // ─── Volume Meter ─────────────────────────────────────────────────────────────
 import { Camera, CameraOff, Mic, MicOff, Timer,
@@ -241,34 +242,90 @@ export default function InterviewLive() {
   const [QUESTIONS, setQUESTIONS] = useState([]);
   const questionsRef = useRef([]);
   const stepRef = useRef(0);
+  const {type} = useParams()
+  const isMock = type === 'mock';
+
 
   useEffect(() => {
     stepRef.current = currentStep;
   }, [currentStep]);
 
-  const jobId = '69b1e7b711c65e4fb7ec2f55'
+  const targetID = isMock? '69aa315763b720c25373f035':'69b1e7b711c65e4fb7ec2f55' //if mock then target id is the candidate id, else it is job id
   //getinterview questions from the backend and set it to the QUESTIONS constant, we can use useEffect to fetch the questions when the component mounts. We can make an API call to the backend endpoint that provides the interview questions, and then update the QUESTIONS constant with the received data. This way, we can dynamically load different sets of questions based on the job role or other criteria.
+  // useEffect(() => {
+  //   const fetchQuestions = async () => {
+  //     // 1. نتشيك الأول لو الأسئلة مبعوتة جاهزة من صفحة الـ Setup عشان نوفر API Call
+  //     const questionsFromState = location.state?.questions;
+      
+  //     if (questionsFromState && questionsFromState.length > 0) {
+  //       console.log("Using questions from navigation state");
+  //       setQUESTIONS(questionsFromState);
+  //       questionsRef.current = questionsFromState;
+  //       return; // بنخرج من الفانكشن لأننا خلاص لقينا الأسئلة
+  //     }
+
+  //     // 2. لو مش موجودة (مثلاً المستخدم عمل Refresh للصفحة)، نكلم الـ API
+  //     // في حالة الموك، الـ jobId اللي معانا هو الـ candidateId فعلياً
+  //     console.log("Fetching questions from backend for ID:", targetID);
+  //     try {
+  //       const response = await api.get(`/interview/questions/${targetID}`);
+        
+  //       if (response.status === 200) {
+  //         const data = response.data;
+  //         const questionsFromBackend = data.questions;
+          
+  //         if (questionsFromBackend && questionsFromBackend.length > 0) {
+  //           setQUESTIONS(questionsFromBackend);
+  //           questionsRef.current = questionsFromBackend;
+  //         } else {
+  //           console.error("No questions found in backend");
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching questions:", error);
+  //     }
+  //   };
+
+  //   fetchQuestions();
+  // }, [targetID]); // أضيفي jobId هنا عشان لو اتغير الـ Effect يشتغل تاني
+
+  // const location = useLocation();
+  const passedQuestions = location.state?.questions; // الأسئلة اللي لسه معمولة حالا
+  const sessionIDFromState = location.state?.sessionId; // السيشين اللي بدأت حالا
+
   useEffect(() => {
     const fetchQuestions = async () => {
-      console.log("Fetching questions for job ID:", jobId);
+      // 2. التحقق: لو الأسئلة مبعوتة في الـ state استخدمها فوراً وم تروحش للـ API
+      setQUESTIONS([]);
+      questionsRef.current = [];
+
+      if (passedQuestions && passedQuestions.length > 0) {
+        console.log("✅ Using freshly generated questions from state");
+        setQUESTIONS(passedQuestions);
+        questionsRef.current = passedQuestions;
+        return; 
+      }
+
+      console.log("🔄 Fetching questions from backend for target:", targetID);
       try {
-        const response = await api.get(`/interview/questions/${jobId}`); // Adjust the endpoint as needed
+        const response = await api.get(`/interview/questions/${targetID}?latest=true`);
+        
         if (response.status === 200) {
           const data = response.data;
-          console.log("Fetched questions:", data);
-          const questionsFromBackend = data.questions; // Adjust based on actual response structure
-          setQUESTIONS(questionsFromBackend);
-          questionsRef.current = questionsFromBackend; // Store in ref for later use
-          } else {
-            console.error("Invalid questions format:", response.data);
+          const questionsFromBackend = data.questions;
+          
+          if (questionsFromBackend && questionsFromBackend.length > 0) {
+            setQUESTIONS(questionsFromBackend);
+            questionsRef.current = questionsFromBackend;
           }
-        }catch (error) {
-        console.error("Error fetching questions:", error);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching questions:", error);
       }
     };
 
     fetchQuestions();
-  }, []);
+  }, [passedQuestions, targetID,location.state?.generatedAt]);
 
   const startRecording = useCallback((stream) => {
     videoChunksRef.current = [];

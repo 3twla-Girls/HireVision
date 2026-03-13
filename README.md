@@ -1,3 +1,6 @@
+python -m uvicorn Server.main:app
+
+
 # HireVision - AI-Powered Recruitment Platform
 
 A comprehensive recruitment platform that leverages AI and machine learning to match candidates with job opportunities through intelligent skill analysis and ranking.
