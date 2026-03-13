@@ -7,7 +7,6 @@ const JobDetails = ({ job, setShowApply }) => {
     const userSkills = ["React", "HTML", "CSS", "Node", "TypeScript", "JavaScript","Node.js","Tailwind"]; // Mocked user skills, ideally should come from user data
     const isApplied = user.applications?.some(app => app.jobId === job.id);
     const isSaved = user.savedJobs?.includes(job.id);
-    job.description = "We are looking for a skilled Frontend Developer to join our dynamic team. The ideal candidate will have experience in building responsive web applications using React and TypeScript. You will work closely with our design and backend teams to create seamless user experiences. If you are passionate about frontend development and eager to work on exciting projects, we would love to hear from you!";
 
   return (
     <div className="space-y-6">

@@ -1,10 +1,12 @@
 import { BookmarkIcon, ClockIcon, MapPinIcon, SendHorizonalIcon } from 'lucide-react';
-import React from 'react'
+import React from 'react';
+import { Link } from 'react-router-dom';
 
 const SimilarJobCard = ({ job }) => {
   return (
-    <div 
-        onClick={() => window.location.href = `/job/${job.id}`} 
+    <Link 
+        to={`/job/${job.id}`} 
+        state={{ job }}
         key={job.id} 
         className="flex flex-col gap-3 bg-white p-4 rounded-3xl shadow-md border border-transparent hover:shadow-lg hover:scale-[1.03] transition-all cursor-pointer group"
     >
@@ -36,13 +38,12 @@ const SimilarJobCard = ({ job }) => {
             <MapPinIcon className="w-3 h-3 mr-1" /> {job.city}
         </div>
         <div className="flex items-center gap-2">
-            <span className="font-bold text-dark-blue text-[12px]">{job.salary}</span>
             <button className="text-light-blue group-hover:translate-x-1 transition-transform">
             <SendHorizonalIcon className="w-4 h-4" />
             </button>
         </div>
         </div>
-    </div>
+    </Link>
     );
 }
 

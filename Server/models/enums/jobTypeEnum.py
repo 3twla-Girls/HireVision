@@ -6,3 +6,6 @@ class JobType(str, Enum):
     CONTRACT = "contract"
     INTERNSHIP = "internship"
     TEMPORARY = "temporary"
+    REMOTE = "remote"
+    HYBRID = "hybrid"
+    ON_SITE = "on_site"

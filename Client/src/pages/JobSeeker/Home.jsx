@@ -4,7 +4,7 @@ import FilterSidebar from '../../components/JobSeeker/FilterSidebar'
 import JobCard from '../../components/JobSeeker/JobCard'
 import RightSidebar from '../../components/JobSeeker/RightSidebar'
 
-const CURRENT_USER_ID = '69a984fb7a2734b7913cf004'
+const CURRENT_USER_ID = '69aa315763b720c25373f035'
 
 // Map API job fields → JobCard prop shape
 const mapJob = (job) => {
@@ -21,6 +21,19 @@ const mapJob = (job) => {
       })()
     : 'Recently'
 
+  const backendType = job.job_type ?? job.type ?? 'full_time'
+
+  let workplace = 'On site'
+  let typeProp = 'full_time'
+
+  if (['remote', 'hybrid', 'on_site'].includes(backendType)) {
+    workplace = backendType === 'remote' ? 'Remote' : backendType === 'hybrid' ? 'Hybrid' : 'On site'
+    // Default the type prop to 'full_time' when the backend only saved the workplace
+  } else {
+    workplace = 'On site' // Default workplace for legacy full_time jobs
+    typeProp = backendType
+  }
+
   return {
     id: job._id ?? job.id,
     title: job.job_title,
@@ -28,12 +41,17 @@ const mapJob = (job) => {
     recruiter: job.recruiter ?? '',
     city,
     country,
-    workplace: job.workplace ?? 'On site',
-    type: job.job_type ?? job.type ?? 'full_time',
+    workplace,
+    type: typeProp,
     postedAgo: posted,
     experience: job.required_experience ?? 'Mid-level',
     yearsOfExp: job.years_of_exp ?? '',
     skills: job.required_skills ?? [],
+    description: job.job_description || job.description || 'No description provided for this job.',
+    salary: job.salary || 'Not specified',
+    education: job.education || 'Not specified',
+    status: job.status || 'Active',
+    cluster_id: job.cluster_id ?? null,
   }
 }
 
@@ -43,6 +61,9 @@ const JOB_TYPE_MAP = {
   'Full-time': 'full_time',
   'Part-time': 'part_time',
   'Contract':  'contract',
+  'Remote':    'remote',
+  'Hybrid':    'hybrid',
+  'On site':   'on_site',
 }
 
 const applyFilters = (jobs, { checked = {}, searchValues = {} }) => {

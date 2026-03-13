@@ -1,17 +1,105 @@
 import React, { useEffect, useState } from 'react'
+import { useLocation, useParams } from 'react-router-dom'
 import JobDetails from '../../components/JobSeeker/JobDetails'
-import {job,JOBS} from '../../data/jobs'
-import { BookmarkIcon, Clock, MapPin, SendHorizonalIcon } from 'lucide-react'
+import {job as mockJob, JOBS} from '../../data/jobs'
+import { BookmarkIcon, Clock, MapPin, SendHorizonalIcon, SearchX } from 'lucide-react'
 import ApplyModal from '../../components/JobSeeker/ApplyModal'
 import USERS from '../../data/user'
 import SimilarJobCard from '../../components/JobSeeker/SimilarJobCard'
 import CircularScore from '../../components/shared/CircularScore'
 
 const Job = () => {
+  const location = useLocation();
+  const { id } = useParams();
+  const job = location.state?.job || mockJob;
+  
+  // Scroll to top when the job ID changes (i.e. clicked a Similar Job)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+  
   const user = USERS[1]; 
   const matchingScore = 80; 
 
   const [showApply, setShowApply] = useState(false);
+  const [similarJobs, setSimilarJobs] = useState([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
+
+  useEffect(() => {
+    console.log("Job details:", job);
+    setSimilarJobs([]); // Clear old similar jobs when navigating to a new job
+
+    if (job?.cluster_id === undefined || job?.cluster_id === null) {
+      console.warn("No cluster_id found on this job object.");
+      return;
+    }
+
+    const fetchSimilarJobs = async () => {
+      setLoadingSimilar(true);
+      try {
+        const res = await fetch(`/api/v1/job/cluster/${job.cluster_id}`);
+        if (res.ok) {
+          const data = await res.json();
+          // Filter out the current job itself
+          const filtered = data.filter(j => String(j._id ?? j.id) !== String(job.id));
+          console.log(`Fetched ${data.length} jobs for cluster ${job.cluster_id}, ${filtered.length} remaining after filter`);
+          
+          const mappedJobs = filtered.map(j => {
+            const parts = (j.location ?? '').split(',').map((s) => s.trim());
+            const city = parts[0] ?? '';
+            const country = parts.slice(1).join(', ') || parts[0] || '';
+            const posted = j.created_at
+              ? (() => {
+                  const diff = Math.floor((Date.now() - new Date(j.created_at)) / 86_400_000);
+                  if (diff === 0) return 'Today';
+                  if (diff === 1) return '1 day ago';
+                  return `${diff} days ago`;
+                })()
+              : 'Recently';
+
+            const backendType = j.job_type ?? j.type ?? 'full_time';
+            let workplace = 'On site';
+            let typeProp = 'full_time';
+
+            if (['remote', 'hybrid', 'on_site'].includes(backendType)) {
+              workplace = backendType === 'remote' ? 'Remote' : backendType === 'hybrid' ? 'Hybrid' : 'On site';
+            } else {
+              workplace = 'On site';
+              typeProp = backendType;
+            }
+
+            return {
+              id: j._id ?? j.id,
+              title: j.job_title,
+              company: j.company ?? 'Company',
+              recruiter: j.recruiter ?? '',
+              city,
+              country,
+              workplace,
+              type: typeProp,
+              postedAgo: posted,
+              experience: j.required_experience ?? 'Mid-level',
+              yearsOfExp: j.years_of_exp ?? '',
+              skills: j.required_skills ?? [],
+              description: j.job_description || j.description || 'No description provided.',
+              salary: j.salary || 'Not specified',
+              education: j.education || 'Not specified',
+              status: j.status || 'Active',
+              cluster_id: j.cluster_id ?? null,
+            };
+          });
+
+          setSimilarJobs(mappedJobs);
+        }
+      } catch (error) {
+        console.error("Failed to fetch similar jobs", error);
+      } finally {
+        setLoadingSimilar(false);
+      }
+    };
+
+    fetchSimilarJobs();
+  }, [job]);
 
   return (
     <div className="min-h-screen">
@@ -58,13 +146,25 @@ const Job = () => {
         {/* --- Left Sidebar: Similar Jobs (Order 3 on mobile) --- */}
         <aside className="order-3 lg:order-1 lg:col-span-3 md:col-span-6 h-fit lg:sticky lg:top-28 flex flex-col w-full">
           <h2 className="text-xl md:text-2xl font-semibold text-dark-blue mb-6">Similar Jobs</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 overflow-y-auto px-2 custom-scrollbar no-scrollbar lg:h-[calc(100vh-200px)]">
-            {JOBS.map((jobItem) => {
-              return (
-                <SimilarJobCard key={jobItem.id} job={jobItem} />
-              )
-            })}
-          </div>
+          {loadingSimilar ? (
+            <p className="text-sm text-gray-400 px-2">Loading similar jobs...</p>
+          ) : similarJobs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 content-start overflow-y-auto px-2 custom-scrollbar no-scrollbar lg:h-[calc(100vh-200px)]">
+              {similarJobs.map((jobItem) => (
+                  <SimilarJobCard key={jobItem.id} job={jobItem} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center bg-white p-8 rounded-3xl border border-gray-100 shadow-sm text-center mt-2">
+              <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                <SearchX className="w-6 h-6 text-gray-400" />
+              </div>
+              <h3 className="text-[15px] font-bold text-dark-blue mb-1">No similar jobs</h3>
+              <p className="text-[13px] text-light-blue leading-relaxed">
+                We couldn't find any other roles matching this profile right now.
+              </p>
+            </div>
+          )}
         </aside>
 
       </div>

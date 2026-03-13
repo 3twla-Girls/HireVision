@@ -225,3 +225,45 @@ async def get_cluster_details(cluster_id: int, request: Request):
             "count": len(candidates)
         }
     )
+
+# -------------------------------
+# New Endpoint: Get all CVs by User
+# -------------------------------
+@cv_router.get("/user/{user_id}")
+async def get_user_cvs(request: Request, user_id: str):
+    """Get all CVs uploaded by a specific user"""
+    try:
+        cv_model = await CVModel.create_instance(db_client=request.app.db_client)
+        user_cvs = await cv_model.get_all_user_cvs(cv_user_id=user_id)
+        
+        cv_list = []
+        for cv in user_cvs:
+            cv_dict = {
+                "id": str(cv.id),
+                "cv_name": cv.cv_name,
+                "cv_type": cv.cv_type,
+                "created_at": cv.cv_pushed_at.isoformat() if cv.cv_pushed_at else None,
+                "extracted_skills": getattr(cv, 'extracted_skills', []),
+                "cluster_id": getattr(cv, 'cluster_id', None)
+            }
+            
+            # Extract URL if available from cloudinary config
+            if hasattr(cv, 'cv_config') and cv.cv_config:
+                cv_dict['url'] = cv.cv_config.get('url')
+            
+            cv_list.append(cv_dict)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "signal": "SUCCESS",
+                "cvs": cv_list,
+                "count": len(cv_list)
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error fetching CVs for user {user_id}: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": "FAILED_TO_FETCH_CVS", "error": str(e)}
+        )

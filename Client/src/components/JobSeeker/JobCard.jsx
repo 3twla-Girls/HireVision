@@ -15,12 +15,18 @@ const TYPE_COLORS = {
   'Full-time':  'bg-blue-50 text-blue-600 border-blue-200',
   'Part-time':  'bg-amber-50 text-amber-600 border-amber-200',
   'Contract':   'bg-rose-50 text-rose-600 border-rose-200',
+  'remote':     'bg-emerald-50 text-emerald-600 border-emerald-200',
+  'hybrid':     'bg-violet-50 text-violet-600 border-violet-200',
+  'on_site':    'bg-sky-50 text-sky-600 border-sky-200',
 }
 
 const TYPE_LABELS = {
   'full_time': 'Full-time',
   'part_time': 'Part-time',
   'contract':  'Contract',
+  'remote':    'Remote',
+  'hybrid':    'Hybrid',
+  'on_site':   'On site',
 }
 
 const JobCard = ({ job }) => {
@@ -31,6 +37,7 @@ const JobCard = ({ job }) => {
   return (
     <Link
       to={`/job/${job.id}`}
+      state={{ job }}
       className="block rounded-3xl border border-gray-100 bg-white shadow-sm
                  hover:shadow-xl hover:-translate-y-0.5
                  transition-all duration-300 ease-out group overflow-hidden"
