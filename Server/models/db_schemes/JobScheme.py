@@ -23,8 +23,8 @@ class JobScheme(BaseModel):
     job_type: JobType = JobType.PART_TIME
     cluster_id: Optional[int] = None
     job_recruiter_id: Optional[PyObjectId] = None
-    num_questions:int
-    number_of_questions_per_interview: int
+    num_questions: int = 0
+    number_of_questions_per_interview: int = 0
     # -------------------------------------------------
     # Pydantic Config
     # -------------------------------------------------

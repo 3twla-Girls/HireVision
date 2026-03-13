@@ -180,6 +180,37 @@ async def get_jobs(request: Request, recruiter_id: str):
         )
 
 # =============================
+# Get recommended jobs for a user
+# =============================
+@job_router.get("/recommended/{user_id}")
+async def get_recommended_jobs(request: Request, user_id: str):
+    import traceback
+    from bson import ObjectId as BsonObjectId
+    from fastapi.encoders import jsonable_encoder
+
+    faiss_service_job = request.app.state.faiss_service["faiss_service_job"]
+    job_controller = await JobController.create_instance(
+        db_client=request.app.db_client,
+        faiss_service_job=faiss_service_job
+    )
+    try:
+        jobs = await job_controller.get_recommended_jobs(user_id=user_id)
+        serialized = jsonable_encoder(
+            jobs,
+            custom_encoder={BsonObjectId: str}
+        )
+        return JSONResponse(status_code=status.HTTP_200_OK, content=serialized)
+    except Exception as e:
+        logger.error(
+            f"Error fetching recommended jobs for user {user_id}: {e}\n"
+            f"{traceback.format_exc()}"
+        )
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": "RECOMMENDED_JOBS_FETCH_FAILED"}
+        )
+
+# =============================
 # get Job by ID
 # =============================
 @job_router.get("/{job_id}")
