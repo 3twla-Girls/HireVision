@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 
 # Local Imports - Routes
-from .routes import base, userRoute, CVRoute, applicationRoute, JobRoute , cheating_eyeGaze_route
+from .routes import base, userRoute, CVRoute, applicationRoute, JobRoute , cheating_eyeGaze_route ,proctoring_router
 from .routes.questions_with_answers import router as questions_with_answers
 from .routes.interview_routes import interview_router
 
@@ -92,6 +92,7 @@ app.include_router(JobRoute.job_router)
 app.include_router(userRoute.user_router)
 app.include_router(applicationRoute.application_router)
 app.include_router(cheating_eyeGaze_route.eyeGazeCheating_router)
+app.include_router(proctoring_router.proctringRouter)
 
 # Module_3 Routes (Questions, Interviews)
 app.include_router(questions_with_answers)

@@ -1,18 +1,24 @@
 # ============================================================================
 # IMPORTS
 # ============================================================================
+import os
 from datetime import datetime
 from typing import Optional, Dict, Any
 from bson import ObjectId
 
 from .BaseController import BaseController
 from ..models.enums.DataBaseEnum import DataBaseEnum
+from .ProctoringController import ProctoringController
 
 # Module 3 (Interview & Evaluation)
 from Module_3.STT.controllers.stt_controller import transcribe_video
 from Module_3.Answer_Evaluation.evaluator import (
     evaluate_single_answer,
     generate_final_summary
+)
+
+from Module2.userAuthn.config import (
+    SCRIPT_DIR
 )
 
 
@@ -55,10 +61,18 @@ class InterviewController(BaseController):
         }
 
         result = await self.sessions_collection.insert_one(session)
+        session_id = str(result.inserted_id)
+
+        ProctoringController._get_or_init_session(session_id) 
+        
+        path = os.path.join(SCRIPT_DIR, "embeddings", f"ref_{session_id}.npy")
+        if os.path.exists(path):
+            os.remove(path)
+        # ------------------------------------------------
 
         return {
             "status": "session_started",
-            "session_id": str(result.inserted_id)
+            "session_id": session_id
         }
 
     # ========== READ ==========
