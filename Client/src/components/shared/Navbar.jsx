@@ -18,7 +18,7 @@ const Navbar = ({ role }) => {
   ]
 
   const recruiterLinks = [
-    { label: 'DASHBOARD', path: '/dashboard' },
+    // { label: 'DASHBOARD', path: '/dashboard' },
     { label: 'JOB MANAGEMENT', path: '/job-management' },
   ]
 

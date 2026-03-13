@@ -8,14 +8,23 @@ import {
 import { JOBS } from '../../data/jobs';
 
 /* ─── helpers ──────────────────────────────────────────────── */
-const mockJobs = JOBS.map((job, i) => ({
-  ...job,
-  
-  status: i % 2 === 0 ? 'Open' : 'Closed',
-  applicants: (job.id * 12) + i * 3,
-  views: job.id * 47 + 100,
-}));
-// const mockJobs =[];
+const CURRENT_RECRUITER_ID = "69aa302c63b720c25373f034";
+
+const inferWorkplace = (jobType) => {
+  if (!jobType) return "On site";
+  const t = jobType.toLowerCase();
+  if (t.includes('remote')) return "Remote";
+  if (t.includes('hybrid')) return "Hybrid";
+  return "On site";
+};
+
+const inferType = (jobType) => {
+  if (!jobType) return "Full-time";
+  const t = jobType.toLowerCase();
+  if (t.includes('part')) return "Part-time";
+  if (t.includes('contract')) return "Contract";
+  return "Full-time";
+};
 
 const StatusBadge = ({ status, small = false }) => {
   const isOpen = status === 'Open';
@@ -103,13 +112,11 @@ const JobDetailPanel = ({ job, onToggleStatus, onBack }) => {
           {/* Actions */}
           <div className="flex flex-wrap gap-2.5 shrink-0">
             <button
-              onClick={() => navigate(`/job-preview/69aae77ddef3bd659ee84eac`)}
+              onClick={() => navigate(`/job-preview/${job.id}`)}
               className="flex items-center gap-2 bg-gray-50 text-[#1B3C53] hover:bg-[#1B3C53] hover:text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all border border-gray-200 hover:border-[#1B3C53]">
               <Eye size={16} /> Preview
             </button>
-            <button className="flex items-center gap-2 bg-gray-50 text-[#1B3C53] hover:bg-[#1B3C53] hover:text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all border border-gray-200 hover:border-[#1B3C53]">
-              <Edit size={16} /> Edit
-            </button>
+           
             <button
               onClick={() => onToggleStatus(job.id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border
@@ -154,7 +161,7 @@ const JobDetailPanel = ({ job, onToggleStatus, onBack }) => {
         {/* CTA */}
         <div className="pt-6 border-t border-gray-200">
           <button
-             onClick={() => navigate(`/job-applications/69aae77ddef3bd659ee84eac`)}
+             onClick={() => navigate(`/job-applications/${job.id}`)}
             className="w-full bg-[#FF914D] hover:bg-[#1B3C53] text-white font-semibold py-3 rounded-2xl flex items-center justify-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg text-base uppercase tracking-widest group">
             <Users size={16} className="group-hover:scale-110 transition-transform" />
             Review {job.applicants} Applicants
@@ -168,11 +175,48 @@ const JobDetailPanel = ({ job, onToggleStatus, onBack }) => {
 /* ─── Main Page ─────────────────────────────────────────────── */
 const JobManagement = () => {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState(mockJobs);
-  const [selectedJobId, setSelectedJobId] = useState(mockJobs[0]?.id ?? null);
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedJobId, setSelectedJobId] = useState(null);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   const [mobileView, setMobileView] = useState('list');
+
+  React.useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/v1/job/all/${CURRENT_RECRUITER_ID}`);
+        if (res.ok) {
+          const data = await res.json();
+          const mappedJobs = data.map(j => ({
+            id: j._id,
+            title: j.job_title,
+            city: j.location ? j.location.split(',')[0] : 'Unknown',
+            country: j.location && j.location.includes(',') ? j.location.split(',')[1].trim() : '',
+            workplace: inferWorkplace(j.job_type),
+            type: inferType(j.job_type),
+            experience: j.required_experience || 'Not specified',
+            postedAgo: j.created_at ? new Date(j.created_at).toLocaleDateString() : 'Recently',
+            salary: 'Not specified',
+            skills: j.required_skills || [],
+            applicants: 0, // To do: wire up applicants count
+            status: j.status === 'open' ? 'Open' : 'Closed',
+          }));
+          setJobs(mappedJobs);
+          
+          if (mappedJobs.length > 0) {
+            setSelectedJobId(mappedJobs[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch recruiter jobs:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobs();
+  }, []);
 
   const selectedJob = jobs.find(j => j.id === selectedJobId);
 
@@ -216,8 +260,12 @@ const JobManagement = () => {
           </div>
         </div>
 
-        {/* ── Empty State ── */}
-        {jobs.length === 0 ? (
+        {/* ── Empty & Loading States ── */}
+        {loading ? (
+          <div className="flex justify-center items-center py-24">
+            <div className="text-[#1B3C53] font-bold animate-pulse text-lg">Loading Jobs...</div>
+          </div>
+        ) : jobs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-24 h-24 bg-white rounded-3xl border border-gray-100 shadow-sm flex items-center justify-center mb-6">
               <Briefcase size={40} className="text-gray-200" />

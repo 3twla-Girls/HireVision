@@ -1,7 +1,47 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { SlidersHorizontal, ChevronUp, ChevronDown, Search, X, MapPin, Globe } from 'lucide-react'
 
-// ── Data ────────────────────────────────────────────────────────────────────
+// ── Comprehensive country & city lists ──────────────────────────────────────
+const ALL_COUNTRIES = [
+    'Afghanistan','Albania','Algeria','Argentina','Armenia','Australia','Austria',
+    'Azerbaijan','Bahrain','Bangladesh','Belarus','Belgium','Bolivia','Bosnia',
+    'Brazil','Bulgaria','Cambodia','Canada','Chile','China','Colombia','Croatia',
+    'Cuba','Cyprus','Czech Republic','Denmark','Ecuador','Egypt','Estonia',
+    'Ethiopia','Finland','France','Georgia','Germany','Ghana','Greece','Guatemala',
+    'Honduras','Hungary','India','Indonesia','Iran','Iraq','Ireland','Israel',
+    'Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kosovo','Kuwait',
+    'Kyrgyzstan','Latvia','Lebanon','Libya','Lithuania','Luxembourg','Malaysia',
+    'Malta','Mexico','Moldova','Mongolia','Montenegro','Morocco','Myanmar',
+    'Nepal','Netherlands','New Zealand','Nigeria','North Korea','Norway','Oman',
+    'Pakistan','Palestine','Panama','Paraguay','Peru','Philippines','Poland',
+    'Portugal','Qatar','Romania','Russia','Saudi Arabia','Senegal','Serbia',
+    'Singapore','Slovakia','Slovenia','Somalia','South Africa','South Korea',
+    'Spain','Sri Lanka','Sudan','Sweden','Switzerland','Syria','Taiwan',
+    'Tajikistan','Tanzania','Thailand','Tunisia','Turkey','Turkmenistan',
+    'UAE','Uganda','UK','Ukraine','USA','Uruguay','Uzbekistan','Venezuela',
+    'Vietnam','Yemen','Zimbabwe',
+]
+
+const ALL_CITIES = [
+    'Abu Dhabi','Accra','Addis Ababa','Alexandria','Algiers','Almaty','Amman',
+    'Amsterdam','Ankara','Athens','Atlanta','Auckland','Baghdad','Bangkok',
+    'Barcelona','Beijing','Beirut','Belgrade','Berlin','Bogotá','Brussels',
+    'Budapest','Buenos Aires','Cairo','Calgary','Caracas','Casablanca',
+    'Chicago','Colombo','Copenhagen','Dallas','Delhi','Denver','Dhaka','Doha',
+    'Dubai','Dublin','Edinburgh','Frankfurt','Geneva','Glasgow','Guangzhou',
+    'Hamburg','Hanoi','Helsinki','Ho Chi Minh City','Hong Kong','Houston',
+    'Hyderabad','Istanbul','Jakarta','Jerusalem','Johannesburg','Karachi',
+    'Kiev','Kinshasa','Kolkata','Kuala Lumpur','Lagos','Lahore','Lima',
+    'Lisbon','London','Los Angeles','Luxembourg','Lyon','Madrid','Manila',
+    'Melbourne','Mexico City','Miami','Milan','Minneapolis','Minsk','Montreal',
+    'Moscow','Mumbai','Munich','Nairobi','New York','Nicosia','Osaka','Oslo',
+    'Ottawa','Paris','Prague','Riyadh','Rome','San Francisco','Santiago',
+    'São Paulo','Seattle','Seoul','Shanghai','Singapore','Sofia','Stockholm',
+    'Sydney','Taipei','Tehran','Tel Aviv','Tokyo','Toronto','Tunis','Vancouver',
+    'Vienna','Warsaw','Washington DC','Zurich',
+]
+
+// ── Sections config ──────────────────────────────────────────────────────────
 const sections = [
     {
         key: 'workplace',
@@ -19,7 +59,7 @@ const sections = [
         type: 'search',
         icon: 'globe',
         placeholder: 'Search country…',
-        suggestions: ['USA', 'Germany', 'UK', 'UAE', 'France', 'Canada', 'Australia', 'Netherlands', 'Spain', 'Japan'],
+        suggestions: ALL_COUNTRIES,
     },
     {
         key: 'city',
@@ -27,7 +67,7 @@ const sections = [
         type: 'search',
         icon: 'pin',
         placeholder: 'Search city…',
-        suggestions: ['San Francisco', 'Berlin', 'London', 'Dubai', 'New York', 'Paris', 'Amsterdam', 'Toronto', 'Sydney', 'Tokyo'],
+        suggestions: ALL_CITIES,
     },
     {
         key: 'experience',
@@ -36,7 +76,10 @@ const sections = [
     },
 ]
 
-// ── Custom Checkbox ─────────────────────────────────────────────────────────
+// All sections closed by default
+const DEFAULT_OPEN = {}
+
+// ── Custom Checkbox ──────────────────────────────────────────────────────────
 function Checkbox({ checked, onChange }) {
     return (
         <span
@@ -57,17 +100,30 @@ function Checkbox({ checked, onChange }) {
     )
 }
 
-// ── Main Component ──────────────────────────────────────────────────────────
-export default function FilterSidebar({ isOpen, onClose }) {
-    const [openSections, setOpenSections] = useState({ workplace: true })
-    const [checked, setChecked] = useState({ Remote: true, 'Mid-level': true })
+// ── Main Component ───────────────────────────────────────────────────────────
+// onChange({ checked, searchValues }) is called on every filter change.
+//
+// checked      = { 'Remote': true, 'Full-time': true, … }   (option label → bool)
+// searchValues = { country: 'Egypt', city: 'Cairo' }        (sec.key → selected string)
+export default function FilterSidebar({ isOpen, onClose, onChange }) {
+    const [openSections, setOpenSections] = useState(DEFAULT_OPEN)
+    const [checked, setChecked]           = useState({})
     const [searchValues, setSearchValues] = useState({})
+
+    // Notify parent whenever any filter changes
+    useEffect(() => {
+        onChange?.({ checked, searchValues })
+    }, [checked, searchValues]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const toggle = (key) =>
         setOpenSections((p) => ({ ...p, [key]: !p[key] }))
 
     const toggleCheck = (opt) =>
         setChecked((p) => ({ ...p, [opt]: !p[opt] }))
+
+    // Update a single search/select field and notify parent immediately
+    const handleSearchChange = (key, value) =>
+        setSearchValues((p) => ({ ...p, [key]: value }))
 
     const clearAll = () => {
         setChecked({})
@@ -77,17 +133,16 @@ export default function FilterSidebar({ isOpen, onClose }) {
     const isPanel = typeof isOpen !== 'undefined'
 
     const sidebarContent = (
-        <aside className={`overflow-y-auto rounded-3xl p-6 shadow-md bg-white ${isPanel ? 'h-full rounded-none rounded-r-3xl' : 'sticky top-28 max-h-[calc(100vh-130px)]'
-            }`}>
+        <aside className={`overflow-y-auto rounded-3xl p-6 shadow-md bg-white ${
+            isPanel ? 'h-full rounded-none rounded-r-3xl' : 'sticky top-28 max-h-[calc(100vh-130px)]'
+        }`}>
             {/* ── Header ── */}
             <div className="flex items-center justify-between mb-5 bg-white">
                 <div className="flex items-center gap-2">
-                    <span className="flex items-center justify-center w-10 h-10 rounded-lg border ">
+                    <span className="flex items-center justify-center w-10 h-10 rounded-lg border">
                         <SlidersHorizontal size={20} className="text-dark-blue" strokeWidth={2.2} />
                     </span>
-                    <span className="font-bold text-[1.2rem] text-dark-blue">
-                        Filters
-                    </span>
+                    <span className="font-bold text-[1.2rem] text-dark-blue">Filters</span>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -109,18 +164,19 @@ export default function FilterSidebar({ isOpen, onClose }) {
             </div>
 
             {/* ── Sections ── */}
-            {sections.map((sec, i) => (
-                sec.type === 'search'
-                    ? <SearchSection
+            {sections.map((sec, i) =>
+                sec.type === 'search' ? (
+                    <SearchSection
                         key={sec.key}
                         sec={sec}
                         isOpen={!!openSections[sec.key]}
                         onToggle={() => toggle(sec.key)}
-                        value={searchValues[sec.key] || ''}
-                        onChange={(v) => setSearchValues(p => ({ ...p, [sec.key]: v }))}
+                        value={searchValues[sec.key] ?? ''}
+                        onChange={(v) => handleSearchChange(sec.key, v)}
                         isLast={i === sections.length - 1}
                     />
-                    : <Section
+                ) : (
+                    <Section
                         key={sec.key}
                         sec={sec}
                         isOpen={!!openSections[sec.key]}
@@ -129,7 +185,8 @@ export default function FilterSidebar({ isOpen, onClose }) {
                         onCheck={toggleCheck}
                         isLast={i === sections.length - 1}
                     />
-            ))}
+                )
+            )}
         </aside>
     )
 
@@ -153,19 +210,16 @@ export default function FilterSidebar({ isOpen, onClose }) {
     return sidebarContent
 }
 
-// ── Section ─────────────────────────────────────────────────────────────────
+// ── Checkbox Section ─────────────────────────────────────────────────────────
 function Section({ sec, isOpen, onToggle, checked, onCheck, isLast }) {
     return (
         <div className={isLast ? '' : 'mb-1'}>
-            {/* Toggle button */}
             <button
                 onClick={onToggle}
                 className="flex items-center justify-between w-full py-2.5 bg-transparent border-none cursor-pointer
                            font-bold text-[0.83rem] text-dark-gray3 hover:text-dark-blue tracking-wide transition-colors duration-150"
             >
-                <span className="flex items-center gap-1.5">
-                    {sec.label}
-                </span>
+                <span className="flex items-center gap-1.5">{sec.label}</span>
                 <span className={`flex items-center justify-center w-[22px] h-[22px] rounded-md transition-all duration-150
                     ${isOpen
                         ? 'bg-orange/10 border border-orange/25'
@@ -178,7 +232,6 @@ function Section({ sec, isOpen, onToggle, checked, onCheck, isLast }) {
                 </span>
             </button>
 
-            {/* Options */}
             {isOpen && sec.options && (
                 <div className="flex flex-col gap-[0.45rem] pl-1 pb-2.5 overflow-hidden animate-slideDown">
                     {sec.options.map((opt) => (
@@ -197,16 +250,21 @@ function Section({ sec, isOpen, onToggle, checked, onCheck, isLast }) {
     )
 }
 
-// ── Search Section ───────────────────────────────────────────────────────────
+// ── Search / Select Section ───────────────────────────────────────────────────
+// `value` is the currently selected/typed string for this field.
+// Selecting from the dropdown sets the full value; typing also updates it live.
 function SearchSection({ sec, isOpen, onToggle, value, onChange, isLast }) {
-    const [focused, setFocused] = useState(false)
+    const [focused, setFocused]   = useState(false)
     const [showDrop, setShowDrop] = useState(false)
     const inputRef = useRef(null)
-    const wrapRef = useRef(null)
+    const wrapRef  = useRef(null)
 
+    // Filter suggestions based on current input
     const filtered = value.trim().length === 0
-        ? sec.suggestions
-        : sec.suggestions.filter(s => s.toLowerCase().includes(value.toLowerCase()))
+        ? sec.suggestions.slice(0, 8)
+        : sec.suggestions
+            .filter((s) => s.toLowerCase().includes(value.toLowerCase()))
+            .slice(0, 20)
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -217,25 +275,30 @@ function SearchSection({ sec, isOpen, onToggle, value, onChange, isLast }) {
         return () => document.removeEventListener('mousedown', handler)
     }, [])
 
+    // User picks a suggestion → set full value, close dropdown, trigger filter
     const select = (s) => {
         onChange(s)
         setShowDrop(false)
         inputRef.current?.blur()
     }
 
+    // User clears the field → reset value, trigger filter
+    const clear = (e) => {
+        e.preventDefault()
+        onChange('')
+        setShowDrop(false)
+    }
+
     const hasValue = value.trim().length > 0
 
     return (
         <div className={isLast ? '' : 'mb-1'}>
-            {/* Toggle header */}
             <button
                 onClick={onToggle}
                 className="flex items-center justify-between w-full py-2.5 bg-transparent border-none cursor-pointer
                            font-bold text-[0.83rem] text-dark-gray3 hover:text-dark-blue tracking-wide transition-colors duration-150"
             >
-                <span className="flex items-center gap-1.5">
-                    {sec.label}
-                </span>
+                <span className="flex items-center gap-1.5">{sec.label}</span>
                 <span className={`flex items-center justify-center w-[22px] h-[22px] rounded-md transition-all duration-150
                     ${isOpen
                         ? 'bg-orange/10 border border-orange/25'
@@ -248,7 +311,6 @@ function SearchSection({ sec, isOpen, onToggle, value, onChange, isLast }) {
                 </span>
             </button>
 
-            {/* Search input + dropdown */}
             {isOpen && (
                 <div ref={wrapRef} className="pb-3 relative animate-slideDown">
                     {/* Input */}
@@ -264,7 +326,7 @@ function SearchSection({ sec, isOpen, onToggle, value, onChange, isLast }) {
                         <input
                             ref={inputRef}
                             value={value}
-                            onChange={e => { onChange(e.target.value); setShowDrop(true) }}
+                            onChange={(e) => { onChange(e.target.value); setShowDrop(true) }}
                             onFocus={() => { setFocused(true); setShowDrop(true) }}
                             onBlur={() => setFocused(false)}
                             placeholder={sec.placeholder}
@@ -272,7 +334,7 @@ function SearchSection({ sec, isOpen, onToggle, value, onChange, isLast }) {
                         />
                         {hasValue && (
                             <button
-                                onMouseDown={e => { e.preventDefault(); onChange(''); setShowDrop(false) }}
+                                onMouseDown={clear}
                                 className="flex items-center justify-center bg-light-gray1 border-none rounded w-[18px] h-[18px] cursor-pointer shrink-0 p-0"
                             >
                                 <X size={10} className="text-dark-gray3" strokeWidth={2.5} />
@@ -280,7 +342,7 @@ function SearchSection({ sec, isOpen, onToggle, value, onChange, isLast }) {
                         )}
                     </div>
 
-                    {/* Dropdown */}
+                    {/* Dropdown suggestions */}
                     {showDrop && filtered.length > 0 && (
                         <div className="absolute top-[calc(100%-4px)] left-0 right-0 bg-white border-[1.5px] border-light-gray2
                                         rounded-[10px] shadow-lg z-50 overflow-hidden animate-slideDown">
@@ -298,14 +360,14 @@ function SearchSection({ sec, isOpen, onToggle, value, onChange, isLast }) {
                         </div>
                     )}
 
-                    {/* Selected tag */}
+                    {/* Selected value chip (shown when dropdown is closed) */}
                     {hasValue && !showDrop && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
                             <span className="inline-flex items-center gap-1.5 bg-orange/10 border border-orange/30
                                              rounded-md px-2 py-0.5 text-[0.73rem] font-semibold text-orange">
                                 {value}
                                 <button
-                                    onMouseDown={e => { e.preventDefault(); onChange('') }}
+                                    onMouseDown={clear}
                                     className="bg-transparent border-none cursor-pointer flex p-0"
                                 >
                                     <X size={9} className="text-orange" strokeWidth={3} />
@@ -323,11 +385,10 @@ function SearchSection({ sec, isOpen, onToggle, value, onChange, isLast }) {
 
 // ── Dropdown Item ─────────────────────────────────────────────────────────────
 function DropItem({ label, query, isLast, onSelect }) {
-    // Highlight matching substring
-    const idx = label.toLowerCase().indexOf(query.toLowerCase())
+    const idx    = label.toLowerCase().indexOf(query.toLowerCase())
     const before = idx >= 0 ? label.slice(0, idx) : label
-    const match = idx >= 0 ? label.slice(idx, idx + query.length) : ''
-    const after = idx >= 0 ? label.slice(idx + query.length) : ''
+    const match  = idx >= 0 ? label.slice(idx, idx + query.length) : ''
+    const after  = idx >= 0 ? label.slice(idx + query.length) : ''
 
     return (
         <div
@@ -346,13 +407,12 @@ function DropItem({ label, query, isLast, onSelect }) {
     )
 }
 
-// ── Option Row ──────────────────────────────────────────────────────────────
+// ── Option Row ───────────────────────────────────────────────────────────────
 function OptionRow({ opt, checked, onCheck }) {
     return (
         <label className="flex items-center gap-2.5 cursor-pointer px-2 py-[0.3rem] rounded-lg
                           hover:bg-light-gray1 transition-colors duration-150">
             <Checkbox checked={checked} onChange={onCheck} />
-
             <span className={`flex-1 text-[0.83rem] select-none transition-colors duration-150
                 ${checked ? 'font-semibold text-dark-blue' : 'font-normal text-dark-gray3'}`}>
                 {opt}

@@ -31,8 +31,8 @@ import USERS from '../../data/user';
 import FeedbackModal from '../../components/JobSeeker/FeedbackModal';
 import safwaResume from '../../data/Safwa Ibrahim Resume (1).pdf';
 
-// Mock finding the current logged-in user
-const currentUser = USERS.find((user) => user.role === 'jobseeker');
+// We will fetch the actual backend user dynamically now
+const CURRENT_USER_ID = "69aa315763b720c25373f035";
 
 
 const normalizeSkill = (skill) => {
@@ -78,35 +78,64 @@ const SkillBadge = ({ label }) => {
 
 
 const Profile = () => {
-  const [skills, setSkills] = React.useState(() => {
-    // Check if we have saved skills in localStorage first
-    const savedSkills = localStorage.getItem('user_skills');
-    if (savedSkills) {
-      return JSON.parse(savedSkills);
-    }
-    // Fall back to the default data
-    return currentUser?.skills || [];
-  });
+  const [currentUser, setCurrentUser] = React.useState(null);
+  const [loadingProfile, setLoadingProfile] = React.useState(true);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [skills, setSkills] = React.useState([]);
+  const [resumes, setResumes] = React.useState([]);
+
+  React.useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoadingProfile(true);
+
+        const [userRes, cvRes] = await Promise.all([
+          fetch(`/api/v1/user/${CURRENT_USER_ID}`),
+          fetch(`/api/v1/cv/user/${CURRENT_USER_ID}`)
+        ]);
+
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setCurrentUser(userData.user);
+        }
+
+        if (cvRes.ok) {
+          const cvData = await cvRes.json();
+          const fetchedCVs = cvData.cvs || [];
+
+          // Map backend CV format to the ResumeItem UI format
+          const mappedResumes = fetchedCVs.map(cv => ({
+            id: cv.id,
+            name: cv.cv_name,
+            created_at: cv.created_at ? new Date(cv.created_at).toLocaleDateString() : 'Unknown Date',
+            data: cv.url // Cloudinary URL
+          }));
+
+          setResumes(mappedResumes);
+
+          // Extract combined unique skills from all CVs natively
+          const combinedSkills = new Set();
+          fetchedCVs.forEach(cv => {
+            if (cv.extracted_skills && Array.isArray(cv.extracted_skills)) {
+              cv.extracted_skills.forEach(skill => combinedSkills.add(skill));
+            }
+          });
+          setSkills(Array.from(combinedSkills));
+        }
+
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const [isAddingSkill, setIsAddingSkill] = React.useState(false);
   const [newSkill, setNewSkill] = React.useState("");
 
-  // Auto-save skills to localStorage whenever the array changes
-  React.useEffect(() => {
-    localStorage.setItem('user_skills', JSON.stringify(skills));
-  }, [skills]);
-
-  const [resumes, setResumes] = React.useState(() => {
-    const savedResumes = localStorage.getItem('user_resumes');
-    if (savedResumes) {
-      return JSON.parse(savedResumes);
-    }
-    return currentUser?.resumes || [];
-  });
-
-  React.useEffect(() => {
-    localStorage.setItem('user_resumes', JSON.stringify(resumes));
-  }, [resumes]);
   const [isResumeModalOpen, setIsResumeModalOpen] = React.useState(false);
   const [selectedResume, setSelectedResume] = React.useState(null);
 
@@ -193,29 +222,53 @@ const Profile = () => {
     e.target.value = '';
   };
 
-  const handleConfirmUpload = () => {
-    if (pendingUploadFile) {
-      const fileUrl = URL.createObjectURL(pendingUploadFile);
+  const handleConfirmUpload = async () => {
+    if (!pendingUploadFile) return;
 
+    try {
+      setIsUploading(true);
       const newName = uploadName.trim() || pendingUploadFile.name;
       const finalName = newName.toLowerCase().endsWith('.pdf') ? newName : `${newName}.pdf`;
 
+      const formData = new FormData();
+      formData.append("file", pendingUploadFile, finalName);
+      formData.append("job_role", currentUser?.job_title || "Software Engineer");
+
+      const response = await fetch(`/api/v1/cv/upload/${CURRENT_USER_ID}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload CV");
+      }
+
+      const data = await response.json();
+
       const newResume = {
-        id: `temp_${Date.now()}`,
+        id: data.file_id || `temp_${Date.now()}`,
         name: finalName,
         created_at: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric', year: 'numeric' }),
-        data: fileUrl // storing the local url temporarily
+        data: data.file_url
       };
 
       setResumes([...resumes, newResume]);
 
-      if (currentUser && currentUser.resumes) {
-        currentUser.resumes.push(newResume);
+      if (data.extracted_skills && Array.isArray(data.extracted_skills)) {
+        setSkills(prevSkills => {
+          const combined = new Set([...prevSkills, ...data.extracted_skills]);
+          return Array.from(combined);
+        });
       }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload resume. Please try again.");
+    } finally {
+      setIsUploading(false);
+      setIsNamePromptOpen(false);
+      setPendingUploadFile(null);
+      setUploadName("");
     }
-    setIsNamePromptOpen(false);
-    setPendingUploadFile(null);
-    setUploadName("");
   };
 
   const handleCancelUpload = () => {
@@ -223,6 +276,14 @@ const Profile = () => {
     setPendingUploadFile(null);
     setUploadName("");
   };
+
+  if (loadingProfile) {
+    return (
+      <div className="min-h-screen py-8 flex items-center justify-center">
+        <div className="text-dark-blue font-semibold animate-pulse text-lg">Loading Profile...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-8">
@@ -363,9 +424,10 @@ const Profile = () => {
                     </button>
                     <button
                       onClick={handleConfirmUpload}
-                      className="px-4 py-2 text-sm font-semibold text-white bg-orange hover:bg-dark-orange rounded-lg transition-colors"
+                      disabled={isUploading}
+                      className="px-4 py-2 text-sm font-semibold text-white bg-orange hover:bg-dark-orange rounded-lg transition-colors disabled:opacity-50"
                     >
-                      Save & Upload
+                      {isUploading ? "Uploading..." : "Save & Upload"}
                     </button>
                   </div>
                 </div>
@@ -408,16 +470,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Contact Info */}
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-light-gray2/60">
-              <h2 className="text-[17px] font-bold text-dark-blue mb-5">Contact Info</h2>
-              <div className="flex flex-col gap-4">
-                <ContactItem icon={Mail} value={currentUser?.email || "N/A"} />
-                <ContactItem icon={Phone} value={currentUser?.socials?.phone || "N/A"} />
-                <ContactItem icon={MapPin} value={currentUser?.location || "N/A"} />
-              </div>
-            </div>
-
             {/* Profile Stats */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-light-gray2/60">
               <h2 className="text-[17px] font-bold text-dark-blue mb-5">Profile Stats</h2>
@@ -425,6 +477,16 @@ const Profile = () => {
                 <StatItem icon={Briefcase} label="Applications" value={currentUser?.stats?.totalApplications || 0} iconBg="bg-light-gray1" iconColor="text-dark-blue/70" />
                 <StatItem icon={Calendar} label="Interviews" value={currentUser?.stats?.interviews || 0} iconBg="bg-light-gray1" iconColor="text-dark-blue/70" />
                 <StatItem icon={CheckCircle2} label="Accepted" value={currentUser?.stats?.accepted || 0} iconBg="bg-light-teal" iconColor="text-teal" />
+              </div>
+            </div>
+
+            {/* Contact Info */}
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-light-gray2/60">
+              <h2 className="text-[17px] font-bold text-dark-blue mb-5">Contact Info</h2>
+              <div className="flex flex-col gap-4">
+                <ContactItem icon={Mail} value={currentUser?.email || "N/A"} />
+                <ContactItem icon={Phone} value={currentUser?.socials?.phone || "N/A"} />
+                <ContactItem icon={MapPin} value={currentUser?.location || "N/A"} />
               </div>
             </div>
 
