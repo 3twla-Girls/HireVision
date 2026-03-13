@@ -7,8 +7,21 @@ import { useDeleteJob } from '../../hooks/useDeleteJob'
 import toast from 'react-hot-toast'
 import { useEffect, useState } from 'react'
 
+const inferWorkplace = (jobType) => {
+  if (!jobType) return "On site";
+  const t = jobType.toLowerCase();
+  if (t.includes('remote')) return "Remote";
+  if (t.includes('hybrid')) return "Hybrid";
+  return "On site";
+};
 
-const JobPreview = () => {
+const inferType = (jobType) => {
+  if (!jobType) return "Full-time";
+  const t = jobType.toLowerCase();
+  if (t.includes('part')) return "Part-time";
+  if (t.includes('contract')) return "Contract";
+  return "Full-time";
+};const JobPreview = () => {
 
     const navigate = useNavigate();
     const { jobId } = useParams();
@@ -89,7 +102,7 @@ const JobPreview = () => {
                             {new Date(job?.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                         <div className="bg-blue-50 px-3 py-1 rounded-lg text-sm text-light-blue font-bold border border-blue-100">
-                            120 applicants
+                            {job?.applicants || 0} applicants
                         </div>
                     </div>
                 </div>
@@ -99,8 +112,8 @@ const JobPreview = () => {
                     <DetailItem label="Career Level" value={job?.careerLevel || "Not specified"} />
                     <DetailItem label="Required Education" value={job?.required_education} />
                     <DetailItem label="Salary" value={job?.salary || "Not specified"} />
-                    <DetailItem label="Job Type" value={job?.job_type} />
-                    <DetailItem label="Workplace" value={job?.workplace} />
+                    <DetailItem label="Job Type" value={inferType(job?.job_type)} />
+                    <DetailItem label="Workplace" value={inferWorkplace(job?.job_type)} />
                 </div>
 
                 {/* ================= SKILLS ================= */}
@@ -159,10 +172,10 @@ const JobPreview = () => {
             <div className="bg-light-blue rounded-3xl p-6 shadow-md space-y-4">
                 <h3 className="text-white font-bold text-lg border-b pb-3">Hiring Pipeline</h3>
                 
-                <StatRow label="Total Applicants" value="120" color="bg-blue-400" />
-                <StatRow label="Interviewed" value="45" color="bg-purple-400" />
-                <StatRow label="Shortlisted (Passed)" value="12" color="bg-emerald-400" />
-                <StatRow label="Rejected" value="63" color="bg-red-400" />
+                <StatRow label="Total Applicants" value={job?.applicants || "0"} color="bg-blue-400" />
+                <StatRow label="Interviewed" value="0" color="bg-purple-400" />
+                <StatRow label="Shortlisted (Passed)" value="0" color="bg-emerald-400" />
+                <StatRow label="Rejected" value="0" color="bg-red-400" />
 
                 <button 
                 onClick={() => navigate(`/job-applications/${jobId}`)}

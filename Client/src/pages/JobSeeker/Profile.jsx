@@ -102,15 +102,15 @@ const Profile = () => {
         if (cvRes.ok) {
           const cvData = await cvRes.json();
           const fetchedCVs = cvData.cvs || [];
-          
+
           // Map backend CV format to the ResumeItem UI format
           const mappedResumes = fetchedCVs.map(cv => ({
             id: cv.id,
             name: cv.cv_name,
             created_at: cv.created_at ? new Date(cv.created_at).toLocaleDateString() : 'Unknown Date',
-            data: cv.url || safwaResume // Fallback if url is missing
+            data: cv.url // Cloudinary URL
           }));
-          
+
           setResumes(mappedResumes);
 
           // Extract combined unique skills from all CVs natively
@@ -145,20 +145,11 @@ const Profile = () => {
 
   const fileInputRef = React.useRef(null);
 
-  const handleDeleteResume = async (id) => {
-    try {
-      const response = await fetch(`/api/v1/cv/${id}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        setResumes(resumes.filter(resume => resume.id !== id));
-      } else {
-        console.error("Failed to delete resume from server");
-        alert("Failed to delete resume. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error deleting resume:", error);
-      alert("Error deleting resume. Please try again.");
+  const handleDeleteResume = (id) => {
+    setResumes(resumes.filter(resume => resume.id !== id));
+    // Simulate updating mock data
+    if (currentUser) {
+      currentUser.resumes = currentUser.resumes.filter(r => r.id !== id);
     }
   };
 
@@ -258,7 +249,7 @@ const Profile = () => {
         id: data.file_id || `temp_${Date.now()}`,
         name: finalName,
         created_at: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric', year: 'numeric' }),
-        data: data.file_url 
+        data: data.file_url
       };
 
       setResumes([...resumes, newResume]);
