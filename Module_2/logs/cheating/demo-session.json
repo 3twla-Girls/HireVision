@@ -1,0 +1,31 @@
+{
+  "session_id": "demo-session",
+  "interview_id": "demo-interview",
+  "submitted_at": "2026-03-12T23:55:00.159801Z",
+  "total_warnings": 1,
+  "total_duration": 9.1,
+  "events": [
+    {
+      "type": "log_event",
+      "at": "00:17",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "warning",
+      "at": "00:20",
+      "duration": 5.0,
+      "head_dir": "Forward",
+      "gaze_dir": "Up",
+      "warning_number": 1
+    },
+    {
+      "type": "log_event",
+      "at": "00:26",
+      "duration": 2.0,
+      "head_dir": "Forward",
+      "gaze_dir": "Left"
+    }
+  ]
+}
