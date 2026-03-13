@@ -17,3 +17,5 @@ reportlab
 cachetools
 rapidfuzz
 rank_bm25
+
+torch
