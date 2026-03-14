@@ -268,6 +268,10 @@ export default function InterviewLive() {
   useEffect(() => { stepRef.current = currentStep; }, [currentStep]);
 
   // ── Cheating detection ────────────────────────────────────────
+  
+  // ── Fetch questions ───────────────────────────────────────────
+  const passedQuestions  = location.state?.questions;
+  const sessionIDFromState = location.state?.sessionId;
   const {
     isReady, isCalibrating, calibProgress,
     warningCount, warningLevel, selfCorrected,
@@ -275,15 +279,11 @@ export default function InterviewLive() {
   } = useCheatingDetection({
     videoRef,
     enabled:     cameraOn && !showGap,
-    sessionId:   'demo-session',
-    interviewId: 'demo-interview',
+    sessionId:   sessionIDFromState || localStorage.getItem('sessionId') || location.state?.sessionId,
+    interviewId: targetID,
   });
-
+  
   const showNudges = !isCalibrating;
-
-  // ── Fetch questions ───────────────────────────────────────────
-  const passedQuestions  = location.state?.questions;
-  const sessionIDFromState = location.state?.sessionId;
 
   useEffect(() => {
     const fetchQuestions = async () => {

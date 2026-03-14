@@ -193,6 +193,36 @@ export function useCheatingDetection({
   const hBuf = useRef([]);
   const vBuf = useRef([]);
 
+  //face authntication
+  useEffect(() => {
+    if (!enabled || !isReady || !sessionId || isCalibrating) return;
+
+    const interval = setInterval(() => {
+      const video = videoRef.current;
+      if (!video || video.readyState < 2) return;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const formData = new FormData();
+        formData.append("image", blob, "frame.jpg");
+
+        try {
+          const response = await api.post(`/proctoring/session/frame/${sessionId}`, formData);
+          console.log("Face Authntication:", response)
+        } catch (err) {
+          console.error("[FaceAuth] Frame send failed");
+        }
+      }, "image/jpeg", 0.7);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [enabled, isReady, sessionId, isCalibrating, videoRef]);
+
   // ── Model load ────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -249,29 +279,6 @@ export function useCheatingDetection({
 
     if (!sessionId) return;
 
-    // try {
-    //   await fetch("http://localhost:8000/api/cheating-log", {
-    //     method:  "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({
-    //       session_id:     sessionId,
-    //       interview_id:   interviewId ?? null,
-    //       total_warnings: totalWarnings,
-    //       total_duration: totalDuration,
-    //       events: events.map(e => ({
-    //         type:           e.type,
-    //         at:             e.at,
-    //         duration:       e.duration,
-    //         head_dir:       e.headDir        ?? null,
-    //         gaze_dir:       e.gazeDir        ?? null,
-    //         warning_number: e.warningNumber  ?? undefined,
-    //       })),
-    //     }),
-    //   });
-    //   console.log(`[useCheatingDetection] Summary sent — ${totalWarnings} warnings, ${totalDuration}s total`);
-    // } catch (err) {
-    //   console.warn("[useCheatingDetection] Summary POST failed:", err);
-    // }
     try {
       await api.post("/eye-gaze-cheating/cheating-log", {
         session_id:     sessionId,

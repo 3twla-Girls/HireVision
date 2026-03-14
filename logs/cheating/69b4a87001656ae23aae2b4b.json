@@ -1,0 +1,577 @@
+{
+  "session_id": "69b4a87001656ae23aae2b4b",
+  "interview_id": "69aa315763b720c25373f035",
+  "submitted_at": "2026-03-14T00:18:19.204934Z",
+  "total_warnings": 36,
+  "total_duration": 262.6,
+  "events": [
+    {
+      "type": "log_event",
+      "at": "00:07",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "00:12",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "warning",
+      "at": "00:15",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 1
+    },
+    {
+      "type": "log_event",
+      "at": "00:17",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "00:20",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 2
+    },
+    {
+      "type": "log_event",
+      "at": "00:22",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "warning",
+      "at": "00:25",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up",
+      "warning_number": 3
+    },
+    {
+      "type": "log_event",
+      "at": "00:27",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "00:30",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 4
+    },
+    {
+      "type": "log_event",
+      "at": "00:32",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "00:35",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 5
+    },
+    {
+      "type": "log_event",
+      "at": "00:37",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "00:40",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up",
+      "warning_number": 6
+    },
+    {
+      "type": "log_event",
+      "at": "00:42",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "00:45",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 7
+    },
+    {
+      "type": "log_event",
+      "at": "00:47",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "00:50",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up",
+      "warning_number": 8
+    },
+    {
+      "type": "log_event",
+      "at": "00:52",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "00:55",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up",
+      "warning_number": 9
+    },
+    {
+      "type": "log_event",
+      "at": "00:57",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "01:00",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 10
+    },
+    {
+      "type": "log_event",
+      "at": "01:02",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "warning",
+      "at": "01:05",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 11
+    },
+    {
+      "type": "log_event",
+      "at": "01:07",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "01:10",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 12
+    },
+    {
+      "type": "log_event",
+      "at": "01:12",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "01:15",
+      "duration": 5.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 13
+    },
+    {
+      "type": "log_event",
+      "at": "01:17",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:20",
+      "duration": 5.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 14
+    },
+    {
+      "type": "log_event",
+      "at": "01:22",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:25",
+      "duration": 5.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 15
+    },
+    {
+      "type": "log_event",
+      "at": "01:27",
+      "duration": 2.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:30",
+      "duration": 5.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 16
+    },
+    {
+      "type": "log_event",
+      "at": "01:32",
+      "duration": 2.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:36",
+      "duration": 5.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 17
+    },
+    {
+      "type": "log_event",
+      "at": "01:38",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:41",
+      "duration": 5.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 18
+    },
+    {
+      "type": "log_event",
+      "at": "01:43",
+      "duration": 2.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:46",
+      "duration": 5.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 19
+    },
+    {
+      "type": "log_event",
+      "at": "01:48",
+      "duration": 2.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "log_event",
+      "at": "01:56",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:00",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 20
+    },
+    {
+      "type": "log_event",
+      "at": "02:02",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:05",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 21
+    },
+    {
+      "type": "log_event",
+      "at": "02:07",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "warning",
+      "at": "02:10",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 22
+    },
+    {
+      "type": "log_event",
+      "at": "02:12",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "warning",
+      "at": "02:15",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 23
+    },
+    {
+      "type": "log_event",
+      "at": "02:17",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:20",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 24
+    },
+    {
+      "type": "log_event",
+      "at": "02:22",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:25",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 25
+    },
+    {
+      "type": "log_event",
+      "at": "02:27",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:30",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 26
+    },
+    {
+      "type": "log_event",
+      "at": "02:32",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "warning",
+      "at": "02:35",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 27
+    },
+    {
+      "type": "log_event",
+      "at": "02:37",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:40",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 28
+    },
+    {
+      "type": "log_event",
+      "at": "02:42",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:45",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 29
+    },
+    {
+      "type": "log_event",
+      "at": "02:47",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:50",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 30
+    },
+    {
+      "type": "log_event",
+      "at": "02:52",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "warning",
+      "at": "02:55",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 31
+    },
+    {
+      "type": "log_event",
+      "at": "02:57",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "03:00",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 32
+    },
+    {
+      "type": "log_event",
+      "at": "03:02",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "03:05",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 33
+    },
+    {
+      "type": "log_event",
+      "at": "03:07",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "03:10",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 34
+    },
+    {
+      "type": "log_event",
+      "at": "03:12",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "log_event",
+      "at": "03:23",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "warning",
+      "at": "03:26",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up",
+      "warning_number": 35
+    },
+    {
+      "type": "log_event",
+      "at": "03:28",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "03:31",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Up",
+      "warning_number": 36
+    },
+    {
+      "type": "log_event",
+      "at": "03:33",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    }
+  ]
+}

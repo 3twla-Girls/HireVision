@@ -1,4 +1,4 @@
-import { Camera, Headphones, Eye, Timer } from 'lucide-react'; // تأكدي من عمل الـ Import هنا
+import { Camera, Headphones, Eye, Timer } from 'lucide-react';
 
 export const INSTRUCTIONS_DATA = [
   {

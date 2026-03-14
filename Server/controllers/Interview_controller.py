@@ -57,7 +57,14 @@ class InterviewController(BaseController):
             "is_mock": is_mock,
             "session_date": datetime.utcnow(),
             "answers": [],
-            "final_summary": None
+            "final_summary": {
+                "technical": None,
+                "integrity": {
+                    "face_auth": None,
+                    "eye_gaze": None 
+                },
+                "personality": None
+            }
         }
 
         result = await self.sessions_collection.insert_one(session)
@@ -173,6 +180,35 @@ class InterviewController(BaseController):
             "evaluation": evaluation
         }
 
+    # async def generate_summary(self, session_id: str) -> Dict[str, Any]:
+    #     session = await self.sessions_collection.find_one(
+    #         {"_id": ObjectId(session_id)}
+    #     )
+
+    #     if not session:
+    #         raise Exception(f"Session {session_id} not found")
+
+    #     # Extract evaluations from all answers
+    #     evaluations = [
+    #         ans["evaluation"]
+    #         for ans in session.get("answers", [])
+    #         if "evaluation" in ans
+    #     ]
+
+    #     # Generate summary using Module 3 evaluator
+    #     summary = generate_final_summary(evaluations)
+
+    #     # Update session with final summary
+    #     await self.sessions_collection.update_one(
+    #         {"_id": ObjectId(session_id)},
+    #         {"$set": {"final_summary": summary}}
+    #     )
+
+    #     return {
+    #         "status": "summary_generated",
+    #         "summary": summary
+    #     }
+        
     async def generate_summary(self, session_id: str) -> Dict[str, Any]:
         session = await self.sessions_collection.find_one(
             {"_id": ObjectId(session_id)}
@@ -181,23 +217,51 @@ class InterviewController(BaseController):
         if not session:
             raise Exception(f"Session {session_id} not found")
 
-        # Extract evaluations from all answers
         evaluations = [
             ans["evaluation"]
             for ans in session.get("answers", [])
             if "evaluation" in ans
         ]
 
-        # Generate summary using Module 3 evaluator
-        summary = generate_final_summary(evaluations)
+        technical_summary = generate_final_summary(evaluations)
 
-        # Update session with final summary
+        from .ProctoringController import ProctoringController
+        proc_data = ProctoringController.active_sessions.get(session_id, {})
+        
+        face_auth_report = {
+            "status": "Passed" if proc_data.get("diff_miss_count", 0) < 3 else "Suspected",
+            "incidents_count": len(proc_data.get("incidents", [])),
+            "incidents": proc_data.get("incidents", []),
+            "counts": {
+                "different_person": proc_data.get("diff_miss_count", 0),
+                "no_face": proc_data.get("gone_miss_count", 0),
+                "multiple_faces": proc_data.get("multi_miss_count", 0)
+            }
+        }
+
+        update_query = {
+            "$set": {
+                "final_summary.technical": technical_summary,
+                "final_summary.integrity.face_auth": face_auth_report,
+                "final_summary.personality": {"status": "Pending Analysis"}
+            }
+        }
+
         await self.sessions_collection.update_one(
             {"_id": ObjectId(session_id)},
-            {"$set": {"final_summary": summary}}
+            update_query
         )
+
+        try:
+            proc_controller = await ProctoringController.create_instance()
+            proc_controller.end_session(session_id)
+        except Exception as e:
+            print(f"Cleanup warning: {e}")
+
+        updated_session = await self.sessions_collection.find_one({"_id": ObjectId(session_id)})
 
         return {
             "status": "summary_generated",
-            "summary": summary
+            "session_id": session_id,
+            "summary": updated_session.get("final_summary")
         }

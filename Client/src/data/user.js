@@ -27,7 +27,7 @@ const USERS = [
         education: "Information Systems",
         job_title: "Frontend Developer",
         location: "Dubai, UAE",
-        resumes: [ // إضافة اختيارية للتيست في الـ Modal
+        resumes: [
             { id: "r1", name: "My_Resume2.pdf", created_at: "20/2/2026",data:'/resume.pdf' },
             { id: "r2", name: "My_Resume.pdf", created_at: "15/1/2026" ,data:'/resume.pdf' }
         ],

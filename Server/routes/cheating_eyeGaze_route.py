@@ -16,13 +16,17 @@
 # ============================================================
 
 import logging
+from urllib import request
 
+from Server.models.enums import DataBaseEnum
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 import json, os
+from bson import ObjectId
+
 
 
 eyeGazeCheating_router = APIRouter(
@@ -80,9 +84,10 @@ async def debug_cheating_log(request: Request):
 # ─────────────────────────────────────────────────────────────
 #  POST /api/cheating-log
 # ─────────────────────────────────────────────────────────────
-
 @eyeGazeCheating_router.post("/cheating-log")
-async def save_cheating_log(payload: CheatingLogPayload):
+async def save_cheating_log(request: Request, payload: CheatingLogPayload):
+    current_file_path = log_path(payload.session_id)
+    
     record = {
         "session_id":     payload.session_id,
         "interview_id":   payload.interview_id,
@@ -102,15 +107,30 @@ async def save_cheating_log(payload: CheatingLogPayload):
         ],
     }
 
-    with open(log_path(payload.session_id), "w") as f:
+    with open(current_file_path, "w") as f:
         json.dump(record, f, indent=2)
 
-    print(
-        f"[cheating] {payload.session_id} | "
-        f"{payload.total_warnings} warnings | "
-        f"{payload.total_duration}s total away | "
-        f"{len(payload.events)} events"
-    )
+    print(f"[cheating] {payload.session_id} | {payload.total_warnings} warnings")
+
+    try:
+        db = request.app.db_client[DataBaseEnum.COLLECTION_INTERVIEW_SESSIONS_NAME.value]
+        
+        await db.update_one(
+            {"_id": ObjectId(payload.session_id)},
+            {
+                "$set": {
+                    "final_summary.integrity.eye_gaze": {
+                        "total_warnings": payload.total_warnings,
+                        "total_duration": round(payload.total_duration, 1),
+                        "status": "Passed" if payload.total_warnings < 3 else "High Alerts",
+                        "log_file_path": current_file_path
+                    }
+                }
+            }
+        )
+        print(f"✅ DB Updated for session: {payload.session_id}")
+    except Exception as e:
+        print(f"❌ DB Update failed: {str(e)}")
 
     return {"ok": True, "session_id": payload.session_id, "summary": record}
 

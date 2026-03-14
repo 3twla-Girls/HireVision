@@ -32,7 +32,6 @@ const InterviewSetup = () => {
     e.preventDefault();
     console.log("Form Data ", formData);
     
-    // التحقق من المهارات مطلوب فقط في حالة الموك
     if (isMock && formData.required_skills.length === 0) {
       toast.error("Please add at least one skill for the mock interview");
       return;
