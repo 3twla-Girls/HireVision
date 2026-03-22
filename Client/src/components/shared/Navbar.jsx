@@ -2,12 +2,8 @@ import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Search, Menu, X, PlusCircle } from 'lucide-react'
 import { assets } from '../../assets/assets'
-import USERS from '../../data/user';
 
-// Mock finding the current logged-in user
-const currentUser = USERS.find((user) => user.role === 'jobseeker');
-
-const Navbar = ({ role }) => {
+const Navbar = ({ role, profileImageUrl }) => {
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -86,9 +82,9 @@ const Navbar = ({ role }) => {
           )}
 
           {/* User Avatar */}
-          <Link to="/profile" className="flex-shrink-0">
+          <Link to={role === 'recruiter' ? '/recruiter-profile' : '/profile'} className="flex-shrink-0">
             <img
-              src={currentUser?.profile_image_url || "https://via.placeholder.com/40"}
+              src={profileImageUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23456882'/%3E%3Ccircle cx='20' cy='15' r='7' fill='%23ffffff' opacity='0.9'/%3E%3Cellipse cx='20' cy='35' rx='12' ry='9' fill='%23ffffff' opacity='0.9'/%3E%3C/svg%3E"}
               alt="Profile"
               className="w-12 h-12 rounded-full border-2 border-white/30 object-cover hover:border-white transition-colors bg-white/10"
             />

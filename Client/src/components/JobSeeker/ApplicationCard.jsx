@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { MapPin, FileText, Download, Eye } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import FeedbackModal from './FeedbackModal'
 
 const statusConfig = {
@@ -42,15 +43,24 @@ const tabBorderColor = {
     feedbacks: 'border-l-orange',
 }
 
-const ApplicationCard = ({ application }) => {
+const ApplicationCard = ({ application, navigable = false }) => {
     const config = statusConfig[application.status] || statusConfig['under review']
     const [showFeedback, setShowFeedback] = useState(false)
+    const navigate = useNavigate()
+
+    const handleCardClick = () => {
+        if (navigable && application.jobId) {
+            navigate(`/job/${application.jobId}`)
+        }
+    }
 
     return (
         <>
             <div
+                onClick={handleCardClick}
                 className={`bg-white rounded-2xl shadow-md px-6 py-5 border-l-[8px] ${tabBorderColor[application.tab] || 'border-l-dark-blue'
-                    } hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 ease-out group`}
+                    } hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 ease-out group
+                    ${navigable ? 'cursor-pointer' : ''}`}
             >
                 <div className="flex items-center gap-4">
                     {/* Company Logo Placeholder */}
@@ -93,7 +103,10 @@ const ApplicationCard = ({ application }) => {
 
                 {/* Feedback PDF (only for feedback tab) */}
                 {application.feedbackFile && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3">
+                    <div
+                        className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <FileText size={18} className="text-dark-orange shrink-0" />
                         <span className="text-[14px] font-medium text-dark-blue">
                             {application.feedbackFileName || 'Feedback.pdf'}
@@ -137,3 +150,4 @@ const ApplicationCard = ({ application }) => {
 }
 
 export default ApplicationCard
+

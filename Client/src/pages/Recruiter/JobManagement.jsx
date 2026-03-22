@@ -232,10 +232,24 @@ const JobManagement = () => {
     closed: jobs.filter(j => j.status === 'Closed').length,
   }), [jobs]);
 
-  const toggleStatus = (id) => {
-    setJobs(prev => prev.map(j =>
-      j.id === id ? { ...j, status: j.status === 'Open' ? 'Closed' : 'Open' } : j
-    ));
+  const toggleStatus = async (id) => {
+    const job = jobs.find(j => j.id === id);
+    if (!job) return;
+    const newStatus = job.status === 'Open' ? 'closed' : 'open';
+    try {
+      const res = await fetch(`/api/v1/job/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error('Failed to update status');
+      // Only update UI after DB confirms
+      setJobs(prev => prev.map(j =>
+        j.id === id ? { ...j, status: newStatus === 'open' ? 'Open' : 'Closed' } : j
+      ));
+    } catch (err) {
+      console.error('Could not update job status:', err);
+    }
   };
 
   const handleSelectJob = (id) => {

@@ -233,6 +233,37 @@ async def get_job(request: Request, job_id: str):
         )
 
 # =============================
+# Update Job Status only
+# =============================
+@job_router.patch("/{job_id}/status")
+async def update_job_status(request: Request, job_id: str):
+    from bson import ObjectId
+    faiss_service_job = request.app.state.faiss_service["faiss_service_job"]
+    job_controller = await JobController.create_instance(
+        db_client=request.app.db_client,
+        faiss_service_job=faiss_service_job
+    )
+    try:
+        body = await request.json()
+        new_status = body.get("status")
+        if new_status not in ("open", "closed"):
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": "INVALID_STATUS"}
+            )
+        await job_controller.job_model.update_job(
+            ObjectId(job_id),
+            {"status": new_status}
+        )
+        return JSONResponse(content={"signal": "JOB_STATUS_UPDATED", "status": new_status})
+    except Exception as e:
+        logger.error(f"Error updating job status: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": "JOB_STATUS_UPDATE_FAILED"}
+        )
+
+# =============================
 # Update Job
 # =============================
 @job_router.patch("/{job_id}")

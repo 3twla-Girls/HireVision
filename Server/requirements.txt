@@ -19,3 +19,4 @@ rapidfuzz
 rank_bm25
 
 torch
+opencv-python
