@@ -29,7 +29,10 @@ class UserModel(BaseDataModel):
 
     async def find_by_email(self, email: str):
         return await self.collection.find_one({"email": email})
-
+    
+    async def find_by_email_password(self, email: str,password: str):
+        return await self.collection.find_one({"email": email, "password": password})
+    
     async def find_by_id(self, user_id):
         return await self.collection.find_one({"_id": user_id})
 

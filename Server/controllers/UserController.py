@@ -78,6 +78,17 @@ class UserController(BaseController):
         user = UserController.serialize_mongo_doc(user)
 
         return user
+    
+    
+    async def get_user_email_password(self, email: str, password: str):
+        user = await self.user_model.find_by_email_password(email, password)
+        if not user:
+            raise Exception("USER_NOT_FOUND")
+
+        # Convert ObjectId and datetime fields
+        user = UserController.serialize_mongo_doc(user)
+
+        return user 
     # =============================
     # Update User
     # =============================

@@ -106,6 +106,27 @@ async def get_user(request: Request, user_id: str):
             status_code=status.HTTP_404_NOT_FOUND,
             content={"signal": str(e)}
         )
+# =============================
+# Get User by email and password
+# =============================
+@user_router.get("/{email}/{password}")
+async def login(request: Request, email: str, password: str):
+    controller = await UserController.create_instance(request.app.db_client)
+
+    try:
+        user = await controller.get_user_email_password(email, password)
+        return JSONResponse(content={"user": user})
+
+    except InvalidId:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": "INVALID_USER_ID"}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"signal": str(e)}
+        )
 
 # =============================
 # Update User

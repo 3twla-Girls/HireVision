@@ -3,8 +3,9 @@ import { SlidersHorizontal, SearchX, RefreshCw } from 'lucide-react'
 import FilterSidebar from '../../components/JobSeeker/FilterSidebar'
 import JobCard from '../../components/JobSeeker/JobCard'
 import RightSidebar from '../../components/JobSeeker/RightSidebar'
+const user = JSON.parse(sessionStorage.getItem("user"));
 
-const CURRENT_USER_ID = '69aa315763b720c25373f035'
+const CURRENT_USER_ID = user._id
 
 // Map API job fields → JobCard prop shape
 const mapJob = (job) => {

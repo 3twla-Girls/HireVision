@@ -8,7 +8,8 @@ import {
 import { JOBS } from '../../data/jobs';
 
 /* ─── helpers ──────────────────────────────────────────────── */
-const CURRENT_RECRUITER_ID = "69aa302c63b720c25373f034";
+const user = JSON.parse(sessionStorage.getItem("user"));
+const CURRENT_RECRUITER_ID = user._id
 
 const inferWorkplace = (jobType) => {
   if (!jobType) return "On site";

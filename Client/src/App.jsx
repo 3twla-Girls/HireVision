@@ -5,6 +5,7 @@ import Home from './pages/JobSeeker/Home'
 import Job from './pages/JobSeeker/Job'
 import Layout from './pages/shared/Layout'
 import Login from './pages/shared/Login'
+import Register from './pages/shared/Register'
 import Applications from './pages/JobSeeker/Applications'
 import Interviews from './pages/JobSeeker/Interviews'
 import InterviewLive from './pages/JobSeeker/InterviewLive'
@@ -45,7 +46,7 @@ const App = () => {
           <Route path='job-preview/:jobId' element={<JobPreview />} />
           <Route path='job-applications/:jobId' element={<JobApplications/>} />
           <Route path='recruiter-profile' element={<RecruiterProfile />} />
-
+          <Route path='register' element={<Register />} />
 
         </Route>
       </Routes>
