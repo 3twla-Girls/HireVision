@@ -37,6 +37,7 @@ const inferType = (jobType) => {
         const fetchJobData = async () => {
             try {
                 const response = await api.get(`/job/${jobId}`);
+                console.log("Job data:", response.data);
                 setJob(response.data);
 
             } catch (error) {

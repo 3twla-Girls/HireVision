@@ -4,4 +4,5 @@ const api = axios.create({
     baseURL: import.meta.env.VITE_BASEURL
 })
 
+console.log("API Base URL:", import.meta.env.VITE_BASEURL)
 export default api

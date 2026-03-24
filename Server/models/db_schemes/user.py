@@ -11,13 +11,11 @@ class CreateUserScheme(BaseModel):
 
     profile_image_url: Optional[str] = None
     profile_image_public_id: Optional[str] = None
-
-    # ---------------- JobSeeker fields ----------------
-    education: Optional[str] = None
     job_title: Optional[str] = None
     location: Optional[str] = None
+    # ---------------- JobSeeker fields ----------------
+    education: Optional[str] = None
     date_of_birth: Optional[datetime] = None  # ✅ Added
-
     # ---------------- Recruiter fields ----------------
     company_name: Optional[str] = None
     company_web_link: Optional[str] = None
@@ -34,8 +32,6 @@ class UpdateUserScheme(BaseModel):
 
     # ---------------- JobSeeker fields ----------------
     education: Optional[str] = None
-    job_title: Optional[str] = None
-    location: Optional[str] = None
     date_of_birth: Optional[datetime] = None  # ✅ Added
 
     # ---------------- Recruiter fields ----------------
