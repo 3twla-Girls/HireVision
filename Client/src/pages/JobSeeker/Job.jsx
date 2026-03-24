@@ -5,8 +5,7 @@ import { SearchX, Loader2 } from 'lucide-react'
 import ApplyModal from '../../components/JobSeeker/ApplyModal'
 import SimilarJobCard from '../../components/JobSeeker/SimilarJobCard'
 import CircularScore from '../../components/shared/CircularScore'
-
-const CURRENT_USER_ID = '69aa315763b720c25373f035'
+import { useAuth } from '../../context/AuthContext'
 
 // Maps raw API job doc → the shape JobDetails / SimilarJobCard expect
 const mapJobFromApi = (j) => {
@@ -44,6 +43,8 @@ const mapJobFromApi = (j) => {
 const Job = () => {
   const location = useLocation();
   const { jobId } = useParams();
+  const { userData } = useAuth();
+  const candidateId = userData?._id ?? userData?.id ?? null;
 
   // Use state if navigated with it (e.g. from Home/JobCard), else fetch from API
   const [job, setJob]           = useState(location.state?.job || null);
@@ -92,9 +93,9 @@ const Job = () => {
   useEffect(() => {
     const checkApplicationStatus = async () => {
       const currentJobId = jobId || job?.id;
-      if (!currentJobId) return;
+      if (!currentJobId || !candidateId) return;
       try {
-        const res = await fetch(`/api/v1/application/candidate/${CURRENT_USER_ID}`);
+        const res = await fetch(`/api/v1/application/candidate/${candidateId}`);
         if (!res.ok) return;
         const apps = await res.json();
         const match = Array.isArray(apps)
@@ -106,7 +107,7 @@ const Job = () => {
       }
     };
     checkApplicationStatus();
-  }, [jobId, job?.id]);
+  }, [jobId, job?.id, candidateId]);
 
   useEffect(() => {
     setSimilarJobs([]);
@@ -262,7 +263,12 @@ const Job = () => {
 
       {/* Apply Modal */}
       {showApply && (
-        <ApplyModal setShowApply={setShowApply} jobTitle={job.title} />
+        <ApplyModal
+          setShowApply={setShowApply}
+          jobTitle={job.title}
+          jobId={job.id}
+          candidateId={candidateId}
+        />
       )}
     </div>
   );

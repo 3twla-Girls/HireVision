@@ -12,27 +12,16 @@ import {
   Briefcase,
   Calendar,
   CheckCircle2,
-  Settings,
-  PenTool,
-  Layout,
-  Server,
-  Code,
-  Terminal,
-  Wind,
   Database,
   Trash2,
   Upload,
-  Edit3
+  Loader2
 } from 'lucide-react';
 import { assets } from '../../assets/assets';
-
-
-import USERS from '../../data/user';
+import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 import FeedbackModal from '../../components/JobSeeker/FeedbackModal';
 import safwaResume from '../../data/Safwa Ibrahim Resume (1).pdf';
-
-// We will fetch the actual backend user dynamically now
-const CURRENT_USER_ID = "69aa315763b720c25373f035";
 
 
 const normalizeSkill = (skill) => {
@@ -78,42 +67,47 @@ const SkillBadge = ({ label }) => {
 
 
 const Profile = () => {
+  const { userData } = useAuth();
+  const candidateId = userData?._id ?? userData?.id ?? null;
+
   const [currentUser, setCurrentUser] = React.useState(null);
   const [loadingProfile, setLoadingProfile] = React.useState(true);
   const [isUploading, setIsUploading] = React.useState(false);
   const [skills, setSkills] = React.useState([]);
   const [resumes, setResumes] = React.useState([]);
+  const [stats, setStats] = React.useState({ totalApplications: 0, interviews: 0, accepted: 0 });
 
   React.useEffect(() => {
+    if (!candidateId) return;
+
     const fetchUserData = async () => {
       try {
         setLoadingProfile(true);
 
-        const [userRes, cvRes] = await Promise.all([
-          fetch(`/api/v1/user/${CURRENT_USER_ID}`),
-          fetch(`/api/v1/cv/user/${CURRENT_USER_ID}`)
+        const [userRes, cvRes, appRes] = await Promise.all([
+          fetch(`/api/v1/user/${candidateId}`),
+          fetch(`/api/v1/cv/user/${candidateId}`),
+          fetch(`/api/v1/application/candidate/${candidateId}`),
         ]);
 
         if (userRes.ok) {
-          const userData = await userRes.json();
-          setCurrentUser(userData.user);
+          const userDataRes = await userRes.json();
+          setCurrentUser(userDataRes.user);
         }
 
         if (cvRes.ok) {
           const cvData = await cvRes.json();
           const fetchedCVs = cvData.cvs || [];
 
-          // Map backend CV format to the ResumeItem UI format
           const mappedResumes = fetchedCVs.map(cv => ({
             id: cv.id,
             name: cv.cv_name,
             created_at: cv.created_at ? new Date(cv.created_at).toLocaleDateString() : 'Unknown Date',
-            data: cv.url // Cloudinary URL
+            url: cv.url ?? null,
           }));
 
           setResumes(mappedResumes);
 
-          // Extract combined unique skills from all CVs natively
           const combinedSkills = new Set();
           fetchedCVs.forEach(cv => {
             if (cv.extracted_skills && Array.isArray(cv.extracted_skills)) {
@@ -121,6 +115,18 @@ const Profile = () => {
             }
           });
           setSkills(Array.from(combinedSkills));
+        }
+
+        if (appRes.ok) {
+          const apps = await appRes.json();
+          const list = Array.isArray(apps) ? apps : [];
+          const accepted = list.filter(a => a.status === 'accepted').length;
+          // interviews = sessions might need separate API; use accepted as fallback count
+          setStats({
+            totalApplications: list.length,
+            interviews: list.filter(a => a.status === 'accepted').length,
+            accepted,
+          });
         }
 
       } catch (error) {
@@ -131,7 +137,7 @@ const Profile = () => {
     };
 
     fetchUserData();
-  }, []);
+  }, [candidateId]);
 
   const [isAddingSkill, setIsAddingSkill] = React.useState(false);
   const [newSkill, setNewSkill] = React.useState("");
@@ -145,11 +151,16 @@ const Profile = () => {
 
   const fileInputRef = React.useRef(null);
 
-  const handleDeleteResume = (id) => {
-    setResumes(resumes.filter(resume => resume.id !== id));
-    // Simulate updating mock data
-    if (currentUser) {
-      currentUser.resumes = currentUser.resumes.filter(r => r.id !== id);
+  const handleDeleteResume = async (id) => {
+    const toastId = toast.loading('Deleting CV…');
+    try {
+      const res = await fetch(`/api/v1/cv/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
+      setResumes(prev => prev.filter(r => r.id !== id));
+      toast.success('CV deleted successfully.', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete CV. Please try again.', { id: toastId });
     }
   };
 
@@ -168,19 +179,22 @@ const Profile = () => {
     const resumeToDownload = resumes.find(r => r.id === resumeId);
     let hrefToUse = safwaResume; // fallback to the static one
 
-    if (resumeToDownload && resumeToDownload.data) {
-      hrefToUse = resumeToDownload.data;
+    if (resumeToDownload?.url) {
+      hrefToUse = resumeToDownload.url;
     }
 
     const link = document.createElement('a');
     link.href = hrefToUse;
     link.download = resumeName;
+    link.target = '_blank';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   const handleViewResume = (resume) => {
+    // Always use the modal iframe viewer — it renders PDFs inline.
+    // window.open on Cloudinary raw URLs triggers a download instead of viewing.
     setSelectedResume(resume);
     setIsResumeModalOpen(true);
   };
@@ -222,19 +236,26 @@ const Profile = () => {
     e.target.value = '';
   };
 
-  const handleConfirmUpload = async () => {
+  const handleConfirmUpload = () => {
     if (!pendingUploadFile) return;
 
-    try {
-      setIsUploading(true);
-      const newName = uploadName.trim() || pendingUploadFile.name;
-      const finalName = newName.toLowerCase().endsWith('.pdf') ? newName : `${newName}.pdf`;
+    // 1. Prepare data
+    const fileToUpload = pendingUploadFile;
+    const newName = uploadName.trim() || fileToUpload.name;
+    const finalName = newName.toLowerCase().endsWith('.pdf') ? newName : `${newName}.pdf`;
 
-      const formData = new FormData();
-      formData.append("file", pendingUploadFile, finalName);
-      formData.append("job_role", currentUser?.job_title || "Software Engineer");
+    const formData = new FormData();
+    formData.append("file", fileToUpload, finalName);
+    formData.append("job_role", currentUser?.job_title || "Software Engineer");
 
-      const response = await fetch(`/api/v1/cv/upload/${CURRENT_USER_ID}`, {
+    // 2. Immediately close the modal and reset states so user can continue
+    setIsNamePromptOpen(false);
+    setPendingUploadFile(null);
+    setUploadName("");
+
+    // 3. Run the upload in the background with a toast promise
+    const uploadPromise = async () => {
+      const response = await fetch(`/api/v1/cv/upload/${candidateId}`, {
         method: 'POST',
         body: formData,
       });
@@ -248,11 +269,12 @@ const Profile = () => {
       const newResume = {
         id: data.file_id || `temp_${Date.now()}`,
         name: finalName,
-        created_at: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric', year: 'numeric' }),
-        data: data.file_url
+        created_at: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+        url: data.file_url
       };
 
-      setResumes([...resumes, newResume]);
+      // Add to state once finished
+      setResumes((prev) => [...prev, newResume]);
 
       if (data.extracted_skills && Array.isArray(data.extracted_skills)) {
         setSkills(prevSkills => {
@@ -260,15 +282,15 @@ const Profile = () => {
           return Array.from(combined);
         });
       }
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert("Failed to upload resume. Please try again.");
-    } finally {
-      setIsUploading(false);
-      setIsNamePromptOpen(false);
-      setPendingUploadFile(null);
-      setUploadName("");
-    }
+
+      return data;
+    };
+
+    toast.promise(uploadPromise(), {
+      loading: 'Uploading CV in background...',
+      success: 'CV uploaded successfully! AI extraction complete.',
+      error: 'Failed to upload CV. Please try again.',
+    });
   };
 
   const handleCancelUpload = () => {
@@ -392,7 +414,7 @@ const Profile = () => {
                 setIsResumeModalOpen(false);
                 setSelectedResume(null);
               }}
-              feedbackFile={selectedResume?.data || safwaResume}
+              feedbackFile={selectedResume?.url || safwaResume}
               jobTitle={selectedResume?.name || "Resume"}
               modalTitle="Resume:"
               downloadName={selectedResume?.name || "Resume.pdf"}
@@ -462,6 +484,7 @@ const Profile = () => {
                     onView={() => handleViewResume(resume)}
                     onDownload={() => handleDownloadResume(resume.id, resume.name)}
                     onDelete={() => handleDeleteResume(resume.id)}
+                    hasUrl={!!resume.url}
                   />
                 ))}
                 {resumes.length === 0 && (
@@ -474,9 +497,9 @@ const Profile = () => {
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-light-gray2/60">
               <h2 className="text-[17px] font-bold text-dark-blue mb-5">Profile Stats</h2>
               <div className="flex flex-col gap-4">
-                <StatItem icon={Briefcase} label="Applications" value={currentUser?.stats?.totalApplications || 0} iconBg="bg-light-gray1" iconColor="text-dark-blue/70" />
-                <StatItem icon={Calendar} label="Interviews" value={currentUser?.stats?.interviews || 0} iconBg="bg-light-gray1" iconColor="text-dark-blue/70" />
-                <StatItem icon={CheckCircle2} label="Accepted" value={currentUser?.stats?.accepted || 0} iconBg="bg-light-teal" iconColor="text-teal" />
+                <StatItem icon={Briefcase} label="Applications" value={stats.totalApplications} iconBg="bg-light-gray1" iconColor="text-dark-blue/70" />
+                <StatItem icon={Calendar} label="Interviews" value={stats.interviews} iconBg="bg-light-gray1" iconColor="text-dark-blue/70" />
+                <StatItem icon={CheckCircle2} label="Accepted" value={stats.accepted} iconBg="bg-light-teal" iconColor="text-teal" />
               </div>
             </div>
 

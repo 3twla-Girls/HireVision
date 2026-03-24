@@ -1,6 +1,20 @@
 import React from 'react'
 import { X, Download } from 'lucide-react'
 
+/**
+ * Returns a viewable src for the iframe:
+ * - Cloudinary / external http URLs: wrap with Google Docs Viewer so the PDF
+ *   renders inline even though Cloudinary serves raw files as attachments.
+ * - Local / blob URLs: use directly.
+ */
+const getViewerSrc = (url) => {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`
+  }
+  return url
+}
+
 const FeedbackModal = ({ isOpen, onClose, feedbackFile, jobTitle, modalTitle = "Feedback for:", downloadName }) => {
     if (!isOpen) return null
 
@@ -66,10 +80,12 @@ const FeedbackModal = ({ isOpen, onClose, feedbackFile, jobTitle, modalTitle = "
                     </button>
                 </div>
 
-                {/* PDF Viewer */}
+                {/* PDF Viewer — Google Docs Viewer handles external URLs that
+                    can't be embedded directly (e.g. Cloudinary raw files). */}
                 <div className="flex-1 bg-gray-100">
                     <iframe
-                        src={feedbackFile}
+                        key={feedbackFile}
+                        src={getViewerSrc(feedbackFile)}
                         title={`Feedback for ${jobTitle}`}
                         className="w-full h-full border-0"
                     />
