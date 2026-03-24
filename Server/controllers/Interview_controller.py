@@ -262,7 +262,10 @@ class InterviewController(BaseController):
             "$set": {
                 "final_summary.technical": technical_summary,
                 "final_summary.integrity.face_auth": face_auth_report,
-                "final_summary.personality": {"status": "Pending Analysis"}
+                "final_summary.personality": {
+                                                "status": "collecting",
+                                                "traits_list": []
+                                             }
             }
         }
 

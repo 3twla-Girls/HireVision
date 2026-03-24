@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, MapPin, GraduationCap, Clock, Send, Plus, X } from 'lucide-react';
+import { Briefcase, MapPin, GraduationCap, Clock, Send, Plus, X, ListOrdered, Shuffle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
 
 const JOB_TYPES = [
   { value: "full_time", label: "Full Time" },
@@ -15,7 +16,6 @@ const JOB_TYPES = [
 const JOB_STATUS = [
   { value: "open", label: "Open" },
   { value: "closed", label: "Closed" },
-  { value: "expired", label: "Expired" }
 ];
 
 const WORKPLACE_TYPES = [
@@ -29,6 +29,10 @@ const PostJob = () => {
   const [loading, setLoading] = useState(false);
   const [skillInput, setSkillInput] = useState("");
 
+  // const user = JSON.parse(sessionStorage.getItem("user"));
+  const { userData } = useAuth();
+  const recruiterId = userData?._id;
+
   const [formData, setFormData] = useState({
     job_title: "",
     job_description: "",
@@ -40,10 +44,9 @@ const PostJob = () => {
     city: "",
     job_type: "full_time",
     workplace: "on_site",
-    num_questions: 5, 
-    number_of_questions_per_interview: 3
+    num_questions: 10, // Total questions to generate for the job bank
+    number_of_questions_per_interview: 5 // Questions picked per interview session
   });
-  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -78,7 +81,7 @@ const PostJob = () => {
     }
     
     setLoading(true);
-    const recruiterId = "69aa302c63b720c25373f034"; 
+    // const recruiterId = "69aa302c63b720c25373f034"; 
 
     const finalData = {
       ...formData,
@@ -89,16 +92,32 @@ const PostJob = () => {
     };
 
     try {
+      // 1. Create the Job
       const response = await api.post(`/job/create/${recruiterId}`, finalData);
       
       if (response.data.signal === "JOB_CREATED_SUCCESSFULLY") {
         const newJobId = response.data.job_id;
-        toast.success('Job posted successfully!');
+        toast.success('Job created! Now generating interview questions...');
+
+        // 2. Generate Questions (Non-blocking UI, but showing progress)
+        // This endpoint takes time as it calls AI
+        try {
+          toast.loading("AI is crafting your interview questions...", { id: "gen_loading" });
+          
+          await api.post(`/questions/generate-interview-questions/${newJobId}`);
+          
+          toast.success("AI questions generated successfully!", { id: "gen_loading" });
+        } catch (genError) {
+          console.error("Question Generation Error:", genError);
+          toast.error("Job created, but question generation failed. You can retry later.", { id: "gen_loading" });
+        }
+
+        // Final Navigation
         setTimeout(() => {
           navigate(`/job-preview/${newJobId}`);
         }, 1500);
       } else {
-        toast.error("Something went wrong");
+        toast.error("Something went wrong with job creation");
       }
     } catch (error) {
       console.error("Full Error:", error);
@@ -108,7 +127,6 @@ const PostJob = () => {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-20 font-sans">
@@ -209,6 +227,31 @@ const PostJob = () => {
             <h3 className="text-xl font-bold mb-8 border-b border-white/10 pb-4 italic tracking-tight">JOB CONFIGURATION</h3>
             
             <div className="space-y-6">
+              {/* Interview AI Configuration */}
+              <div className="bg-white/5 p-5 rounded-3xl border border-white/10 space-y-4 mb-4">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF914D]">AI Interview Settings</h4>
+                
+                <div className="group">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-2 block flex items-center gap-2">
+                    <ListOrdered size={12} /> Questions Bank Size
+                  </label>
+                  <input 
+                    type="number" name="num_questions" value={formData.num_questions} onChange={handleInputChange}
+                    className="w-full bg-white/10 border border-white/20 p-4 rounded-2xl outline-none focus:bg-white/20 transition-all font-bold"
+                  />
+                </div>
+
+                <div className="group">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-2 block flex items-center gap-2">
+                    <Shuffle size={12} /> Questions Per Session
+                  </label>
+                  <input 
+                    type="number" name="number_of_questions_per_interview" value={formData.number_of_questions_per_interview} onChange={handleInputChange}
+                    className="w-full bg-white/10 border border-white/20 p-4 rounded-2xl outline-none focus:bg-white/20 transition-all font-bold"
+                  />
+                </div>
+              </div>
+
               <div className="group">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-2 block">Job Type</label>
                 <select 

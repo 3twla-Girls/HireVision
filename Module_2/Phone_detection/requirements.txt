@@ -1,0 +1,8 @@
+# HireVision — Phone Usage Detection API
+# pip install -r requirements.txt
+
+    # required for FastAPI file uploads
+ultralytics      # YOLOv8 (match your Kaggle training version)
+opencv-python
+torch
+torchvision

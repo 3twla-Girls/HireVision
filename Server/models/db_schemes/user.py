@@ -37,3 +37,4 @@ class UpdateUserScheme(BaseModel):
     # ---------------- Recruiter fields ----------------
     company_name: Optional[str] = None
     company_web_link: Optional[str] = None
+    

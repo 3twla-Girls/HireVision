@@ -23,6 +23,7 @@ const JobApplications = () => {
     const { jobId } = useParams()
     const navigate = useNavigate()
     const [filterPanelOpen, setFilterPanelOpen] = useState(false)
+    const [candidate,setCandidate] = useState(null)
 
     const { deleteJob, isDeleting } = useDeleteJob()
 
@@ -33,25 +34,55 @@ const JobApplications = () => {
     // city:    string
     const [job, setJob] = useState(null)
     const [filters, setFilters] = useState({ sort: '', status: {}, country: '', city: '' })
+    const [applications, setApplications] = useState([])
 
     useEffect(() => {
+        let isMounted = true;
+
         const fetchJobData = async () => {
-        try {
-            const response = await api.get(`/job/${jobId}`);
-            setJob(response.data);
+            try {
+                const response = await api.get(`/job/${jobId}`);
+                if (!isMounted) return;
+                
+                setJob(response.data);
 
-            // const locationParts = job.location ? job.location.split(', ') : ["", ""];
-            // const country = locationParts[1] || "";
-            // const city = locationParts[0] || "";
+                if (response.status === 200) {
+                    try {
+                        const appsResponse = await api.get(`/application/job/${jobId}`);
+                        const appsList = appsResponse.data || [];
 
-        } catch (error) {
-            console.error("Error fetching job:", error);
-            toast.error("Failed to load job data");
-            navigate('/job-management');
-        }
+                        const enrichedApps = await Promise.all(
+                            appsList.map(async (app) => {
+                                try {
+                                    const candidateRes = await api.get(`/user/${app.candidate_id}`);
+                                    return { ...app, candidate: candidateRes.data };
+                                } catch (e) {
+                                    console.error(`Failed to fetch candidate ${app.candidate_id}`, e);
+                                    return { ...app, candidate: null };
+                                }
+                            })
+                        );
+
+                        if (isMounted) {
+                            setApplications(enrichedApps);
+                            console.log("app:",enrichedApps)
+                        }
+                    } catch (error) {
+                        console.error("Error fetching applications:", error);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching job:", error);
+                if (isMounted) {
+                    toast.error("Failed to load job data");
+                    navigate('/job-management');
+                }
+            }
         };
 
         fetchJobData();
+
+        return () => { isMounted = false; }; // Cleanup function
     }, [jobId, navigate]);
 
 
@@ -61,18 +92,18 @@ const JobApplications = () => {
     //     [jobId]
     // )
 
-    const enriched = useMemo(() =>
-        APPLICATIONS
-            .filter(a => a.job_id === job?._id)
-            .map(a => ({
-                ...a,
-                candidate: CANDIDATES.find(c => c._id === a.candidate_id) ?? null,
-            })),
-        [job]
-    )
+    // const enriched = useMemo(() =>
+    //     APPLICATIONS
+    //         .filter(a => a.job_id === job?._id)
+    //         .map(a => ({
+    //             ...a,
+    //             candidate: CANDIDATES.find(c => c._id === a.candidate_id) ?? null,
+    //         })),
+    //     [job]
+    // )
 
     var displayed = useMemo(() => {
-        let list = [...enriched]
+        let list = applications
 
         const activeStatuses = Object.keys(filters.status || {})
                                       .filter(k => filters.status[k])
@@ -102,7 +133,7 @@ const JobApplications = () => {
         if (sort === 'Oldest First') list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
 
         return list
-    }, [enriched, filters])
+    }, [applications, filters])
 
     // ── Pagination variables ─────────────────────────────────────────
     const [currentPage, setCurrentPage] = useState(1)
@@ -120,20 +151,21 @@ const JobApplications = () => {
     )
 
     const lastUpdate = useMemo(() => {
-        if (!enriched.length) return '—'
-        const latest = enriched.reduce((a, b) =>
+        if (!applications.length) return '—'
+        const latest = applications.reduce((a, b) =>
             new Date(a.created_at) > new Date(b.created_at) ? a : b
         )
         return timeAgo(latest.created_at)
-    }, [enriched])
+    }, [applications])
 
     // ── Shared row renderer ───────────────────────────────
     const renderRow = (app, i) => {
-        const c           = app.candidate
-        const displayName = c?.name ?? `Candidate #${app.candidate_id.slice(-4)}`
-        const displayCity = c?.location ?? job?.location ?? '—'
-        const avatar      = c?.profile_image_url ?? null
-        const initials    = c?.name ? c.name.slice(0, 2).toUpperCase() : '??'
+        const candidate           = app.candidate.user
+        console.log("candidate : ",candidate)
+        const displayName = candidate?.name ?? `Candidate #${app.candidate_id.slice(-4)}`
+        const displayCity = candidate?.location ?? job?.location ?? '—'
+        const avatar      = candidate?.profile_image_url ?? null
+        const initials    = candidate?.name ? candidate.name.slice(0, 2).toUpperCase() : '??'
 
         return (
             <tr key={`${app._id}-${i}`} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
@@ -174,7 +206,8 @@ const JobApplications = () => {
 
     // ── Shared card renderer (mobile / tablet) ────────────
     const renderCard = (app, i) => {
-        const c           = app.candidate
+        const c           = app.candidate.user
+        console.log("candidate: ",c)
         const displayName = c?.name ?? `Candidate #${app.candidate_id.slice(-4)}`
         const displayCity = c?.location ?? job?.location ?? '—'
         const avatar      = c?.profile_image_url ?? null
@@ -236,7 +269,7 @@ const JobApplications = () => {
 
                     {/* Job Header — Mobile/Tablet only */}
                     <div className="block md:block lg:hidden">
-                        <JobHeader compact={false} job={job} enriched={enriched} lastUpdate={lastUpdate} />
+                        <JobHeader compact={false} job={job} enriched={applications} lastUpdate={lastUpdate} />
                     </div>
 
                     
@@ -261,7 +294,7 @@ const JobApplications = () => {
                                             <span className={`w-1.5 h-1.5 rounded-full ${job?.status === 'open' ? 'bg-green-500' : job?.status === 'closed' ? 'bg-red-500' : 'bg-yellow-500'} inline-block`} />
                                             {job?.status === 'open' ? 'Active' : (job?.status ?? 'Active')}
                                         </span>
-                                        <span className="text-sm text-gray-500">Total Applicants: <strong className="text-dark-orange">{enriched.length}</strong></span>
+                                        <span className="text-sm text-gray-500">Total Applicants: <strong className="text-dark-orange">{applications.length}</strong></span>
                                         <span className="text-sm text-gray-500">Last Update: <strong className="text-gray-900">{lastUpdate}</strong></span>
                                     </div>
                                 </div>

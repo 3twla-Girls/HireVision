@@ -265,6 +265,7 @@ export default function InterviewLive() {
   const [timeLeft,     setTimeLeft]     = useState(QUESTION_TIME);
   const [showGap,      setShowGap]      = useState(false);
   const [gapTime,      setGapTime]      = useState(GAP_TIME);
+  const [selectedOption, setSelectedOption] = useState(null);
 
   // Keep stepRef in sync (used inside async callbacks)
   useEffect(() => { stepRef.current = currentStep; }, [currentStep]);
@@ -557,12 +558,39 @@ export default function InterviewLive() {
         {/* Left: question + tip */}
         <div className="space-y-8">
           <div>
-            <p className="mt-2 text-sm font-semibold text-dark-blue/50 uppercase tracking-wider mb-2">
+            <p className="mt-8 text-sm font-semibold text-dark-blue/50 uppercase tracking-wider mb-2">
               Question {currentStep + 1} of {questions.length}
             </p>
-            <h2 className="mt-10 mb-28 text-2xl font-extrabold leading-snug min-h-[100px]">
+            <h2 className="mt-6 mb-6 text-2xl font-extrabold leading-snug min-h-[100px]">
               {questions[currentStep]?.question}
             </h2>
+            {/* MCQ Options */}
+            {questions[currentStep]?.type === 'mcq' && (
+              <div className="mt-2 space-y-3 space-x-3">
+                {questions[currentStep]?.options.map((option, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedOption(option)}
+                    className={`w-fit text-left p-4 pr-6 rounded-xl border-2 transition-all ${
+                      selectedOption === option
+                        ? 'border-dark-blue bg-dark-blue/5 shadow-md'
+                        : 'border-gray-100 hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold ${
+                        selectedOption === option ? 'bg-dark-blue text-white' : 'text-gray-400'
+                      }`}>
+                        {String.fromCharCode(65 + idx)} {/* A, B, C, D */}
+                      </span>
+                      <span className={selectedOption === option ? 'font-bold text-dark-blue' : 'text-gray-700'}>
+                        {option}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-start gap-4">
             <AlertCircle className="text-blue-500 shrink-0 mt-0.5" size={20} />
@@ -574,7 +602,7 @@ export default function InterviewLive() {
         </div>
 
         {/* Right: video + controls */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
 
           {/* Timer + warning badge */}
           <div className="flex items-center justify-between">

@@ -3,6 +3,8 @@ import { assets } from "../../assets/assets";
 import { Link, Navigate } from "react-router-dom";
 import api from '../../api/axios'
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+
 
 /* ─────────────────────────────────────────────
    Only keyframe animations that Tailwind can't
@@ -376,7 +378,7 @@ export default function HireVision() {
   const [fKey, setFKey] = useState(0);
   const fileRef = useRef();
   const navigate = useNavigate();
-
+  const { login } = useAuth()
   /* inject minimal keyframes once */
   useEffect(() => {
     const tag = document.createElement("style");
@@ -432,6 +434,10 @@ export default function HireVision() {
           sessionStorage.removeItem("user");
           // Save user data in sessionStorage
           sessionStorage.setItem("user", JSON.stringify(response.data.user));
+
+          //here we save user data using context
+          login(response.data.user);
+
           if (response.data.user.role === "jobseeker") {
             navigate("/"); // Redirect to Home page
           } else if (response.data.user.role === "recruiter") {
@@ -461,7 +467,7 @@ export default function HireVision() {
       formData.append("password", pwd);
       formData.append("role", role);
 
-      if (role === "seeker") {
+      if (role === "jobseeker") {
         formData.append(
           "education",
           document.querySelector("input[placeholder='Education']")?.value,

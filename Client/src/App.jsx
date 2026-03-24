@@ -25,10 +25,16 @@ import EditJob from "./pages/Recruiter/EditJob";
 import Layout from "./pages/shared/Layout";
 import Login from "./pages/shared/Login";
 import Register from "./pages/shared/Register";
+import { useAuth } from "./context/AuthContext";
 
 const App = () => {
-  const user = JSON.parse(sessionStorage.getItem("user"));
-
+  // const userData = JSON.parse(sessionStorage.getItem("user"));
+  const { userData, loading } = useAuth();
+  console.log("USER: ",userData)
+  const userRole = userData?.role
+  if (loading) {
+    return <div className="h-screen w-screen flex items-center justify-center">Loading...</div>;
+  }
   return (
     <>
       <Toaster />
@@ -38,9 +44,9 @@ const App = () => {
         <Route path="/login" element={<Login />} />
 
         {/* Protected / Layout route */}
-        <Route path="/" element={user ? <Layout /> : <Navigate to="/register" replace />}>
+        <Route path="/" element={userData ? <Layout/> : <Navigate to="/register" replace />}>
           {/* Job Seeker */}
-          <Route index element={<Home />} />
+          <Route index element={userRole === "jobseeker" ? <Home /> : <JobManagement/>} />
           <Route path="job/:jobId" element={<Job />} />
           <Route path="applications" element={<Applications />} />
           <Route path="interviews" element={<Interviews />} />
