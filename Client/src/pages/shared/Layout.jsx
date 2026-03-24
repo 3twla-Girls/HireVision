@@ -17,25 +17,25 @@ const Layout = () => {
   const [profileImageUrl, setProfileImageUrl] = useState(null)
   const location = useLocation()
 
-  // useEffect(() => {
-  //   // const userId = USER_IDS[role]
-  //   const userId = user._id
-  //   if (!userId) {
-  //     console.log("There is no user id!")
-  //     return
-  //   }
-  //   fetch(`/api/v1/user/${userId}`)
-  //     .then((r) => (r.ok ? r.json() : null))
-  //     .then((data) => {
-  //       if (data?.user?.profile_image_url) {
-  //         setProfileImageUrl(data.user.profile_image_url)
-  //         console.log("setting user image done")
-  //       }
-  //     })
-  //     .catch((e) => {
-  //       console.log("error in fetching user")
-  //     })
-  // }, [role])
+  useEffect(() => {
+    // const userId = USER_IDS[role]
+    const userId = userData._id
+    if (!userId) {
+      console.log("There is no user id!")
+      return
+    }
+    fetch(`/api/v1/user/${userId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.user?.profile_image_url) {
+          setProfileImageUrl(data.user.profile_image_url)
+          console.log("setting user image done")
+        }
+      })
+      .catch((e) => {
+        console.log("error in fetching user")
+      })
+  }, [role])
 
   const isRegisterPage = location.pathname === '/Register'
 

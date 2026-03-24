@@ -246,10 +246,12 @@ class JobController(BaseController):
                 application = app_map.get(str(cv_id))
 
                 if not application:
+                    logger.info(f"no application {rank}")
                     continue
 
                 try:
 
+                    logger.info(f"try application {rank}")
                     # Get CV text
                     cv_record = await cv_model.collection.find_one({"_id": ObjectId(cv_id)})
                     cv_text = cv_record.get("cv_text", "")

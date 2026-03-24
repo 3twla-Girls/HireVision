@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import JSONResponse
 import logging
-
+from bson import ObjectId
+from fastapi import BackgroundTasks
+from ..helpers.hiring_automating_service import run_hiring_automation
 from ..helpers.config import get_settings, Settings
 from ..controllers.JobController import JobController
 from ..models.db_schemes.JobScheme import JobScheme
@@ -235,32 +237,107 @@ async def get_job(request: Request, job_id: str):
 # =============================
 # Update Job Status only
 # =============================
+# @job_router.patch("/{job_id}/status")
+# async def update_job_status(request: Request, job_id: str, background_tasks: BackgroundTasks):
+#     faiss_service_job = request.app.state.faiss_service["faiss_service_job"]
+#     job_controller = await JobController.create_instance(
+#         db_client=request.app.db_client,
+#         faiss_service_job=faiss_service_job
+#     )
+#     try:
+#         body = await request.json()
+#         new_status = body.get("status")
+#         if new_status not in ("open", "closed"):
+#             return JSONResponse(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 content={"signal": "INVALID_STATUS"}
+#             )
+            
+#         current_job = await job_controller.job_model.get_job_by_id(ObjectId(job_id))
+#         if not current_job:
+#             return JSONResponse(status_code=404, content={"signal": "JOB_NOT_FOUND"})
+        
+#         await job_controller.job_model.update_job(
+#             ObjectId(job_id),
+#             {"status": new_status}
+#         )
+        
+#         if new_status == "closed" and current_job.get("status") == "open":
+#             background_tasks.add_task(run_hiring_automation, current_job, request.app)
+            
+#         return JSONResponse(content={"signal": "JOB_STATUS_UPDATED", "status": new_status})
+#     except Exception as e:
+#         logger.error(f"Error updating job status: {e}")
+#         return JSONResponse(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             content={"signal": "JOB_STATUS_UPDATE_FAILED"}
+#         )
 @job_router.patch("/{job_id}/status")
-async def update_job_status(request: Request, job_id: str):
-    from bson import ObjectId
-    faiss_service_job = request.app.state.faiss_service["faiss_service_job"]
+async def update_job_status(request: Request, job_id: str, background_tasks: BackgroundTasks):
+    """
+    Updates the job status and triggers automation if the job is closed.
+    """
+    # 1. Access FAISS service from app state
+    faiss_service_job = request.app.state.faiss_service.get("faiss_service_job")
+    
+    # 2. Initialize the Controller
     job_controller = await JobController.create_instance(
         db_client=request.app.db_client,
         faiss_service_job=faiss_service_job
     )
+    
     try:
+        # 3. Parse and validate request body
         body = await request.json()
         new_status = body.get("status")
-        if new_status not in ("open", "closed"):
+
+        if new_status not in ["open", "closed"]:
             return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_400_BAD_REQUEST, 
                 content={"signal": "INVALID_STATUS"}
             )
+
+        # 4. Fetch the existing job to check current state
+        # Note: Using find_by_id to match your JobModel method naming
+        current_job = await job_controller.job_model.find_by_id(ObjectId(job_id))
+        
+        if not current_job:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                content={"signal": "JOB_NOT_FOUND"}
+            )
+
+        old_status = current_job.get("status")
+
+        # 5. Perform the update in the database
         await job_controller.job_model.update_job(
-            ObjectId(job_id),
+            ObjectId(job_id), 
             {"status": new_status}
         )
-        return JSONResponse(content={"signal": "JOB_STATUS_UPDATED", "status": new_status})
+
+        # 6. Trigger automation ONLY if status changed from 'open' to 'closed'
+        if new_status == "closed" and old_status == "open":
+            logger.info(f"Triggering automation for job: {job_id}")
+            background_tasks.add_task(run_hiring_automation, current_job, request.app)
+
+        return JSONResponse(
+            content={
+                "signal": "JOB_STATUS_UPDATED", 
+                "status": new_status
+            }
+        )
+
     except Exception as e:
-        logger.error(f"Error updating job status: {e}")
+        # Crucial for debugging the '400' error in your terminal
+        print(f"DEBUG ERROR in update_job_status: {e}")
+        logger.error(f"Error updating job status: {e}", exc_info=True)
+        
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"signal": "JOB_STATUS_UPDATE_FAILED"}
+            content={
+                "signal": "JOB_STATUS_UPDATE_FAILED", 
+                "error": str(e)
+            }
         )
 
 # =============================

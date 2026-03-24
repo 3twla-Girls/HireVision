@@ -69,7 +69,7 @@ def rank_cvs_for_job(
             try:
 
                 cv_text = normalize_skills(mask_pii(cv_raw.cv_text))
-
+                logger.info("RANKING Step 1 Done")
                 # -----------------------------------------
                 # Get CV embedding
                 # -----------------------------------------
@@ -111,6 +111,7 @@ def rank_cvs_for_job(
                 dense_score = (dense_score + 1.0) / 2.0
                 dense_score = max(0.0, min(1.0, dense_score))
 
+                logger.info("RANKING Step 2 Done")
                 # -----------------------------------------
                 # Skill Matching
                 # -----------------------------------------
@@ -131,6 +132,8 @@ def rank_cvs_for_job(
                     )
                     continue
 
+                logger.info(f"RANKING Step 3 Done")
+                
                 matched = skill_res.get("matched_skills", [])
                 missing = skill_res.get("missing_skills", [])
 
@@ -140,6 +143,7 @@ def rank_cvs_for_job(
                     matched,
                     job_skills
                 )
+                logger.info(f"RANKING Step 3 Done :{s_score}")
 
                 # -----------------------------------------
                 # Final Fusion Score
@@ -150,6 +154,7 @@ def rank_cvs_for_job(
                     float(sparse_score),
                     float(s_score)
                 )
+                logger.info(f"RANKING Step 4 Done fuse : {final_score}")
 
                 # -----------------------------------------
                 # Store Result
@@ -182,6 +187,7 @@ def rank_cvs_for_job(
                             skill_res.get("match_percentage", 0.0)
                     }
                 })
+                logger.info(f"RANKING Step 5 Done fuse : {all_candidates_results}")
 
             except Exception as cv_error:
 
@@ -196,10 +202,12 @@ def rank_cvs_for_job(
         # Sort results
         # ---------------------------------------------------
 
+        logger.info(f"RANKING Step 6 Done fuse")
         all_candidates_results.sort(
             key=lambda x: x["final_score"],
             reverse=True
         )
+        logger.info(f"RANKING Step 7 Done {all_candidates_results} ")
 
     except Exception as e:
 
@@ -208,4 +216,5 @@ def rank_cvs_for_job(
             exc_info=True
         )
 
+    logger.info(f"RANKING Step final Done {all_candidates_results} ")
     return all_candidates_results
