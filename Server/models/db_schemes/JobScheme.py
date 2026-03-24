@@ -5,6 +5,7 @@ from ..enums.jobStatusEnum import JobStatus
 from ..enums.jobTypeEnum import JobType
 from ...helpers.serialized import PyObjectId
 from bson import ObjectId
+from .Application import Application
 
 
 class JobScheme(BaseModel):
@@ -25,6 +26,8 @@ class JobScheme(BaseModel):
     job_recruiter_id: Optional[PyObjectId] = None
     num_questions: int = 0
     number_of_questions_per_interview: int = 0
+    
+    applications: Optional[List[Application]] = Field(default_factory=list)
     # -------------------------------------------------
     # Pydantic Config
     # -------------------------------------------------

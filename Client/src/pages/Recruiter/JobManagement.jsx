@@ -231,7 +231,7 @@ const JobDetailPanel = ({ job, onToggleStatus, onBack }) => {
               size={16}
               className="group-hover:scale-110 transition-transform"
             />
-            Review {job.applicants} Applicants
+            Review {job.applicants.length || 0} Applicants
           </button>
         </div>
       </div>
@@ -286,6 +286,7 @@ const JobManagement = () => {
             status: j.status === "open" ? "Open" : "Closed",
           }));
           setJobs(mappedJobs);
+          console.log("Jobs")
 
           if (mappedJobs.length > 0) {
             setSelectedJobId(mappedJobs[0].id);
