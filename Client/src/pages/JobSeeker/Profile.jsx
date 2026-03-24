@@ -249,46 +249,51 @@ const Profile = () => {
     formData.append("job_role", currentUser?.job_title || "Software Engineer");
 
     // 2. Immediately close the modal and reset states so user can continue
+    setIsUploading(true);
     setIsNamePromptOpen(false);
     setPendingUploadFile(null);
     setUploadName("");
 
     // 3. Run the upload in the background with a toast promise
     const uploadPromise = async () => {
-      const response = await fetch(`/api/v1/cv/upload/${candidateId}`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to upload CV");
-      }
-
-      const data = await response.json();
-
-      const newResume = {
-        id: data.file_id || `temp_${Date.now()}`,
-        name: finalName,
-        created_at: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-        url: data.file_url
-      };
-
-      // Add to state once finished
-      setResumes((prev) => [...prev, newResume]);
-
-      if (data.extracted_skills && Array.isArray(data.extracted_skills)) {
-        setSkills(prevSkills => {
-          const combined = new Set([...prevSkills, ...data.extracted_skills]);
-          return Array.from(combined);
+      try {
+        const response = await fetch(`/api/v1/cv/upload/${candidateId}`, {
+          method: 'POST',
+          body: formData,
         });
-      }
 
-      return data;
+        if (!response.ok) {
+          throw new Error("Failed to upload CV");
+        }
+
+        const data = await response.json();
+
+        const newResume = {
+          id: data.file_id || `temp_${Date.now()}`,
+          name: finalName,
+          created_at: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+          url: data.file_url
+        };
+
+        // Add to state once finished
+        setResumes((prev) => [...prev, newResume]);
+
+        if (data.extracted_skills && Array.isArray(data.extracted_skills)) {
+          setSkills(prevSkills => {
+            const combined = new Set([...prevSkills, ...data.extracted_skills]);
+            return Array.from(combined);
+          });
+        }
+
+        return data;
+      } finally {
+        setIsUploading(false); // Make sure we reset the button state!
+      }
     };
 
     toast.promise(uploadPromise(), {
-      loading: 'Uploading CV in background...',
-      success: 'CV uploaded successfully! AI extraction complete.',
+      loading: 'Uploading & Extracting CV Data... (This takes a few minutes)',
+      success: 'CV uploaded automatically! Resume data extracted.',
       error: 'Failed to upload CV. Please try again.',
     });
   };
