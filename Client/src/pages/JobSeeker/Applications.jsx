@@ -1,68 +1,52 @@
 import React, { useState, useEffect } from 'react'
 import {
-  Send,
-  XCircle,
-  MessageSquareText,
-  Search,
-  Loader2,
+  Send, XCircle, MessageSquareText, Search, Sparkles,
+  CheckCircle2, Clock, Filter,
 } from 'lucide-react'
 import ApplicationCard from '../../components/JobSeeker/ApplicationCard'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const CURRENT_USER_ID = '69aa315763b720c25373f035'
 
+// Two main tabs: Applications (submitted + rejected) and Feedbacks
 const TABS = [
-  { key: 'submitted', label: 'Submitted', icon: Send },
-  { key: 'rejected', label: 'Rejected', icon: XCircle },
-  { key: 'feedbacks', label: 'Feedbacks', icon: MessageSquareText },
+  { key: 'applications', label: 'Applications',  icon: Send },
+  { key: 'feedbacks',    label: 'Feedbacks',     icon: MessageSquareText },
 ]
 
-// ─── Status Mapping ───────────────────────────────────────────────────────────
-// Backend statuses: "pending" | "accepted" | "rejected"
-// UI statuses:      "under review" | "passed" | "rejected" | "feedback"
-// UI tabs:          "submitted" | "rejected" | "feedbacks"
+// Status filter options inside the Applications tab
+const STATUS_FILTERS = [
+  { key: 'all',      label: 'All',          activeClass: 'bg-dark-blue  text-white border-dark-blue'  },
+  { key: 'pending',  label: 'Under Review', activeClass: 'bg-orange     text-white border-orange'      },
+  { key: 'accepted', label: 'Passed',       activeClass: 'bg-teal       text-white border-teal'        },
+  { key: 'rejected', label: 'Rejected',     activeClass: 'bg-red-400 text-white border-red-400'},
+]
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 const mapStatus = (backendStatus) => {
   switch (backendStatus) {
     case 'accepted': return 'passed'
     case 'rejected': return 'rejected'
-    default:         return 'under review'   // "pending"
+    default:         return 'under review'
   }
 }
 
-// Tab membership: an application can appear in multiple tabs
-// - Submitted  → backendStatus is 'pending' or 'accepted'
-// - Rejected   → backendStatus is 'rejected'
-// - Feedbacks  → has a cv_feedback_url (regardless of status)
-const appBelongsToTab = (app, tabKey) => {
-  switch (tabKey) {
-    case 'submitted': return app.backendStatus === 'pending' || app.backendStatus === 'accepted'
-    case 'rejected':  return app.backendStatus === 'rejected'
-    case 'feedbacks': return Boolean(app.feedbackFile) && (app.backendStatus === 'accepted' || app.backendStatus === 'rejected')
-    default: return false
-  }
-}
-
-// ─── Date Formatter ───────────────────────────────────────────────────────────
 const formatDate = (isoString) => {
   if (!isoString) return ''
   const d = new Date(isoString)
   return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`
 }
 
-// ─── Location splitter ────────────────────────────────────────────────────────
 const splitLocation = (location = '') => {
   const parts = location.split(',').map((s) => s.trim())
   return { city: parts[0] ?? '', country: parts.slice(1).join(', ') || parts[0] || '' }
 }
 
-// ─── Skeleton Loader ──────────────────────────────────────────────────────────
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 const Skeletons = () => (
-  <div className="flex flex-col gap-4">
+  <div className="flex flex-col gap-3">
     {[1, 2, 3].map((n) => (
-      <div
-        key={n}
-        className="bg-white rounded-2xl px-6 py-5 border-l-[8px] border-l-light-gray2 animate-pulse"
-      >
+      <div key={n} className="bg-white rounded-2xl px-6 py-5 border-l-[8px] border-l-light-gray2 animate-pulse">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-xl bg-light-gray1 shrink-0" />
           <div className="flex-1 space-y-2">
@@ -84,229 +68,206 @@ const Applications = () => {
   const [applications, setApplications] = useState([])
   const [loading, setLoading]           = useState(true)
   const [error, setError]               = useState(null)
-  const [activeTab, setActiveTab]       = useState('submitted')
+  const [activeTab, setActiveTab]       = useState('applications')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [searchQuery, setSearchQuery]   = useState('')
 
-  // ── Fetch applications + enrich with job details ──────────────────────────
   useEffect(() => {
     const fetchApplications = async () => {
       try {
-        setLoading(true)
-        setError(null)
-
-        // 1️⃣ Fetch all applications for this candidate
+        setLoading(true); setError(null)
         const appRes = await fetch(`/api/v1/application/candidate/${CURRENT_USER_ID}`)
-        if (!appRes.ok) throw new Error(`Failed to fetch applications (${appRes.status})`)
+        if (!appRes.ok) throw new Error(`Failed (${appRes.status})`)
         const appData = await appRes.json()
+        if (!Array.isArray(appData) || appData.length === 0) { setApplications([]); return }
 
-        if (!Array.isArray(appData) || appData.length === 0) {
-          setApplications([])
-          return
-        }
-
-        // 2️⃣ Fetch job details for every application in parallel
         const enriched = await Promise.all(
           appData.map(async (app) => {
             let job = {}
             try {
-              const jobRes = await fetch(`/api/v1/job/${app.job_id}`)
-              if (jobRes.ok) job = await jobRes.json()
-            } catch (_) {
-              // non-critical — show fallback values if job fetch fails
-            }
-
-            const hasFeedback = Boolean(app.cv_feedback_url)
+              const jr = await fetch(`/api/v1/job/${app.job_id}`)
+              if (jr.ok) job = await jr.json()
+            } catch (_) {}
             const { city, country } = splitLocation(job.location)
-
             return {
-              id:               app._id,
-              jobId:            app.job_id,
+              id: app._id, jobId: app.job_id,
               jobTitle:         job.job_title  ?? 'Unknown Job',
               company:          job.company    ?? 'Company',
-              city,
-              country,
+              city, country,
               appliedDate:      formatDate(app.created_at),
               status:           mapStatus(app.status),
               backendStatus:    app.status,
-              matchingScore:    app.matching_score    ?? null,
-              matchingSkills:   app.matching_skills   ?? [],
-              missingSkills:    app.missing_skills    ?? [],
-              feedbackFile:     app.cv_feedback_url   ?? null,
+              matchingScore:    app.matching_score  ?? null,
+              matchingSkills:   app.matching_skills ?? [],
+              missingSkills:    app.missing_skills  ?? [],
+              feedbackFile:     app.cv_feedback_url ?? null,
               feedbackFileName: app.cv_feedback_url ? 'CV_Feedback.pdf' : null,
             }
           })
         )
-
         setApplications(enriched)
       } catch (err) {
-        console.error('Error fetching applications:', err)
+        console.error(err)
         setError('Could not load your applications. Please try again later.')
       } finally {
         setLoading(false)
       }
     }
-
     fetchApplications()
   }, [])
 
-  // ── Derived counts & filters ──────────────────────────────────────────────
-  const tabCounts = TABS.reduce((acc, tab) => {
-    acc[tab.key] = applications.filter((a) => appBelongsToTab(a, tab.key)).length
-    return acc
-  }, {})
+  // ── Counts ──────────────────────────────────────────────────────────────────
+  const passedCount   = applications.filter((a) => a.backendStatus === 'accepted').length
+  const reviewCount   = applications.filter((a) => a.backendStatus === 'pending').length
+  const rejectedCount = applications.filter((a) => a.backendStatus === 'rejected').length
+  const feedbackCount = applications.filter(
+    (a) => a.feedbackFile && (a.backendStatus === 'accepted' || a.backendStatus === 'rejected')
+  ).length
 
+  const tabCounts = {
+    applications: applications.length,
+    feedbacks:    feedbackCount,
+  }
+
+  // Status filter counts (for badges inside the filter pills)
+  const statusCounts = {
+    all:      applications.length,
+    pending:  reviewCount,
+    accepted: passedCount,
+    rejected: rejectedCount,
+  }
+
+  // ── Filtered list ───────────────────────────────────────────────────────────
   const filtered = applications.filter((a) => {
-    if (!appBelongsToTab(a, activeTab)) return false
+    if (activeTab === 'feedbacks') {
+      return a.feedbackFile && (a.backendStatus === 'accepted' || a.backendStatus === 'rejected')
+    }
+    // Applications tab: apply status filter
+    if (statusFilter !== 'all' && a.backendStatus !== statusFilter) return false
+    // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
-      return (
-        a.jobTitle.toLowerCase().includes(q) ||
-        a.company.toLowerCase().includes(q) ||
-        a.city.toLowerCase().includes(q)
-      )
+      return a.jobTitle.toLowerCase().includes(q) || a.company.toLowerCase().includes(q)
     }
     return true
   })
 
-  // ── Stats (use backendStatus so feedback apps still count correctly) ──────
-  const passedCount   = applications.filter((a) => a.backendStatus === 'accepted').length
-  const reviewCount   = applications.filter((a) => a.backendStatus === 'pending').length
-  const rejectedCount = applications.filter((a) => a.backendStatus === 'rejected').length
-  const feedbackCount = applications.filter((a) => appBelongsToTab(a, 'feedbacks')).length
-
-  const stats = [
-    {
-      label: 'Passed',
-      value: passedCount,
-      icon: Send,
-      color: 'from-emerald-500 to-emerald-400',
-      iconBg: 'bg-emerald-50',
-      iconColor: 'text-emerald-500',
-    },
-    {
-      label: 'Under Review',
-      value: reviewCount,
-      icon: Search,
-      color: 'from-orange to-light-orange',
-      iconBg: 'bg-orange/10',
-      iconColor: 'text-dark-orange',
-    },
-    {
-      label: 'Rejected',
-      value: rejectedCount,
-      icon: XCircle,
-      color: 'from-red-500 to-red-400',
-      iconBg: 'bg-red-50',
-      iconColor: 'text-red-500',
-    },
-    {
-      label: 'Feedbacks',
-      value: feedbackCount,
-      icon: MessageSquareText,
-      color: 'from-teal to-emerald-400',
-      iconBg: 'bg-light-teal',
-      iconColor: 'text-teal',
-    },
-  ]
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-light-gray1">
+
+      {/* ── Hero Banner ────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-dark-blue via-[#1e4d6b] to-light-blue">
+        <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 w-48 h-48 rounded-full bg-teal/10 blur-2xl" />
+
+        <div className="relative mx-auto px-4 md:px-8 lg:px-[60px] py-10 max-w-5xl">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles size={16} className="text-teal" />
+            <span className="text-teal text-[13px] font-semibold tracking-wide uppercase">Application Tracker</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">Your Applications</h1>
+          <p className="text-white/60 text-[14px] mt-1.5">Track your progress and review feedback — all in one place.</p>
+
+          {/* Stat chips */}
+          <div className="flex flex-wrap gap-3 mt-8">
+            {[
+              { icon: CheckCircle2,      label: 'Passed',       value: loading ? '—' : passedCount,   color: 'bg-teal/20 text-teal' },
+              { icon: Clock,             label: 'Under Review',  value: loading ? '—' : reviewCount,   color: 'bg-white/10 text-white' },
+              { icon: XCircle,           label: 'Rejected',      value: loading ? '—' : rejectedCount, color: 'bg-orange/20 text-light-orange' },
+              { icon: MessageSquareText, label: 'Feedbacks',     value: loading ? '—' : feedbackCount, color: 'bg-white/10 text-white' },
+            ].map(({ icon: Icon, label, value, color }) => (
+              <div key={label} className={`flex items-center gap-2.5 px-4 py-2 rounded-xl backdrop-blur-sm ${color} border border-white/10`}>
+                <Icon size={14} />
+                <span className="text-[13px] font-semibold">{label}:&nbsp;<span className="font-bold">{value}</span></span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Main Content ───────────────────────────────────────────── */}
       <div className="mx-auto px-4 md:px-8 lg:px-[60px] py-8 max-w-5xl">
 
-        {/* ── Page Header ── */}
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-dark-blue">
-            Your Applications &amp; Feedback
-          </h1>
-          <p className="text-[15px] text-dark-gray3 mt-2">
-            Track your progress, manage saved jobs, and review feedback — all in one place.
-          </p>
-        </div>
+        {/* ── Sticky tab bar ── */}
+        <div className="sticky top-16 z-30 bg-light-gray1/95 backdrop-blur-sm py-3
+                        -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-[60px] lg:px-[60px] mb-5
+                        border-b border-light-gray2/60 shadow-sm">
 
-        {/* ── Stats Overview ── */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat) => {
-            const Icon = stat.icon
-            return (
-              <div
-                key={stat.label}
-                className="relative bg-white rounded-2xl p-5 shadow-sm border border-light-gray2/60
-                           hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 overflow-hidden group"
-              >
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.color}`} />
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl ${stat.iconBg} flex items-center justify-center
-                                   group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon size={20} className={stat.iconColor} />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-dark-blue leading-none">
-                      {loading ? '—' : stat.value}
-                    </p>
-                    <p className="text-[12px] text-dark-gray3 mt-0.5 font-medium">{stat.label}</p>
-                  </div>
-                </div>
+          {/* Tabs + Search row */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+            {/* Pill tabs */}
+            <div className="flex items-center gap-1.5 bg-white rounded-2xl p-1.5 shadow-sm border border-light-gray2/60 self-start">
+              {TABS.map((tab) => {
+                const Icon = tab.icon
+                const isActive = activeTab === tab.key
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => { setActiveTab(tab.key); setStatusFilter('all'); setSearchQuery('') }}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[13px] font-semibold
+                                transition-all duration-200
+                                ${isActive
+                      ? 'bg-dark-blue text-white shadow-md'
+                      : 'text-dark-gray3 hover:bg-light-gray1 hover:text-dark-blue'
+                    }`}
+                  >
+                    <Icon size={14} className="shrink-0" />
+                    {tab.label}
+                    <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md min-w-[20px] text-center
+                                     ${isActive ? 'bg-white/20 text-white' : 'bg-light-gray1 text-dark-gray3'}`}>
+                      {loading ? '·' : tabCounts[tab.key]}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Search */}
+            <div className="relative shrink-0">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-gray3 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search applications…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-4 py-2.5 rounded-xl bg-white border border-light-gray2/80
+                           text-[13px] text-dark-gray4 placeholder:text-dark-gray3
+                           focus:outline-none focus:ring-2 focus:ring-dark-blue/20 focus:border-dark-blue/40
+                           transition-all duration-200 w-full sm:w-56 shadow-sm"
+              />
+            </div>
+          </div>
+
+          {/* Status filter pills — only on Applications tab */}
+          {activeTab === 'applications' && (
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <div className="flex items-center gap-1 text-[12px] text-dark-gray3 font-medium mr-1">
+                <Filter size={12} />
+                Filter:
               </div>
-            )
-          })}
+              {STATUS_FILTERS.map((f) => {
+                const isActive = statusFilter === f.key
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => setStatusFilter(f.key)}
+                    className={`px-3.5 py-1 rounded-lg text-[12px] font-semibold border transition-all duration-200
+                                ${isActive
+                      ? f.activeClass
+                      : 'bg-white text-dark-gray3 border-light-gray2 hover:border-dark-blue/30 hover:text-dark-blue'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
-        {/* ── Tabs + Search ── */}
-        <div className="sticky top-20 z-40 bg-light-gray1/95 backdrop-blur-sm pt-3 md:pt-4 pb-0
-                        -mx-4 px-4 md:-mx-8 md:px-8 lg:-mx-[60px] lg:px-[60px]
-                        flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4
-                        rounded-3xl border-b border-light-gray2 mb-6
-                        shadow-[0_4px_12px_-4px_rgba(0,0,0,0.08)]">
-          <div className="flex gap-0 sm:gap-2 md:gap-5 overflow-x-auto no-scrollbar -mb-px flex-1">
-            {TABS.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-1 sm:gap-1.5 md:gap-2 pb-2.5 sm:pb-3 px-2.5 sm:px-2 md:px-1
-                              text-[12px] sm:text-[14px] md:text-[15px] font-semibold whitespace-nowrap
-                              transition-all duration-200 border-b-[3px]
-                              ${activeTab === tab.key
-                                ? 'text-dark-blue border-dark-blue'
-                                : 'text-dark-gray3 border-transparent hover:text-dark-blue hover:border-light-gray2'
-                              }`}
-                >
-                  <Icon size={15} className={`shrink-0 sm:w-4 sm:h-4 ${activeTab === tab.key ? 'text-dark-blue' : 'text-dark-gray3'}`} />
-                  <span className="hidden md:inline">{tab.label}</span>
-                  <span className="md:hidden">{tab.label.split(' ')[0]}</span>
-                  <span className={`hidden sm:inline-flex text-[11px] sm:text-[12px] font-bold px-1.5 sm:px-2 py-0.5
-                                    rounded-md min-w-[22px] sm:min-w-[24px] text-center
-                                    ${activeTab === tab.key
-                                      ? 'bg-dark-blue text-white'
-                                      : 'bg-light-gray1 text-dark-gray3 border border-light-gray2'
-                                    }`}>
-                    {loading ? '·' : tabCounts[tab.key]}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Search */}
-          <div className="relative mb-2 md:mb-2 shrink-0">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-gray3" />
-            <input
-              type="text"
-              placeholder="Search applications..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 rounded-xl bg-white border border-light-gray2
-                         text-[13px] text-dark-gray4 placeholder:text-dark-gray3
-                         focus:outline-none focus:ring-2 focus:ring-dark-blue/20 focus:border-dark-blue/30
-                         transition-all duration-200 w-full md:w-56"
-            />
-          </div>
-        </div>
-
-        {/* ── Application Cards ── */}
-        <div className="flex flex-col gap-4">
+        {/* ── Cards ── */}
+        <div className="flex flex-col gap-3">
           {loading ? (
             <Skeletons />
           ) : error ? (
@@ -314,33 +275,42 @@ const Applications = () => {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-50 flex items-center justify-center">
                 <XCircle size={28} className="text-red-400" />
               </div>
-              <p className="text-lg font-semibold text-dark-blue mb-1">Something went wrong</p>
-              <p className="text-[14px] text-dark-gray3 max-w-sm mx-auto">{error}</p>
+              <p className="text-[17px] font-bold text-dark-blue mb-1">Something went wrong</p>
+              <p className="text-[13px] text-dark-gray3 max-w-sm mx-auto">{error}</p>
             </div>
           ) : filtered.length > 0 ? (
-            filtered.map((app) => (
-              <ApplicationCard
-                key={app.id}
-                navigable={activeTab !== 'feedbacks'}
-                application={
-                  activeTab === 'feedbacks'
-                    ? app
-                    : { ...app, feedbackFile: null, feedbackFileName: null }
-                }
-              />
-            ))
+            <>
+              <p className="text-[12px] text-dark-gray3 font-medium ml-1 mb-1">
+                {filtered.length} result{filtered.length !== 1 ? 's' : ''}
+                {searchQuery && ` for "${searchQuery}"`}
+              </p>
+              {filtered.map((app) => (
+                <ApplicationCard
+                  key={app.id}
+                  navigable={activeTab !== 'feedbacks'}
+                  application={
+                    activeTab === 'feedbacks'
+                      ? app
+                      : { ...app, feedbackFile: null, feedbackFileName: null }
+                  }
+                />
+              ))}
+            </>
           ) : (
-            <div className="text-center py-16 bg-white rounded-2xl border border-light-gray2/60 shadow-sm">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-light-gray1 flex items-center justify-center">
+            <div className="text-center py-20 bg-white rounded-2xl border border-light-gray2/60 shadow-sm">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-light-gray1 to-white
+                              border border-light-gray2 flex items-center justify-center shadow-inner">
                 <Search size={28} className="text-dark-gray3" />
               </div>
-              <p className="text-lg font-semibold text-dark-blue mb-1">
-                {searchQuery ? 'No matching applications' : 'No applications yet'}
+              <p className="text-[17px] font-bold text-dark-blue mb-1.5">
+                {searchQuery ? 'No matching results' : 'Nothing here yet'}
               </p>
-              <p className="text-[14px] text-dark-gray3 max-w-sm mx-auto">
+              <p className="text-[13px] text-dark-gray3 max-w-xs mx-auto leading-relaxed">
                 {searchQuery
-                  ? `We couldn't find any results for "${searchQuery}". Try a different search term.`
-                  : 'Applications you submit will appear here. Start exploring jobs to get started!'}
+                  ? `No results for "${searchQuery}". Try a different search.`
+                  : activeTab === 'feedbacks'
+                    ? 'Feedback from recruiters will appear here.'
+                    : 'Applications you submit will appear here.'}
               </p>
             </div>
           )}
