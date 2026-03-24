@@ -16,6 +16,7 @@ from .routes import base, userRoute, CVRoute, applicationRoute, JobRoute , cheat
 from .routes.questions_with_answers import router as questions_with_answers
 from .routes.interview_routes import interview_router
 #from .routes.personality_routes import router as personality_router
+from .routes.phone_routes import router as phone_router
 # Local Imports - Helpers & Config
 from .helpers.config import get_settings
 
@@ -96,7 +97,7 @@ app.include_router(proctoring_router.proctringRouter)
 
 # # Module 2 Routes
 # app.include_router(personality_router, prefix="/personality", tags=["Personality"])
-
+app.include_router(phone_router)
 # Module_3 Routes (Questions, Interviews)
 app.include_router(questions_with_answers)
 app.include_router(interview_router)
