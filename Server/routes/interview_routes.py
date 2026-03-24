@@ -57,7 +57,10 @@ async def start_mock_session(request: Request, candidate_id: str):
             request.app.db_client
         )
 
-        result = await controller.start_session(candidate_id, None , True)
+        body = await request.json()
+        job_title = body.get("job_title", None)
+
+        result = await controller.start_session(candidate_id, None, True, job_title=job_title)
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
             content=result
@@ -112,6 +115,26 @@ async def get_session(request: Request, session_id: str):
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"error": str(e)}
         )
+
+
+@interview_router.get("/candidate/{candidate_id}")
+async def get_candidate_sessions(request: Request, candidate_id: str):
+    try:
+        controller = await InterviewController.create_instance(
+            request.app.db_client
+        )
+        result = await controller.get_sessions_by_candidate(candidate_id)
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=jsonable_encoder(result)
+        )
+    except Exception as e:
+        logger.error(f"Error retrieving candidate sessions: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"error": str(e)}
+        )
+
 
 
 # ============================================================================

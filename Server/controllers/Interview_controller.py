@@ -50,10 +50,11 @@ class InterviewController(BaseController):
         ]
 
     # ========== CREATE ==========
-    async def start_session(self, candidate_id: str, job_id: Optional[str] = None, is_mock: bool = False) -> Dict[str, Any]:
+    async def start_session(self, candidate_id: str, job_id: Optional[str] = None, is_mock: bool = False, job_title: Optional[str] = None) -> Dict[str, Any]:
         session = {
             "candidate_id": candidate_id,
             "job_id": job_id,
+            "job_title": job_title,
             "is_mock": is_mock,
             "session_date": datetime.utcnow(),
             "answers": [],
@@ -120,6 +121,24 @@ class InterviewController(BaseController):
             ans["question_id"] = str(ans.get("question_id", ""))
 
         return session
+
+    async def get_sessions_by_candidate(self, candidate_id: str) -> list:
+        cursor = self.sessions_collection.find(
+            {"candidate_id": candidate_id}
+        ).sort("session_date", -1)
+
+        sessions = await cursor.to_list(length=None)
+        for s in sessions:
+            s["_id"] = str(s["_id"])
+            s["candidate_id"] = str(s["candidate_id"])
+            if s.get("job_id"):
+                s["job_id"] = str(s["job_id"])
+            for ans in s.get("answers", []):
+                if ans.get("question_id"):
+                    ans["question_id"] = str(ans["question_id"])
+
+        return sessions
+
 
     # ========== UPDATE ==========
     async def submit_answer(
@@ -243,7 +262,10 @@ class InterviewController(BaseController):
             "$set": {
                 "final_summary.technical": technical_summary,
                 "final_summary.integrity.face_auth": face_auth_report,
-                "final_summary.personality": {"status": "Pending Analysis"}
+                "final_summary.personality": {
+                                                "status": "collecting",
+                                                "traits_list": []
+                                             }
             }
         }
 

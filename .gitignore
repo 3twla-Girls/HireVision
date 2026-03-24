@@ -25,3 +25,4 @@ Module-3/STT/utils/__pycache__/video_utils.cpython-313.pyc
 *.webm
 *.mp4
 myenv
+__pycache__

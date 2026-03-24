@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Camera, Headphones, Eye, Timer, X } from 'lucide-react';
 import InterviewSetupModal from '../../components/JobSeeker/InterviewSetupModal';
 import { INSTRUCTIONS_DATA } from '../../data/interviewInstruction';
@@ -15,11 +15,14 @@ const EXPERIENCE_LEVEL = [
 const InterviewSetup = () => {
   const { type, jobName } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showSetup, setShowSetup] = useState(false);
   const [skillInput, setSkillInput] = useState("");
 
   const isMock = type === 'mock';
-  const displayTitle = isMock ? "Mock Interview" : `Interview for: ${jobName}`;
+  const existingSessionId = location.state?.sessionId ?? null;  // passed from upcoming card
+  const existingJobId     = location.state?.jobId     ?? null;  // passed from upcoming card
+  const displayTitle = isMock ? "Mock Interview" : `Interview for: ${decodeURIComponent(jobName ?? '')}`;
 
   const [formData, setFormData] = useState({
     job_title: "",
@@ -30,7 +33,6 @@ const InterviewSetup = () => {
 
   const handleStartInterview = async(e) => {
     e.preventDefault();
-    console.log("Form Data ", formData);
     
     if (isMock && formData.required_skills.length === 0) {
       toast.error("Please add at least one skill for the mock interview");
@@ -218,6 +220,8 @@ const InterviewSetup = () => {
       {showSetup && (
         <InterviewSetupModal 
           setShowSetup={setShowSetup} isMock={isMock} jobInfo={formData}
+          existingSessionId={existingSessionId}
+          existingJobId={existingJobId}
         />
       )}
     </div>

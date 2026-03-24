@@ -34,6 +34,8 @@ class InterviewScheme(BaseModel):
     candidate_id: PyObjectId
     # job_id: PyObjectId
     job_id: Optional[PyObjectId] = None
+   
+    job_title: Optional[str] = None
     status: str = "started"
 
     created_at: datetime = Field(default_factory=datetime.utcnow)

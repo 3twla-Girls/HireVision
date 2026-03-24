@@ -66,7 +66,7 @@ const ToggleBtn = ({ onClick, active, loading, IconOn, IconOff, labelOn, labelOf
 );
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function InterviewSetupModal({ setShowSetup, isMock = false, jobInfo }) {
+export default function InterviewSetupModal({ setShowSetup, isMock = false, jobInfo, existingSessionId = null, existingJobId = null }) {
   const navigate = useNavigate();
   const { type } = useParams();
 
@@ -243,16 +243,29 @@ export default function InterviewSetupModal({ setShowSetup, isMock = false, jobI
   const handleConfirm = async () => {
     setIsStarting(true);
     try {
-      // Step 1: Start the session first to get session_id
-      const sessionResponse = isMock
-        ? await api.post(`/interview/start-mock-session/${candidateId}`)
-        : await api.post(`/interview/start-session/${applicantId}`);
+      let sessionId;
+      let generatedQuestions = [];
 
-      if (sessionResponse.status === 201) {
+      if (!isMock && existingSessionId) {
+        // Real interview with pre-existing session.
+        // Pass sessionId only; InterviewLive will fetch questions itself via job ID (targetID).
+        sessionId = existingSessionId;
+      } else {
+        // ── New session (mock or real without existing session) ──
+        const sessionResponse = isMock
+          ? await api.post(`/interview/start-mock-session/${candidateId}`, {
+              job_title: jobInfo?.job_title || null
+            })
+          : await api.post(`/interview/start-session/${applicantId}`);
+
+        if (sessionResponse.status !== 201) {
+          toast.error('Could not start session. Please try again.');
+          return;
+        }
+
         const sessionData = sessionResponse.data;
-        let generatedQuestions = [];
+        sessionId = sessionData.session_id;
 
-        // Step 2: If mock, generate questions and wait for them
         if (isMock) {
           const mockRequestData = {
             candidate_id: candidateId,
@@ -261,26 +274,22 @@ export default function InterviewSetupModal({ setShowSetup, isMock = false, jobI
             experience_level: jobInfo?.experience_level || "Junior",
             num_questions: jobInfo?.num_questions || 5
           };
-
           const questionsResponse = await api.post('/questions/generate-mock-questions', mockRequestData);
           if (questionsResponse.status === 201) {
             generatedQuestions = questionsResponse.data.questions || [];
           }
         }
-
-        cleanup();
-        setShowSetup(false);
-        localStorage.setItem('sessionId', sessionData.session_id);
-
-        setTimeout(() => {
-          navigate(`/interview/${type}/live`, {
-            state: {
-              sessionId: sessionData.session_id,
-              questions: generatedQuestions.length > 0 ? generatedQuestions : sessionData.questions
-            }
-          });
-        }, 150);
       }
+
+      cleanup();
+      setShowSetup(false);
+      localStorage.setItem('sessionId', sessionId);
+
+      setTimeout(() => {
+        navigate(`/interview/${type}/live`, {
+          state: { sessionId, questions: generatedQuestions, jobId: existingJobId ?? null }
+        });
+      }, 150);
     } catch (error) {
       console.error("Failed to setup interview:", error);
       toast.error("Something went wrong. Please try again.", { duration: 3000 });
