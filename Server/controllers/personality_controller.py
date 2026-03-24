@@ -2,7 +2,7 @@ from fastapi import UploadFile, HTTPException
 from Module_2.Personality_Traits_Detection.model_utils import PersonalityPredictor
 import shutil, os
 
-predictor = PersonalityPredictor("/home/bebo/Documents/HireVision-GP/HireVision/Module_2/Personality_Traits_Detection/weights/personality_r3d_best.pth.zip")
+predictor = PersonalityPredictor("./Module_2/Personality_Traits_Detection/weights/personality_r3d_best.pth.zip")
 async def predict_personality_controller(file: UploadFile):
     if not file.filename.endswith(('.mp4', '.avi', '.mov', '.mkv')):
         raise HTTPException(status_code=400, detail="Invalid video format")
