@@ -138,7 +138,7 @@ class PhoneUsagePredictor:
 
 # ── Initialize predictor at module level (not inside startup event) ──
 # This guarantees it's ready before any request comes in
-predictor = PhoneUsagePredictor("weights/yolov8_phone_usage_best.pt")
+predictor = PhoneUsagePredictor("Module_2/Phone_detection/weights/yolov8_phone_usage_best.pt")
 print("✅ Phone usage model loaded.")
 
 
