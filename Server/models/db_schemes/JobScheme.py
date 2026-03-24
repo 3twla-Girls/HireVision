@@ -28,6 +28,14 @@ class JobScheme(BaseModel):
     number_of_questions_per_interview: int = 0
     
     applications: Optional[List[Application]] = Field(default_factory=list)
+    
+    # for interview
+    expiry_date: Optional[str] = None 
+    max_applications_count: int = 50
+    top_candidates_count: int = 10
+    interview_gap_days: int = 2
+    # min_matching_score: int = 70
+    
     # -------------------------------------------------
     # Pydantic Config
     # -------------------------------------------------

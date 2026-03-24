@@ -18,6 +18,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { JOBS } from "../../data/jobs";
+import api from "../../api/axios";
+import toast from "react-hot-toast";
 
 /* ─── helpers ──────────────────────────────────────────────── */
 
@@ -324,27 +326,60 @@ const JobManagement = () => {
     [jobs],
   );
 
+  // const toggleStatus = async (id) => {
+  //   const job = jobs.find((j) => j.id === id);
+  //   if (!job) return;
+  //   const newStatus = job.status === "Open" ? "closed" : "open";
+  //   try {
+  //     // const res = await fetch(`/api/v1/job/${id}/status`, {
+  //     //   method: "PATCH",
+  //     //   headers: { "Content-Type": "application/json" },
+  //     //   body: JSON.stringify({ status: newStatus }),
+  //     // });
+  //     const res = await api.patch(`/api/v1/job/${id}/status`,{ status: newStatus })
+  //     if (!res.status==200) throw new Error("Failed to update status");
+  //     // Only update UI after DB confirms
+  //     setJobs((prev) =>
+  //       prev.map((j) =>
+  //         j.id === id
+  //           ? { ...j, status: newStatus === "open" ? "Open" : "Closed" }
+  //           : j,
+  //       ),
+  //     );
+  //   } catch (err) {
+  //     console.error("Could not update job status:", err);
+  //   }
+  // };
   const toggleStatus = async (id) => {
     const job = jobs.find((j) => j.id === id);
     if (!job) return;
-    const newStatus = job.status === "Open" ? "closed" : "open";
+
+    // Ensure status is sent in lowercase to match your Backend logic ("open"/"closed")
+    const newStatus = job.status.toLowerCase() === "open" ? "closed" : "open";
+
     try {
-      const res = await fetch(`/api/v1/job/${id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+      // 1. Use the 'api' (axios instance) instead of 'fetch'
+      // This automatically uses the BaseURL: http://localhost:8000/api/v1
+      const res = await api.patch(`/job/${id}/status`, { 
+        status: newStatus 
       });
-      if (!res.ok) throw new Error("Failed to update status");
-      // Only update UI after DB confirms
-      setJobs((prev) =>
-        prev.map((j) =>
-          j.id === id
-            ? { ...j, status: newStatus === "open" ? "Open" : "Closed" }
-            : j,
-        ),
-      );
+
+      // 2. Axios returns data directly in 'res.data'
+      if (res.status === 200) {
+        setJobs((prev) =>
+          prev.map((j) =>
+            j.id === id
+              ? { ...j, status: newStatus === "open" ? "Open" : "Closed" }
+              : j
+          )
+        );
+        toast.success(`Job status updated to ${newStatus}`);
+      }
     } catch (err) {
       console.error("Could not update job status:", err);
+      // Use your toast for better UI feedback
+      const errorMsg = err.response?.data?.signal || "Failed to update status";
+      toast.error(`Error: ${errorMsg}`);
     }
   };
 
