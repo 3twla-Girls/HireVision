@@ -140,7 +140,7 @@ async def get_candidate_sessions(request: Request, candidate_id: str):
 # ============================================================================
 # UPDATE - Submit Answer
 # ============================================================================
-@interview_router.post("/submit-answer")
+"""@interview_router.post("/submit-answer")
 async def submit_answer(
     request: Request,
     session_id: str,
@@ -158,9 +158,35 @@ async def submit_answer(
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"error": str(e)}
+        )"""
+@interview_router.post("/submit-answer")
+async def submit_candidate_answer(
+    request: Request,
+    session_id: str,
+    question_id: str,
+    selected_option: str = None,
+    file: UploadFile = File(None)
+):
+    try:
+        controller = await InterviewController.create_instance(
+            request.app.db_client
         )
 
+        result = await controller.submit_answer_unified(
+            session_id=session_id,
+            question_id=question_id,
+            file=file,
+            selected_option=selected_option
+        )
 
+        return JSONResponse(status_code=200, content=result)
+
+    except Exception as e:
+        logger.error(f"Error submitting answer: {e}")
+        return JSONResponse(
+            status_code=400,
+            content={"error": str(e)}
+        )
 # ============================================================================
 # UPDATE - Generate Summary
 # ============================================================================
