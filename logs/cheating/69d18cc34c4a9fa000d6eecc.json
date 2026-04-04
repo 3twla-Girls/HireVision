@@ -1,0 +1,210 @@
+{
+  "session_id": "69d18cc34c4a9fa000d6eecc",
+  "interview_id": "69aa315763b720c25373f035",
+  "submitted_at": "2026-04-04T22:14:17.430912Z",
+  "total_warnings": 12,
+  "total_duration": 129.7,
+  "events": [
+    {
+      "type": "log_event",
+      "at": "00:05",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "00:08",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 1
+    },
+    {
+      "type": "log_event",
+      "at": "00:18",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "00:21",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 2
+    },
+    {
+      "type": "log_event",
+      "at": "00:23",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "00:26",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 3
+    },
+    {
+      "type": "log_event",
+      "at": "00:28",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "log_event",
+      "at": "00:37",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "00:40",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 4
+    },
+    {
+      "type": "log_event",
+      "at": "00:42",
+      "duration": 2.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "00:45",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 5
+    },
+    {
+      "type": "log_event",
+      "at": "01:04",
+      "duration": 19.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:04",
+      "duration": 19.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 6
+    },
+    {
+      "type": "log_event",
+      "at": "01:06",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:09",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 7
+    },
+    {
+      "type": "log_event",
+      "at": "01:11",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:14",
+      "duration": 5.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 8
+    },
+    {
+      "type": "log_event",
+      "at": "01:16",
+      "duration": 2.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:19",
+      "duration": 5.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 9
+    },
+    {
+      "type": "log_event",
+      "at": "01:21",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:24",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 10
+    },
+    {
+      "type": "log_event",
+      "at": "01:31",
+      "duration": 7.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:31",
+      "duration": 7.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 11
+    },
+    {
+      "type": "log_event",
+      "at": "01:33",
+      "duration": 2.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "log_event",
+      "at": "01:42",
+      "duration": 2.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:46",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 12
+    },
+    {
+      "type": "log_event",
+      "at": "01:48",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    }
+  ]
+}

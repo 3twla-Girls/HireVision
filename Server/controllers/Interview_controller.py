@@ -201,85 +201,85 @@ class InterviewController(BaseController):
 
 
 
-async def submit_answer_unified(
-    self,
-    session_id: str,
-    question_id: str,
-    file=None,
-    selected_option: str = None
-) -> Dict[str, Any]:
+    async def submit_answer_unified(
+        self,
+        session_id: str,
+        question_id: str,
+        file=None,
+        selected_option: str = None
+    ) -> Dict[str, Any]:
 
-    job_questions = await self.questions_collection.find_one({
-        "questions_w_answers.question_id": ObjectId(question_id)
-    })
+        job_questions = await self.questions_collection.find_one({
+            "questions_w_answers.question_id": ObjectId(question_id)
+        })
 
-    if not job_questions:
-        raise Exception(f"Question {question_id} not found")
+        if not job_questions:
+            raise Exception(f"Question {question_id} not found")
 
-    question_data = next(
-        (q for q in job_questions["questions_w_answers"]
-         if q["question_id"] == ObjectId(question_id)),
-        None
-    )
-
-    if not question_data:
-        raise Exception("Question not found")
-
-    q_type = question_data.get("type")
-    question_text = question_data.get("question", "")
-    reference_answer = question_data.get("reference_answer", "")
-
-    # 🧠 Handle each type
-    if q_type == "mcq":
-        if not selected_option:
-            raise Exception("MCQ answer required")
-
-        is_correct = selected_option.strip().upper() == reference_answer.strip().upper()
-
-        evaluation = {
-            "type": "mcq",
-            "is_correct": is_correct,
-            "correct_answer": reference_answer,
-            "selected_answer": selected_option
-        }
-
-        answer_doc = {
-            "question_id": ObjectId(question_id),
-            "type": "mcq",
-            "selected_option": selected_option,
-            "evaluation": evaluation
-        }
-
-    else:
-        # video / short / conceptual
-        if not file:
-            raise Exception("File required for non-MCQ")
-
-        speech_to_text = await transcribe_video(file)
-
-        evaluation = evaluate_single_answer(
-            question_text,
-            reference_answer,
-            speech_to_text
+        question_data = next(
+            (q for q in job_questions["questions_w_answers"]
+            if q["question_id"] == ObjectId(question_id)),
+            None
         )
 
-        answer_doc = {
-            "question_id": ObjectId(question_id),
-            "type": q_type,
-            "speech_to_text": speech_to_text,
+        if not question_data:
+            raise Exception("Question not found")
+
+        q_type = question_data.get("type")
+        question_text = question_data.get("question", "")
+        reference_answer = question_data.get("reference_answer", "")
+
+        # 🧠 Handle each type
+        if q_type == "mcq":
+            if not selected_option:
+                raise Exception("MCQ answer required")
+
+            is_correct = selected_option.strip().upper() == reference_answer.strip().upper()
+
+            evaluation = {
+                "type": "mcq",
+                "is_correct": is_correct,
+                "correct_answer": reference_answer,
+                "selected_answer": selected_option
+            }
+
+            answer_doc = {
+                "question_id": ObjectId(question_id),
+                "type": "mcq",
+                "selected_option": selected_option,
+                "evaluation": evaluation
+            }
+
+        else:
+            # video / short / conceptual
+            if not file:
+                raise Exception("File required for non-MCQ")
+
+            speech_to_text = await transcribe_video(file)
+
+            evaluation = evaluate_single_answer(
+                question_text,
+                reference_answer,
+                speech_to_text
+            )
+
+            answer_doc = {
+                "question_id": ObjectId(question_id),
+                "type": q_type,
+                "speech_to_text": speech_to_text,
+                "evaluation": evaluation
+            }
+
+        # Save
+        await self.sessions_collection.update_one(
+            {"_id": ObjectId(session_id)},
+            {"$push": {"answers": answer_doc}}
+        )
+
+        return {
+            "status": "answer_saved",
             "evaluation": evaluation
         }
-
-    # Save
-    await self.sessions_collection.update_one(
-        {"_id": ObjectId(session_id)},
-        {"$push": {"answers": answer_doc}}
-    )
-
-    return {
-        "status": "answer_saved",
-        "evaluation": evaluation
-    }
     # async def generate_summary(self, session_id: str) -> Dict[str, Any]:
     #     session = await self.sessions_collection.find_one(
     #         {"_id": ObjectId(session_id)}
