@@ -12,14 +12,14 @@ import { useAuth } from '../../context/AuthContext';
 const Layout = () => {
   // const role = 'jobseeker';
   const { userData } = useAuth();
-  const role = userData.role;
+  const role = userData?.role || "jobseeker" // Default to jobseeker if no role found
 
   const [profileImageUrl, setProfileImageUrl] = useState(null)
   const location = useLocation()
 
   useEffect(() => {
     // const userId = USER_IDS[role]
-    const userId = userData._id
+    const userId = userData?._id
     if (!userId) {
       console.log("There is no user id!")
       return

@@ -13,7 +13,8 @@ print("Phone usage model loaded.")
 
 
 async def analyze_phone_usage(file: UploadFile, session_id: str, question_id: str):
-    if not file.filename.endswith(('.mp4', '.avi', '.mov', '.mkv')):
+    await file.seek(0)
+    if not file.filename.endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
         raise HTTPException(status_code=400, detail="Invalid video format")
 
     temp_path = f"uploads/{session_id}_{question_id}_{file.filename}"

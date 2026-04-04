@@ -1,0 +1,221 @@
+{
+  "session_id": "69c2ea15be5e86cbebef2f3f",
+  "interview_id": "69aa315763b720c25373f035",
+  "submitted_at": "2026-03-24T19:49:51.633927Z",
+  "total_warnings": 9,
+  "total_duration": 86.6,
+  "events": [
+    {
+      "type": "log_event",
+      "at": "00:09",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "00:14",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "00:17",
+      "duration": 5.2,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 1
+    },
+    {
+      "type": "log_event",
+      "at": "00:20",
+      "duration": 2.2,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "00:22",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 2
+    },
+    {
+      "type": "log_event",
+      "at": "00:24",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "00:43",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "log_event",
+      "at": "00:51",
+      "duration": 2.0,
+      "head_dir": "Forward",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "log_event",
+      "at": "01:07",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "01:10",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 3
+    },
+    {
+      "type": "log_event",
+      "at": "01:12",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "01:21",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "01:24",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 4
+    },
+    {
+      "type": "log_event",
+      "at": "01:26",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "01:40",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "01:46",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "01:55",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "01:58",
+      "duration": 5.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 5
+    },
+    {
+      "type": "log_event",
+      "at": "02:00",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "02:04",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:07",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 6
+    },
+    {
+      "type": "log_event",
+      "at": "02:09",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:12",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Up",
+      "warning_number": 7
+    },
+    {
+      "type": "log_event",
+      "at": "02:14",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "02:19",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "02:24",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:27",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 8
+    },
+    {
+      "type": "log_event",
+      "at": "02:29",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "warning",
+      "at": "02:32",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 9
+    }
+  ]
+}
