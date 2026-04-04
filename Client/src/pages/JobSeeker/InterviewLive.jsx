@@ -354,40 +354,6 @@ export default function InterviewLive() {
       if (e.data.size > 0) videoChunksRef.current.push(e.data);
     };
 
-    // recorder.onstop = async () => {
-    //   const videoBlob      = new Blob(videoChunksRef.current, { type: 'video/webm' });
-    //   const sId            = location.state?.sessionId || localStorage.getItem('sessionId');
-    //   const activeStep     = stepRef.current;
-    //   const currentQuestion = questionsRef.current[activeStep];
-    //   const qId            = currentQuestion?.question_id || currentQuestion?._id || currentQuestion?.id;
-
-    //   if (!qId || !sId) {
-    //     toast.error('Missing Session or Question ID!');
-    //     return;
-    //   }
-
-    //   const formData = new FormData();
-    //   formData.append('file', videoBlob, `answer_q${activeStep + 1}.webm`);
-
-    //   try {
-    //     const { status } = await api.post('/interview/submit-answer', formData, {
-    //       params:  { session_id: sId, question_id: qId },
-    //       headers: { 'Content-Type': 'multipart/form-data' },
-    //     });
-    //     if (status === 200) console.log('✅ Answer uploaded for:', qId);
-    //   } catch (err) {
-    //     console.error('❌ Upload failed:', err.response?.data || err.message);
-    //   }
-    //   try {
-    //     const phoneDetection = await api.post(`/interview/analyze-phone-usage`,formData,{
-    //       params:  { session_id: sId, question_id: qId },
-    //       headers: { 'Content-Type': 'multipart/form-data' },
-    //     })
-    //     if (phoneDetection.status === 200) console.log('✅ Phone Detection for:', qId);
-    //   } catch (error) {
-    //     console.error('❌ Upload failed for Phone Detection:', error.response?.data || error.message);
-    //   }
-    // };
     recorder.onstop = async () => {
       const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
       const sId = location.state?.sessionId || localStorage.getItem('sessionId');
@@ -415,8 +381,8 @@ export default function InterviewLive() {
           sendRequest('/interview/analyze-phone-usage')
         ]);
 
-        if (resAnswer.status === 'fulfilled') console.log('✅ Answer Uploaded');
-        if (resPhone.status === 'fulfilled') console.log('✅ Phone Detection Done');
+        if (resAnswer.status === 'fulfilled') console.log('✅ Answer Uploaded for:', qId);
+        if (resPhone.status === 'fulfilled') console.log('✅ Phone Detection Done for:', qId);
         
       } catch (err) {
         console.error('❌ General Upload Error:', err);

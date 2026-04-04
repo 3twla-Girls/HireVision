@@ -12,11 +12,11 @@ from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 
 # Local Imports - Routes
-from .routes import base, userRoute, CVRoute, applicationRoute, JobRoute , cheating_eyeGaze_route ,proctoring_router
+from .routes import base, userRoute, CVRoute, applicationRoute, JobRoute , cheating_eyeGaze_route ,proctoring_router ,phone_routes
 from .routes.questions_with_answers import router as questions_with_answers
 from .routes.interview_routes import interview_router
 #from .routes.personality_routes import router as personality_router
-from .routes.phone_routes import router as phone_router
+# from .routes.phone_routes import router as phone_router
 # from .routes.report_generator_routes import router as report_generator_route
 # Local Imports - Helpers & Config
 from .helpers.config import get_settings
@@ -98,7 +98,7 @@ app.include_router(proctoring_router.proctringRouter)
 
 # # Module 2 Routes
 # app.include_router(personality_router, prefix="/personality", tags=["Personality"])
-app.include_router(phone_router)
+app.include_router(phone_routes.PhoneRouter)
 # app.include_router(report_generator_route)
 
 # Module_3 Routes (Questions, Interviews)

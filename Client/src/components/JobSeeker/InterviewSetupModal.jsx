@@ -3,6 +3,7 @@ import { Camera, CameraOff, Mic, MicOff, Volume2, Wifi, CheckCircle2, XCircle, L
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
 
 // ─── Volume Meter ─────────────────────────────────────────────────────────────
 const VolumeMeter = ({ level }) => (
@@ -204,33 +205,33 @@ export default function InterviewSetupModal({ setShowSetup, isMock = false, jobI
   }, []);
 
   // ── Speaker test ───────────────────────────────────────────────────────────
-  const testSpeaker = useCallback(async () => {
-    if (speakerTesting) return;
-    setSpeakerTesting(true);
-    setSpeakerStatus(STATUS.CHECKING);
-    setSpeakerDetail("Playing test tone…");
-    try {
-      const ctx  = new (window.AudioContext || window.webkitAudioContext)();
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 440;
-      gain.gain.setValueAtTime(0.25, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.8);
-      await new Promise((r) => setTimeout(r, 900));
-      await ctx.close();
-      setSpeakerStatus(STATUS.OK);
-      setSpeakerDetail("Speaker working — did you hear the beep?");
-    } catch {
-      setSpeakerStatus(STATUS.ERROR);
-      setSpeakerDetail("Could not play audio");
-    } finally {
-      setSpeakerTesting(false);
-    }
-  }, [speakerTesting]);
+  // const testSpeaker = useCallback(async () => {
+  //   if (speakerTesting) return;
+  //   setSpeakerTesting(true);
+  //   setSpeakerStatus(STATUS.CHECKING);
+  //   setSpeakerDetail("Playing test tone…");
+  //   try {
+  //     const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+  //     const osc  = ctx.createOscillator();
+  //     const gain = ctx.createGain();
+  //     osc.connect(gain);
+  //     gain.connect(ctx.destination);
+  //     osc.frequency.value = 440;
+  //     gain.gain.setValueAtTime(0.25, ctx.currentTime);
+  //     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+  //     osc.start();
+  //     osc.stop(ctx.currentTime + 0.8);
+  //     await new Promise((r) => setTimeout(r, 900));
+  //     await ctx.close();
+  //     setSpeakerStatus(STATUS.OK);
+  //     setSpeakerDetail("Speaker working — did you hear the beep?");
+  //   } catch {
+  //     setSpeakerStatus(STATUS.ERROR);
+  //     setSpeakerDetail("Could not play audio");
+  //   } finally {
+  //     setSpeakerTesting(false);
+  //   }
+  // }, [speakerTesting]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const cleanup = () => { stopCamera(); stopMic(); };
@@ -238,7 +239,11 @@ export default function InterviewSetupModal({ setShowSetup, isMock = false, jobI
   const handleClose   = () => { cleanup(); setShowSetup(false); };
 
   const applicantId = '69ab2892e134199955ba9655'
-  const candidateId = '69aa315763b720c25373f035'
+  // const candidateId = '69aa315763b720c25373f035'
+
+  const { userData } = useAuth();
+  const candidateId = userData?._id;
+
 
   const handleConfirm = async () => {
     setIsStarting(true);
@@ -373,11 +378,11 @@ export default function InterviewSetupModal({ setShowSetup, isMock = false, jobI
             <div className="flex flex-col gap-3">
               <CheckRow icon={Camera}  label="Camera"         status={camStatus}     detail={camDetail} />
               <CheckRow icon={Mic}     label="Microphone" status={micStatus}     detail={micDetail} />
-              <CheckRow
+              {/* <CheckRow
                 icon={Volume2} label="Speaker" status={speakerStatus} detail={speakerDetail}
                 onAction={testSpeaker}
                 actionLabel={speakerTesting ? "Testing…" : speakerStatus === STATUS.OK ? "Retest" : "Test"}
-              />
+              /> */}
               <CheckRow
                 icon={Wifi} label="Network" status={networkStatus} detail={networkDetail}
                 onAction={networkStatus === STATUS.ERROR ? checkNetwork : undefined}

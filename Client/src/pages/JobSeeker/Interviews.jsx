@@ -12,44 +12,90 @@ const TABS = [
 ]
 
 // ── Map a raw DB session → InterviewCard prop shape ──────────────
+// const mapSession = (s) => {
+//   const date = s.session_date
+//     ? new Date(s.session_date).toLocaleDateString('en-GB', {
+//         day: '2-digit', month: 'short', year: 'numeric',
+//       })
+//     : '—'
+
+//   const rawScore = s.final_summary?.technical?.final_score
+//   const score = rawScore != null ? Math.min(Math.round(Number(rawScore) * 10), 100) : 0
+
+//   const totalQuestions = s.answers?.length ?? 0
+//   const answeredCorrectly = s.answers?.filter(
+//     (a) => Number(a.evaluation?.score ?? 0) >= 3
+//   ).length ?? 0
+
+//   // A real session is "upcoming" while now < session_date + 5 hours
+//   const sessionDay  = s.session_date ? new Date(s.session_date) : null
+//   const expiresAt   = sessionDay ? new Date(sessionDay.getTime() + 5 * 60 * 60 * 1000) : null
+//   const isUpcoming  = expiresAt ? Date.now() < expiresAt.getTime() : false
+
+//   return {
+//     id: s._id,
+//     jobId: s.job_id ?? null,
+//     tab: s.is_mock ? 'mock' : (isUpcoming ? 'upcoming' : 'past'),
+//     jobTitle: s.job_title || 'Interview Session',
+//     company:  s.company  || '—',
+//     city:     s.city     || '—',
+//     country:  s.country  || '',
+//     interviewDate: date,
+//     scheduledAt:   s.session_date ?? new Date().toISOString(),
+//     score,
+//     totalQuestions,
+//     answeredCorrectly,
+//     duration: `${totalQuestions} Q`,
+//     reportFile: s.final_summary?.technical ? s._id : null,
+//     _raw: s,
+//   }
+// }
 const mapSession = (s) => {
-  const date = s.session_date
-    ? new Date(s.session_date).toLocaleDateString('en-GB', {
+  const rawDate = s.session_date?.$date || s.session_date; 
+  const sessionDay = rawDate ? new Date(rawDate) : null;
+
+  const dateStr = sessionDay && !isNaN(sessionDay)
+    ? sessionDay.toLocaleDateString('en-GB', {
         day: '2-digit', month: 'short', year: 'numeric',
       })
-    : '—'
+    : '—';
 
-  const rawScore = s.final_summary?.technical?.final_score
-  const score = rawScore != null ? Math.min(Math.round(Number(rawScore) * 10), 100) : 0
+  const isMock = s.is_mock === true || s.is_mock === "true";
 
-  const totalQuestions = s.answers?.length ?? 0
+  const rawScore = s.final_summary?.technical?.final_score;
+  const score = rawScore != null ? Math.min(Math.round(Number(rawScore) * 10), 100) : 0;
+
+  const totalQuestions = s.answers?.length ?? 0;
   const answeredCorrectly = s.answers?.filter(
     (a) => Number(a.evaluation?.score ?? 0) >= 3
-  ).length ?? 0
+  ).length ?? 0;
 
-  // A real session is "upcoming" while now < session_date + 5 hours
-  const sessionDay  = s.session_date ? new Date(s.session_date) : null
-  const expiresAt   = sessionDay ? new Date(sessionDay.getTime() + 5 * 60 * 60 * 1000) : null
-  const isUpcoming  = expiresAt ? Date.now() < expiresAt.getTime() : false
+  let tab = 'past';
+  if (isMock) {
+    tab = 'mock';
+  } else if (sessionDay && !isNaN(sessionDay)) {
+    const expiresAt = new Date(sessionDay.getTime() + 5 * 60 * 60 * 1000);
+    tab = Date.now() < expiresAt.getTime() ? 'upcoming' : 'past';
+  }
 
   return {
-    id: s._id,
+    id: s._id?.$oid || s._id,
     jobId: s.job_id ?? null,
-    tab: s.is_mock ? 'mock' : (isUpcoming ? 'upcoming' : 'past'),
-    jobTitle: s.job_title || 'Interview Session',
-    company:  s.company  || '—',
-    city:     s.city     || '—',
+    tab: tab,
+    jobTitle: s.job_title || (isMock ? 'Mock Practice' : 'Interview Session'),
+    company:  s.company  || 'HireVision AI',
+    city:     s.city     || 'Remote',
     country:  s.country  || '',
-    interviewDate: date,
-    scheduledAt:   s.session_date ?? new Date().toISOString(),
+    interviewDate: dateStr,
+    scheduledAt:   rawDate || new Date().toISOString(),
     score,
     totalQuestions,
     answeredCorrectly,
     duration: `${totalQuestions} Q`,
-    reportFile: s.final_summary?.technical ? s._id : null,
+    reportFile: s.final_summary?.technical ? (s._id?.$oid || s._id) : null,
     _raw: s,
-  }
-}
+  };
+};
 
 // ── Animated score ring for the avg stat ─────────────────────────
 const MiniRing = ({ value }) => {
@@ -87,9 +133,11 @@ const Interviews = () => {
       try {
         setLoading(true)
         const res = await fetch(`/api/v1/interview/candidate/${candidateId}`)
+        console.log("Raw sessions data:", res.body)
         if (!res.ok) throw new Error(`Server error: ${res.status}`)
-        const data = await res.json()
-
+          const data = await res.json()
+        console.log("Raw sessions data:",data)
+        
         const uniqueJobIds = [...new Set(
           data.filter((s) => !s.is_mock && s.job_id).map((s) => s.job_id)
         )]
@@ -115,7 +163,7 @@ const Interviews = () => {
           }
           return base
         })
-
+        console.log("Mapped sessions:", mapped)
         setSessions(mapped)
       } catch (err) {
         console.error('Failed to fetch interviews:', err)

@@ -5,13 +5,13 @@ from Server.controllers.phoneDetectionController import(
     
 
 
-router = APIRouter(
-    prefix="/interview",
+PhoneRouter = APIRouter(
+    prefix="/api/v1/interview",
     tags=["Phone Usage Detection"]
 )
 
 # Make sure to await the controller functions
-@router.post("/analyze-phone-usage")
+@PhoneRouter.post("/analyze-phone-usage")
 async def analyze_phone_usage_router(
     file       : UploadFile = File(...),
     session_id : str        = Query(...),
@@ -20,6 +20,6 @@ async def analyze_phone_usage_router(
     return await analyze_phone_usage(file, session_id, question_id)
 
 
-@router.get("/cheating-report")
+@PhoneRouter.get("/cheating-report")
 async def get_cheating_report_router(session_id: str = Query(...)):
     return await get_cheating_report(session_id)
