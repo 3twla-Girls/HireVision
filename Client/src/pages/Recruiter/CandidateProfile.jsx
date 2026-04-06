@@ -1,42 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Mail, MapPin, Clock, Download, Send,
   CheckCircle, XCircle, Layers, FileText, User,
-  Briefcase, Star, AlertCircle
+  Briefcase, Star, AlertCircle, Loader2
 } from 'lucide-react';
-
-/* ─── Mock Data (replace with API call) ─────────────────────── */
-const APPLICATION = {
-  _id: '69aaebe4def3bd659ee84eb3',
-  job_id: '69aae77ddef3bd659ee84eac',
-  candidate_id: '69aa315763b720c25373f035',
-  years_of_exp: 3,
-  created_at: '2026-03-06T14:59:48.212Z',
-  status: 'pending',
-  cv_feedback_url: 'https://res.cloudinary.com/dzufxvqbb/raw/upload/v1772826743/feedbacks/69aa315763b720c25373f035/hflkmovcwgchktxiuqd3',
-  matching_score: 66.98,
-  matching_skills: ['HTML', 'React', 'JavaScript', 'CSS', 'Git'],
-  missing_skills: ['Bootstrap', 'Tailwind CSS', 'Figma', 'REST API'],
-};
-
-const CANDIDATE = {
-  name: 'Sarah Johnson',
-  email: 'sarah.johnson@email.com',
-  city: 'San Francisco',
-  country: 'USA',
-  avatar: null,
-};
-
-const JOB = { title: 'Frontend Developer' };
-
-// Mock CV feedback lines parsed from the PDF
-const CV_FEEDBACK = [
-  { text: 'Strong foundational skills in core web technologies', positive: true },
-  { text: 'Well-structured and clearly presented CV', positive: true },
-  { text: 'Projects demonstrate practical real-world impact', positive: true },
-  { text: 'Lacks experience with modern CSS frameworks', positive: false },
-];
 
 /* ─── Circular Progress ─────────────────────────────────────── */
 const CircularScore = ({ score, color, size = 120 }) => {
@@ -45,7 +13,6 @@ const CircularScore = ({ score, color, size = 120 }) => {
   const circumference = 2 * Math.PI * radius;
   const strokeColor = color === 'orange' ? '#FF914D' : '#10b981';
 
-  // Animate from 0 → score on mount
   useEffect(() => {
     const t = setTimeout(() => setAnimated(score), 50);
     return () => clearTimeout(t);
@@ -57,9 +24,7 @@ const CircularScore = ({ score, color, size = 120 }) => {
     <div className="flex flex-col items-center gap-3">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox="0 0 100 100" className="-rotate-90">
-          {/* track */}
           <circle cx="50" cy="50" r={radius} fill="none" stroke="#f1f5f9" strokeWidth="8" />
-          {/* progress arc */}
           <circle
             cx="50" cy="50" r={radius} fill="none"
             stroke={strokeColor} strokeWidth="8"
@@ -68,7 +33,6 @@ const CircularScore = ({ score, color, size = 120 }) => {
             style={{ transition: 'stroke-dasharray 1.2s cubic-bezier(0.4,0,0.2,1)' }}
           />
         </svg>
-        {/* Animated counter */}
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="text-xl font-black text-[#1B3C53]">{Math.round(animated)}%</span>
         </div>
@@ -79,10 +43,11 @@ const CircularScore = ({ score, color, size = 120 }) => {
 
 /* ─── Status Badge ──────────────────────────────────────────── */
 const statusConfig = {
-  pending:   { label: 'Pending',   bg: 'bg-amber-50',   text: 'text-amber-700',   dot: 'bg-amber-400'   },
-  reviewed:  { label: 'Reviewed',  bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500'    },
-  accepted:  { label: 'Accepted',  bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  rejected:  { label: 'Rejected',  bg: 'bg-red-50',     text: 'text-red-600',     dot: 'bg-red-400'     },
+  pending:               { label: 'Pending',             bg: 'bg-amber-50',   text: 'text-amber-700',   dot: 'bg-amber-400'   },
+  reviewed:              { label: 'Reviewed',            bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500'    },
+  accepted:              { label: 'Accepted',            bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+  rejected:              { label: 'Rejected',            bg: 'bg-red-50',     text: 'text-red-600',     dot: 'bg-red-400'     },
+  accepted_for_interview:{ label: 'Accepted for Interview', bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-purple-500' },
 };
 
 const StatusBadge = ({ status }) => {
@@ -105,13 +70,107 @@ const Card = ({ children, className = '' }) => (
 /* ─── Main Page ─────────────────────────────────────────────── */
 const CandidateProfile = () => {
   const navigate = useNavigate();
-  const [appStatus, setAppStatus] = useState(APPLICATION.status);
+  const { applicationId } = useParams();
 
-  const app = APPLICATION;
-  const candidate = CANDIDATE;
+  const [app, setApp]           = useState(null);
+  const [candidate, setCandidate] = useState(null);
+  const [job, setJob]           = useState(null);
+  const [appStatus, setAppStatus] = useState('pending');
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(null);
+  const [saving, setSaving]     = useState(false);
+
+  // ── Fetch application + candidate + job ──────────────────────
+  useEffect(() => {
+    if (!applicationId) return;
+
+    const fetchAll = async () => {
+      try {
+        setLoading(true);
+
+        // 1. Application
+        const appRes = await fetch(`/api/v1/application/${applicationId}`);
+        if (!appRes.ok) throw new Error('Application not found');
+        const appData = await appRes.json();
+        setApp(appData);
+        setAppStatus(appData.status ?? 'pending');
+
+        // 2. Candidate user (fetch in parallel with job)
+        const [candidateRes, jobRes] = await Promise.all([
+          fetch(`/api/v1/user/${appData.candidate_id}`),
+          fetch(`/api/v1/job/${appData.job_id}`),
+        ]);
+
+        if (candidateRes.ok) {
+          const userData = await candidateRes.json();
+          setCandidate(userData.user ?? userData);
+        }
+        if (jobRes.ok) setJob(await jobRes.json());
+
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
+  }, [applicationId]);
+
+  // ── Update status ────────────────────────────────────────────
+  const handleStatusChange = async (newStatus) => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/v1/application/${applicationId}/status?status_value=${newStatus}`, {
+        method: 'PATCH',
+      });
+      if (res.ok) setAppStatus(newStatus);
+    } catch (e) {
+      console.error('Failed to update status:', e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Loading / Error states ────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-[#456882]">
+          <Loader2 size={36} className="animate-spin text-[#1B3C53]" />
+          <p className="text-sm font-semibold">Loading candidate profile…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !app) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <AlertCircle size={40} className="text-red-400 mx-auto" />
+          <p className="text-sm font-semibold text-red-500">{error ?? 'Application not found'}</p>
+          <button onClick={() => navigate(-1)} className="text-sm text-[#1B3C53] underline">Go back</button>
+        </div>
+      </div>
+    );
+  }
 
   const postedDate = new Date(app.created_at);
-  const daysAgo = Math.floor((Date.now() - postedDate.getTime()) / 86400000);
+  const daysAgo    = Math.floor((Date.now() - postedDate.getTime()) / 86400000);
+
+  const candidateName  = candidate?.name ?? candidate?.full_name ?? 'Candidate';
+  const candidateEmail = candidate?.email ?? '—';
+  const location       = candidate?.location ?? '';
+  const locationParts  = location.split(',').map((p) => p.trim());
+  const city    = locationParts[0] ?? '—';
+  const country = locationParts.slice(1).join(', ') || '';
+
+  const matchScore    = app.matching_score != null ? Math.round(app.matching_score) : 0;
+  const matchSkills   = app.matching_skills ?? [];
+  const missingSkills = app.missing_skills  ?? [];
+  const cvUrl         = app.cv_feedback_url ?? null;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-24">
@@ -127,7 +186,7 @@ const CandidateProfile = () => {
           <div>
             <h1 className="text-xl font-black text-[#1B3C53] leading-tight">Candidate Profile</h1>
             <p className="text-[#456882] text-xs font-medium mt-0.5">
-              Application for <span className="font-bold text-[#FF914D]">{JOB.title}</span>
+              Application for <span className="font-bold text-[#FF914D]">{job?.job_title ?? '—'}</span>
             </p>
           </div>
         </div>
@@ -138,20 +197,22 @@ const CandidateProfile = () => {
             <div className="flex items-center gap-4">
               {/* Avatar */}
               <div className="w-20 h-20 rounded-3xl bg-[#1B3C53]/10 flex items-center justify-center shrink-0 border border-[#1B3C53]/10">
-                {candidate.avatar
-                  ? <img src={candidate.avatar} alt={candidate.name} className="w-full h-full object-cover rounded-2xl" />
+                {candidate?.avatar
+                  ? <img src={candidate.avatar} alt={candidateName} className="w-full h-full object-cover rounded-2xl" />
                   : <User size={28} className="text-[#1B3C53]/40" />
                 }
               </div>
               <div>
-                <h2 className="text-xl font-black text-[#1B3C53]">{candidate.name}</h2>
+                <h2 className="text-xl font-black text-[#1B3C53]">{candidateName}</h2>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                   <span className="flex items-center gap-1.5 text-[#456882] text-sm">
-                    <Mail size={13} className="text-[#FF914D]" /> {candidate.email}
+                    <Mail size={13} className="text-[#FF914D]" /> {candidateEmail}
                   </span>
-                  <span className="flex items-center gap-1.5 text-[#456882] text-sm">
-                    <MapPin size={13} className="text-[#FF914D]" /> {candidate.city}, {candidate.country}
-                  </span>
+                  {location && (
+                    <span className="flex items-center gap-1.5 text-[#456882] text-sm">
+                      <MapPin size={13} className="text-[#FF914D]" /> {city}{country ? `, ${country}` : ''}
+                    </span>
+                  )}
                   <span className="flex items-center gap-1.5 text-[#456882] text-sm">
                     <Briefcase size={13} className="text-[#FF914D]" /> {app.years_of_exp} yrs experience
                   </span>
@@ -162,7 +223,7 @@ const CandidateProfile = () => {
             <div className="flex flex-col sm:items-end gap-3 shrink-0">
               <StatusBadge status={appStatus} />
               <span className="flex items-center gap-1.5 text-[#456882] text-xs font-medium">
-                <Clock size={12} /> Applied {daysAgo} days ago
+                <Clock size={12} /> Applied {daysAgo} day{daysAgo !== 1 ? 's' : ''} ago
               </span>
             </div>
           </div>
@@ -179,53 +240,58 @@ const CandidateProfile = () => {
               <h3 className="text-xs font-black text-[#456882] uppercase tracking-[0.15em] mb-5">CV Matching Score</h3>
               <div className="flex items-center justify-center gap-10">
                 <div className="flex flex-col items-center gap-2">
-                  <CircularScore score={app.matching_score} color="green" />
+                  <CircularScore score={matchScore} color="green" />
                   <span className="text-xs font-bold text-[#456882]">CV Score</span>
-                </div>
-                {/* Vertical divider */}
-                <div className="h-24 w-px bg-gray-100" />
-                <div className="flex flex-col items-center gap-2">
-                  <CircularScore score={72} color="orange" />
-                  <span className="text-xs font-bold text-[#456882]">Interview Score</span>
                 </div>
               </div>
             </Card>
 
             {/* Matching Skills */}
-            <Card>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 bg-emerald-500 rounded-lg flex items-center justify-center">
-                  <CheckCircle size={14} className="text-white" />
+            {matchSkills.length > 0 && (
+              <Card>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-7 h-7 bg-emerald-500 rounded-lg flex items-center justify-center">
+                    <CheckCircle size={14} className="text-white" />
+                  </div>
+                  <h3 className="text-sm font-black text-[#1B3C53]">
+                    Matching Skills <span className="text-[#456882] font-medium text-xs">(From CV)</span>
+                  </h3>
                 </div>
-                <h3 className="text-sm font-black text-[#1B3C53]">
-                  Matching Skills <span className="text-[#456882] font-medium text-xs">(From CV)</span>
-                </h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {app.matching_skills.map(skill => (
-                  <span key={skill} className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-xl text-sm font-bold">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </Card>
+                <div className="flex flex-wrap gap-2">
+                  {matchSkills.map(skill => (
+                    <span key={skill} className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 rounded-xl text-sm font-bold">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </Card>
+            )}
 
             {/* Missing Skills */}
-            <Card>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 bg-red-400 rounded-lg flex items-center justify-center">
-                  <XCircle size={14} className="text-white" />
+            {missingSkills.length > 0 && (
+              <Card>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-7 h-7 bg-red-400 rounded-lg flex items-center justify-center">
+                    <XCircle size={14} className="text-white" />
+                  </div>
+                  <h3 className="text-sm font-black text-[#1B3C53]">Missing Skills</h3>
                 </div>
-                <h3 className="text-sm font-black text-[#1B3C53]">Missing Skills</h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {app.missing_skills.map(skill => (
-                  <span key={skill} className="bg-red-50 text-red-600 border border-red-100 px-3 py-1 rounded-xl text-sm font-bold">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </Card>
+                <div className="flex flex-wrap gap-2">
+                  {missingSkills.map(skill => (
+                    <span key={skill} className="bg-red-50 text-red-600 border border-red-100 px-3 py-1 rounded-xl text-sm font-bold">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* No skills info yet */}
+            {matchSkills.length === 0 && missingSkills.length === 0 && (
+              <Card>
+                <p className="text-sm text-[#456882] text-center py-4">Skills analysis not yet available.</p>
+              </Card>
+            )}
 
           </div>
 
@@ -238,30 +304,20 @@ const CandidateProfile = () => {
                 <div className="w-7 h-7 bg-[#1B3C53] rounded-lg flex items-center justify-center">
                   <FileText size={14} className="text-white" />
                 </div>
-                <h3 className="text-sm font-black text-[#1B3C53]">CV Feedback</h3>
+                <h3 className="text-sm font-black text-[#1B3C53]">CV Feedback Report</h3>
               </div>
-              <ul className="space-y-2.5">
-                {CV_FEEDBACK.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-[#456882] font-medium">
-                    <span className={`mt-0.5 shrink-0 ${item.positive ? 'text-emerald-500' : 'text-[#FF914D]'}`}>
-                      {item.positive
-                        ? <CheckCircle size={15} />
-                        : <AlertCircle size={15} />
-                      }
-                    </span>
-                    {item.text}
-                  </li>
-                ))}
-              </ul>
 
-              {/* View full CV feedback PDF button */}
-              <a
-                href={app.cv_feedback_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-5 flex items-center gap-2 text-[#1B3C53] hover:text-[#FF914D] text-sm font-bold transition-colors">
-                <Download size={15} /> View Full CV Feedback Report
-              </a>
+              {cvUrl ? (
+                <a
+                  href={cvUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-[#1B3C53] hover:text-[#FF914D] text-sm font-bold transition-colors">
+                  <Download size={15} /> View Full CV Feedback Report
+                </a>
+              ) : (
+                <p className="text-sm text-[#456882]">No CV feedback report available yet.</p>
+              )}
             </Card>
 
             {/* Application Decision */}
@@ -274,7 +330,8 @@ const CandidateProfile = () => {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => setAppStatus('accepted')}
+                  onClick={() => handleStatusChange('accepted')}
+                  disabled={saving}
                   className={`py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all border
                     ${appStatus === 'accepted'
                       ? 'bg-emerald-500 text-white border-emerald-500 shadow-md'
@@ -282,7 +339,8 @@ const CandidateProfile = () => {
                   <CheckCircle size={15} /> Accept
                 </button>
                 <button
-                  onClick={() => setAppStatus('rejected')}
+                  onClick={() => handleStatusChange('rejected')}
+                  disabled={saving}
                   className={`py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all border
                     ${appStatus === 'rejected'
                       ? 'bg-red-500 text-white border-red-500 shadow-md'
@@ -290,19 +348,26 @@ const CandidateProfile = () => {
                   <XCircle size={15} /> Reject
                 </button>
               </div>
+              {saving && <p className="text-xs text-[#456882] mt-2 text-center">Saving…</p>}
             </Card>
 
             {/* Action Buttons */}
             <div className="flex gap-3">
+              {cvUrl ? (
+                <a
+                  href={cvUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 bg-[#1B3C53] hover:bg-[#0f2535] text-white font-black py-3.5 rounded-2xl text-sm transition-all shadow-md hover:shadow-lg">
+                  <Download size={16} /> View CV Report
+                </a>
+              ) : (
+                <div className="flex-1 flex items-center justify-center gap-2 bg-gray-200 text-gray-400 font-black py-3.5 rounded-2xl text-sm cursor-not-allowed">
+                  <Download size={16} /> No CV Report
+                </div>
+              )}
               <a
-                href={app.cv_feedback_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 bg-[#1B3C53] hover:bg-[#0f2535] text-white font-black py-3.5 rounded-2xl text-sm transition-all shadow-md hover:shadow-lg">
-                <Download size={16} /> View CV
-              </a>
-              <a
-                href={`mailto:${candidate.email}`}
+                href={`mailto:${candidateEmail}`}
                 className="flex-1 flex items-center justify-center gap-2 bg-[#FF914D] hover:bg-[#e07d3c] text-white font-black py-3.5 rounded-2xl text-sm transition-all shadow-md hover:shadow-lg">
                 <Send size={16} /> Send Email
               </a>
