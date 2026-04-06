@@ -262,6 +262,7 @@ export default function InterviewLive() {
   const videoChunksRef   = useRef([]);
   const questionsRef     = useRef([]);
   const stepRef          = useRef(0);
+  const selectedOptionRef = useRef(null);
 
   // ── State ─────────────────────────────────────────────────────
   const [questions,    setQuestions]    = useState([]);
@@ -361,13 +362,67 @@ export default function InterviewLive() {
       if (e.data.size > 0) videoChunksRef.current.push(e.data);
     };
 
+  //   recorder.onstop = async () => {
+  //     const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
+  //     const sId = location.state?.sessionId || localStorage.getItem('sessionId');
+  //     const activeStep = stepRef.current;
+  //     const currentQuestion = questionsRef.current[activeStep];
+  //     const qId = currentQuestion?.question_id || currentQuestion?._id || currentQuestion?.id;
+
+  //     if (!qId || !sId) {
+  //       console.error('Missing IDs!', { sId, qId });
+  //       return;
+  //     }
+
+  //     const sendRequest = async (endpoint) => {
+  //       const formData = new FormData();
+  //       // formData.append('file', videoBlob, `video_${qId}.webm`);
+  //       // questions[currentStep]?.type === 'mcq' && formData.append('selected_option', selectedOption);
+  //       const currentSelection = selectedOptionRef.current;
+  //       if (currentQuestion.type === 'mcq' && !currentSelection) {
+  //         console.error("No option selected!");
+  //         return;
+  //       }
+  //       if (currentQuestion.type === 'mcq') {
+  //           formData.append('selected_option', currentSelection);
+  //       } else {
+  //           formData.append('file', videoBlob, `video_${qId}.webm`);
+  //       }
+  //       console.log("selected option in form data", currentSelection)
+  //       return api.post(endpoint, formData, {
+  //         params: { session_id: sId, question_id: qId  },
+  //         headers: { 'Content-Type': 'multipart/form-data' },
+  //       });
+  //     };
+  //     const sendRequestPhone = async (endpoint) => {
+  //       const formData = new FormData();
+  //       formData.append('file', videoBlob, `video_${qId}.webm`);
+  //       return api.post(endpoint, formData, {
+  //         params: { session_id: sId, question_id: qId  },
+  //         headers: { 'Content-Type': 'multipart/form-data' },
+  //       });
+  //     };
+
+  //     try {
+  //       const [resAnswer, resPhone] = await Promise.allSettled([
+  //         sendRequest('/interview/submit-answer'),
+  //         sendRequestPhone('/interview/analyze-phone-usage')
+  //       ]);
+
+  //       if (resAnswer.status === 'fulfilled') console.log('✅ Answer Uploaded for:', qId);
+  //       if (resPhone.status === 'fulfilled') console.log('✅ Phone Detection Done for:', qId);
+        
+  //     } catch (err) {
+  //       console.error('❌ General Upload Error:', err);
+  //     }
+  // };
     recorder.onstop = async () => {
       const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
       const sId = location.state?.sessionId || localStorage.getItem('sessionId');
       const activeStep = stepRef.current;
       const currentQuestion = questionsRef.current[activeStep];
       const qId = currentQuestion?.question_id || currentQuestion?._id || currentQuestion?.id;
-
+      
       if (!qId || !sId) {
         console.error('Missing IDs!', { sId, qId });
         return;
@@ -375,29 +430,23 @@ export default function InterviewLive() {
 
       const sendRequest = async (endpoint) => {
         const formData = new FormData();
-        // formData.append('file', videoBlob, `video_${qId}.webm`);
-        // questions[currentStep]?.type === 'mcq' && formData.append('selected_option', selectedOption);
-        if (currentQuestion.type === 'mcq' && !selectedOption) {
-          console.error("No option selected!");
-          return;
-        }
-        if (currentQuestion.type === 'mcq') {
-            formData.append('selected_option', selectedOption);
-        } else {
-            formData.append('file', videoBlob, `video_${qId}.webm`);
-        }
-        console.log("selected option in form data", selectedOption)
-        return api.post(endpoint, formData, {
-          params: { session_id: sId, question_id: qId  },
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-      };
-      const sendRequestPhone = async (endpoint) => {
-        const formData = new FormData();
+        
         formData.append('file', videoBlob, `video_${qId}.webm`);
-        console.log("selected option in form data", selectedOption)
+
+        const requestParams = {
+          session_id: sId,
+          question_id: qId
+        };
+
+        if (currentQuestion.type === 'mcq') {
+          const currentSelection = selectedOptionRef.current;
+          if (currentSelection) {
+            requestParams.selected_option = currentSelection;
+          }
+        }
+
         return api.post(endpoint, formData, {
-          params: { session_id: sId, question_id: qId  },
+          params: requestParams,
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       };
@@ -405,46 +454,25 @@ export default function InterviewLive() {
       try {
         const [resAnswer, resPhone] = await Promise.allSettled([
           sendRequest('/interview/submit-answer'),
-          sendRequestPhone('/interview/analyze-phone-usage')
+          sendRequest('/interview/analyze-phone-usage')
         ]);
 
-        if (resAnswer.status === 'fulfilled') console.log('✅ Answer Uploaded for:', qId);
-        if (resPhone.status === 'fulfilled') console.log('✅ Phone Detection Done for:', qId);
-        
+        if (resAnswer.status === 'fulfilled') {
+          console.log('✅ Answer & Video Uploaded:', qId);
+        } else {
+          console.error('❌ Answer Post Failed:', resAnswer.reason);
+        }
+
+        if (resPhone.status === 'fulfilled') {
+          console.log('✅ Phone Detection Processed');
+        }
       } catch (err) {
-        console.error('❌ General Upload Error:', err);
+        console.error('❌ Critical Error during submission:', err);
       }
-      
-      
-    // const sendAnswer = async () => {
-    //   const formData = new FormData();
-
-    //   if (currentQuestion.type === 'mcq') {
-    //     formData.append('selected_option', selectedOption);
-    //   } else {
-    //     formData.append('file', videoBlob);
-    //   }
-
-    //   return api.post('/interview/submit-answer', formData, {
-    //     params: { session_id: sId, question_id: qId },
-    //   });
-    // };
-    
-    // const sendPhoneAnalysis = async () => {
-    //   if (currentQuestion.type === 'mcq') return; // 🚫 skip
-      
-    //   const formData = new FormData();
-    //   formData.append('file', videoBlob);
-      
-    //   return api.post('/interview/analyze-phone-usage', formData, {
-    //     params: { session_id: sId, question_id: qId },
-    //   });
-    // };
-    
-  };
+    };
     recorder.start();
     mediaRecorderRef.current = recorder;
-  }, [location, questions, currentStep, selectedOption]);
+  }, [location, questions, currentStep, selectedOption,selectedOptionRef]);
 
   // ── Camera ────────────────────────────────────────────────────
   const stopCamera = useCallback(() => {
@@ -629,28 +657,33 @@ export default function InterviewLive() {
             {/* MCQ Options */}
             {questions[currentStep]?.type === 'mcq' && (
               <div className="mt-2 space-y-3 space-x-3">
-                {questions[currentStep]?.options.map((option, idx) => (
+                {questions[currentStep]?.options.map((option, idx) => {
+                    const optionLetter = String.fromCharCode(65 + idx); 
+                    return(
                   <button
                     key={idx}
-                    onClick={() => setSelectedOption(option)}
+                    onClick={() => {
+                      setSelectedOption(optionLetter);
+                      selectedOptionRef.current = optionLetter;
+                    }}
                     className={`w-fit text-left p-4 pr-6 rounded-xl border-2 transition-all ${
-                      selectedOption === option
+                      selectedOption === optionLetter
                         ? 'border-dark-blue bg-dark-blue/5 shadow-md'
                         : 'border-gray-100 hover:border-gray-300 bg-white'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <span className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold ${
-                        selectedOption === option ? 'bg-dark-blue text-white' : 'text-gray-400'
+                        selectedOption === optionLetter ? 'bg-dark-blue text-white' : 'text-gray-400'
                       }`}>
                         {String.fromCharCode(65 + idx)} {/* A, B, C, D */}
                       </span>
-                      <span className={selectedOption === option ? 'font-bold text-dark-blue' : 'text-gray-700'}>
+                      <span className={selectedOption === optionLetter ? 'font-bold text-dark-blue' : 'text-gray-700'}>
                         {option}
                       </span>
                     </div>
                   </button>
-                ))}
+              )})}
               </div>
             )}
           </div>
