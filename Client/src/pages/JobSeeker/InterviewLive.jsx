@@ -7,6 +7,7 @@ import {
   ChevronRight, AlertCircle, CheckCircle2,
 } from 'lucide-react';
 import { useCheatingDetection } from '../../components/JobSeeker/useCheatingDetection';
+import { useAuth } from '../../context/AuthContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const QUESTION_TIME  = 120;
@@ -238,12 +239,18 @@ export default function InterviewLive() {
   const { type }  = useParams();
   const isMock    = type === 'mock';
 
+  const { userData } = useAuth();
+  const candidateId = userData?._id;
+
   // Target ID depends on interview type:
   // - mock: candidateId (used to fetch mock questions)
   // - real: jobId passed via location.state (falls back to hardcoded for dev/testing)
+  // const targetID = isMock
+  //   ? '69aa315763b720c25373f035'                       // candidateId for mock
+  //   : (location.state?.jobId ?? '69b1e7b711c65e4fb7ec2f55'); // real job_id
   const targetID = isMock
-    ? '69aa315763b720c25373f035'                       // candidateId for mock
-    : (location.state?.jobId ?? '69b1e7b711c65e4fb7ec2f55'); // real job_id
+    ? candidateId                      // candidateId for mock
+    : (location.state?.jobId); // real job_id
 
   // ── Refs ──────────────────────────────────────────────────────
   const videoRef         = useRef(null);
