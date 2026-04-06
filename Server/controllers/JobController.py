@@ -124,6 +124,8 @@ class JobController(BaseController):
         records = await self.job_model.find_all_jobs()
         jobs = []
         for doc in records:
+            if doc.get("status") != "open":
+                continue
             doc["id"] = str(doc["_id"])
             if "job_recruiter_id" in doc:
                 doc["job_recruiter_id"] = str(doc["job_recruiter_id"])
@@ -138,6 +140,8 @@ class JobController(BaseController):
         records = await self.job_model.find_jobs_by_cluster(cluster_id)
         jobs = []
         for doc in records:
+            if doc.get("status") != "open":
+                continue
             doc["id"] = str(doc["_id"])
             if "job_recruiter_id" in doc:
                 doc["job_recruiter_id"] = str(doc["job_recruiter_id"])

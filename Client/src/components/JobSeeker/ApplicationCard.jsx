@@ -101,50 +101,32 @@ const ApplicationCard = ({ application, navigable = false }) => {
                     </div>
                 </div>
 
-                {/* Feedback PDF (only for feedback tab) */}
+                {/* Feedback Section (only for feedback tab) */}
                 {application.feedbackFile && (
                     <div
-                        className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3"
+                        className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <FileText size={18} className="text-dark-orange shrink-0" />
-                        <span className="text-[14px] font-medium text-dark-blue">
-                            {application.feedbackFileName || 'Feedback.pdf'}
-                        </span>
+                        <div className="flex items-center gap-3">
+                            <FileText size={18} className="text-dark-orange shrink-0" />
+                            <span className="text-[14px] font-medium text-dark-blue">
+                                {application.feedbackFileName || 'Application/Session Feedback'}
+                            </span>
+                        </div>
 
-                        {/* Open button — opens modal */}
+                        {/* Navigate to candidate report button */}
                         <button
-                            onClick={() => setShowFeedback(true)}
-                            className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold
-                                       text-dark-blue bg-light-gray1 border border-light-gray2
-                                       hover:border-dark-blue/30 hover:shadow-sm transition-all duration-200 cursor-pointer"
-                        >
-                            <Eye size={14} />
-                            Open
-                        </button>
-
-                        {/* Download button */}
-                        <a
-                            href={application.feedbackFile}
-                            download={application.feedbackFileName || 'Feedback.pdf'}
+                            onClick={() => navigate(`/candidate-report/${application.sessionId || application.id}`)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold
                                        text-white bg-dark-blue
-                                       hover:bg-dark-blue/90 hover:shadow-sm transition-all duration-200"
+                                       hover:bg-dark-blue/90 hover:shadow-sm transition-all duration-200 cursor-pointer"
                         >
-                            <Download size={14} />
-                            Download
-                        </a>
+                            <Eye size={14} />
+                            View Candidate Report
+                        </button>
                     </div>
                 )}
             </div>
-
-            {/* Feedback PDF Modal */}
-            <FeedbackModal
-                isOpen={showFeedback}
-                onClose={() => setShowFeedback(false)}
-                feedbackFile={application.feedbackFile}
-                jobTitle={application.jobTitle}
-            />
         </>
     )
 }

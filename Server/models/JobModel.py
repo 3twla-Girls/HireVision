@@ -54,9 +54,23 @@ class JobModel(BaseDataModel):
             {"job_recruiter_id": recruiter_id}
         )
         
-    # in JobModel
     async def find_all_jobs(self):
         return await self.collection.find({}).to_list(length=None)
 
     async def find_jobs_by_cluster(self, cluster_id: int):
         return await self.collection.find({"cluster_id": cluster_id}).to_list(length=None)
+
+    async def find_expired_open_jobs(self, today_str: str):
+        """
+        Return all 'open' jobs whose expiry_date is earlier than or equal to today.
+        today_str should be in YYYY-MM-DD format.
+        Uses a string comparison which works correctly for ISO-format dates.
+        """
+        return await self.collection.find({
+            "status": "open",
+            "expiry_date": {"$lte": today_str, "$exists": True, "$ne": None, "$ne": ""}
+        }).to_list(length=None)
+
+    async def find_jobs_by_status(self, status: str):
+        """Return all jobs matching a given status string."""
+        return await self.collection.find({"status": status}).to_list(length=None)

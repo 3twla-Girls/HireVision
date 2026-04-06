@@ -97,6 +97,16 @@ class InterviewController(BaseController):
 
         questions = job_questions.get("questions_w_answers", [])
 
+        # Fetch the job to check number_of_questions_per_interview
+        job_doc = await self.db_client[DataBaseEnum.COLLECTION_JOB_NAME.value].find_one(
+            {"_id": ObjectId(job_id)}
+        )
+        if job_doc:
+            num_req_questions = job_doc.get("number_of_questions_per_interview", 0)
+            if num_req_questions > 0 and len(questions) > num_req_questions:
+                import random
+                questions = random.sample(questions, num_req_questions)
+
         # Convert ObjectId to string for API response
         for q in questions:
             q_id = q.get("question_id")
@@ -123,20 +133,64 @@ class InterviewController(BaseController):
         return session
 
     async def get_sessions_by_candidate(self, candidate_id: str) -> list:
+        # 1. Fetch real sessions (started/completed)
         cursor = self.sessions_collection.find(
             {"candidate_id": candidate_id}
         ).sort("session_date", -1)
 
         sessions = await cursor.to_list(length=None)
+        real_job_ids = set()
+
         for s in sessions:
             s["_id"] = str(s["_id"])
             s["candidate_id"] = str(s["candidate_id"])
             if s.get("job_id"):
                 s["job_id"] = str(s["job_id"])
+                if not s.get("is_mock"):
+                    real_job_ids.add(s["job_id"])
             for ans in s.get("answers", []):
                 if ans.get("question_id"):
                     ans["question_id"] = str(ans["question_id"])
 
+        # 2. Fetch scheduled upcoming interviews from applications collection
+        # Pipeline creates these when a job closes.
+        try:
+            apps_col = self.db_client[DataBaseEnum.COLLECTION_APPLICATION_NAME.value]
+            scheduled_apps = await apps_col.find({
+                "candidate_id": ObjectId(candidate_id),
+                "status": "accepted_for_interview"
+            }).to_list(length=None)
+
+            for app in scheduled_apps:
+                job_id_str = str(app.get("job_id"))
+                # If they already started a real session for this job, don't show the placeholder
+                if job_id_str in real_job_ids:
+                    continue
+
+                scheduled_date = app.get("scheduled_interview_date")
+                if not scheduled_date:
+                    continue
+
+                upc = app.get("upcoming_interview", {})
+                job_title = upc.get("job_title", "Interview")
+
+                # Mock a session object that the UI can consume
+                sessions.append({
+                    "_id": str(app["_id"]),  # UI uses this to trigger /start-session/id
+                    "candidate_id": str(app["candidate_id"]),
+                    "job_id": job_id_str,
+                    "job_title": job_title,
+                    "is_mock": False,
+                    "session_date": f"{scheduled_date}T00:00:00", # Start of day so it is immediately read
+                    "answers": [],
+                    "final_summary": None
+                })
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Error fetching upcoming interviews: {e}")
+
+        # Re-sort descending by date
+        sessions.sort(key=lambda x: str(x.get("session_date", "")), reverse=True)
         return sessions
 
 

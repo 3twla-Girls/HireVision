@@ -17,6 +17,7 @@ reportlab
 cachetools
 rapidfuzz
 rank_bm25
+apscheduler>=3.10.0
 
 torch
 opencv-python

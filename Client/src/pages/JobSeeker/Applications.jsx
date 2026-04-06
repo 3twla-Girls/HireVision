@@ -81,7 +81,19 @@ const Applications = () => {
         const appRes = await fetch(`/api/v1/application/candidate/${candidateId}`)
         if (!appRes.ok) throw new Error(`Failed (${appRes.status})`)
         const appData = await appRes.json()
-        if (!Array.isArray(appData) || appData.length === 0) { setApplications([]); return }
+        if (!Array.isArray(appData) || appData.length === 0) { 
+          setApplications([{
+            id: "demo-app-1", jobId: "demo-job-1",
+            jobTitle: "Demo Software Engineer", company: "HireVision AI",
+            city: "San Francisco", country: "USA",
+            appliedDate: "05/04/2026",
+            status: "passed", backendStatus: "accepted",
+            matchingScore: 85, matchingSkills: ["React", "Node.js"], missingSkills: ["Docker"],
+            feedbackFile: "demo-url", feedbackFileName: "Feedback.pdf",
+            sessionId: "demo-session-id" // Explicitly adding a demo session id for the report
+          }])
+          return 
+        }
 
         const enriched = await Promise.all(
           appData.map(async (app) => {

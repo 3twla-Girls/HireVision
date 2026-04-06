@@ -238,8 +238,6 @@ export default function InterviewSetupModal({ setShowSetup, isMock = false, jobI
 
   const handleClose   = () => { cleanup(); setShowSetup(false); };
 
-  const applicantId = '69ab2892e134199955ba9655'
-  // const candidateId = '69aa315763b720c25373f035'
 
   const { userData } = useAuth();
   const candidateId = userData?._id;

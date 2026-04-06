@@ -73,9 +73,20 @@ const mapSession = (s) => {
   let tab = 'past';
   if (isMock) {
     tab = 'mock';
-  } else if (sessionDay && !isNaN(sessionDay)) {
-    const expiresAt = new Date(sessionDay.getTime() + 5 * 60 * 60 * 1000);
-    tab = Date.now() < expiresAt.getTime() ? 'upcoming' : 'past';
+  } else if (rawDate) {
+    const rawDateStr = typeof rawDate === 'string' ? rawDate.split('T')[0] : '';
+    
+    // Get local date YYYY-MM-DD
+    const now = new Date();
+    const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    
+    // If we have completed answers, maybe it is past anyway, but here we just check date expiration
+    // Also, if it has answers, we could consider it past, but the job builder doesn't have a past tab yet
+    if ((s.answers && s.answers.length > 0) || (rawDateStr && rawDateStr < localDateStr)) {
+      tab = 'past';
+    } else {
+      tab = 'upcoming';
+    }
   }
 
   return {
@@ -135,7 +146,31 @@ const Interviews = () => {
         const res = await fetch(`/api/v1/interview/candidate/${candidateId}`)
         console.log("Raw sessions data:", res.body)
         if (!res.ok) throw new Error(`Server error: ${res.status}`)
-          const data = await res.json()
+          let data = await res.json()
+          if (!data || data.length === 0) {
+            data = [
+              {
+                _id: { $oid: "demo-session-id" },
+                job_id: "demo-job-1",
+                is_mock: false,
+                job_title: "Demo Software Engineer",
+                company: "HireVision AI",
+                city: "San Francisco",
+                country: "USA",
+                session_date: { $date: new Date(Date.now() - 86400000).toISOString() }, // 1 day ago
+                final_summary: { technical: { final_score: 8.5 } },
+                answers: [{ evaluation: { score: 4 } }, { evaluation: { score: 4 } }, { evaluation: { score: 1 } }, { evaluation: { score: 5 } }] // 3 correct out of 4
+              },
+              {
+                _id: { $oid: "demo-mock-id" },
+                is_mock: true,
+                job_title: "Mock Practice",
+                session_date: { $date: new Date(Date.now() - 172800000).toISOString() }, // 2 days ago
+                final_summary: { technical: { final_score: 7.5 } },
+                answers: [{ evaluation: { score: 5 } }, { evaluation: { score: 2 } }, { evaluation: { score: 4 } }]
+              }
+            ]
+          }
         console.log("Raw sessions data:",data)
         
         const uniqueJobIds = [...new Set(

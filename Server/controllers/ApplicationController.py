@@ -118,6 +118,82 @@ class ApplicationController(BaseController):
             raise Exception(f"Application with id {application_id} not found")
         return await self.get_application_by_id(application_id)
 
+    # ── PIPELINE BULK METHODS ─────────────────────────────────────────────
+
+    async def bulk_update_status(
+        self,
+        application_ids: List[str],
+        status: ApplicationStatusEnum
+    ) -> int:
+        """
+        Update the status of multiple applications in a single DB call.
+        Returns the number of documents modified.
+        """
+        if not application_ids:
+            return 0
+        object_ids = [ObjectId(aid) for aid in application_ids]
+        result = await self.collection.update_many(
+            {"_id": {"$in": object_ids}},
+            {"$set": {"status": status.value}}
+        )
+        return result.modified_count
+
+    async def bulk_reject_except(
+        self,
+        job_id: str,
+        accepted_application_ids: List[str]
+    ) -> int:
+        """
+        Mark every application for this job as REJECTED unless it is in the
+        accepted list. This is called for non-top-N candidates.
+        Returns the number of documents modified.
+        """
+        accepted_object_ids = [ObjectId(aid) for aid in accepted_application_ids]
+        result = await self.collection.update_many(
+            {
+                "job_id": ObjectId(job_id),
+                "_id": {"$nin": accepted_object_ids},
+                "status": {"$nin": [
+                    ApplicationStatusEnum.ACCEPTED_FOR_INTERVIEW.value,
+                    ApplicationStatusEnum.ACCEPTED.value
+                ]}
+            },
+            {"$set": {"status": ApplicationStatusEnum.REJECTED.value}}
+        )
+        return result.modified_count
+
+    async def update_interview_schedule(
+        self,
+        application_id: str,
+        scheduled_date: str,
+        slot_index: int,
+        job_title: str
+    ) -> None:
+        """
+        Write interview scheduling info onto an application document.
+        Creates the `upcoming_interview` summary used by the candidate dashboard.
+        """
+        await self.collection.update_one(
+            {"_id": ObjectId(application_id)},
+            {"$set": {
+                "scheduled_interview_date": scheduled_date,
+                "interview_slot_index": slot_index,
+                "upcoming_interview": {
+                    "job_title": job_title,
+                    "scheduled_date": scheduled_date,
+                    "status": "upcoming"
+                }
+            }}
+        )
+
+    async def get_accepted_for_interview_by_job(self, job_id: str) -> List[Application]:
+        """Return all applications for a job that are accepted_for_interview."""
+        records = await self.collection.find({
+            "job_id": ObjectId(job_id),
+            "status": ApplicationStatusEnum.ACCEPTED_FOR_INTERVIEW.value
+        }).to_list(length=None)
+        return [self._convert_record_to_application(r) for r in records]
+
     # ---------------- DELETE ----------------
     async def delete_application(self, application_id: str) -> bool:
         result = await self.collection.delete_one({"_id": ObjectId(application_id)})

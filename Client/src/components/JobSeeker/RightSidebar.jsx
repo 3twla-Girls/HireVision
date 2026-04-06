@@ -87,13 +87,18 @@ const RightSidebar = () => {
         // 2. 'upcoming' means Date.now() < session_date + 5 hours
         const upcoming = list.filter((s) => {
           if (s.is_mock) return false;
+          if (s.answers && s.answers.length > 0) return false;
 
-          const sessionDay = s.session_date ? new Date(s.session_date) : null;
-          const expiresAt = sessionDay
-            ? new Date(sessionDay.getTime() + 5 * 60 * 60 * 1000)
-            : null;
-
-          return expiresAt ? Date.now() < expiresAt.getTime() : false;
+          const rawDate = s.session_date?.$date || s.session_date; 
+          const rawDateStr = typeof rawDate === 'string' ? rawDate.split('T')[0] : '';
+          
+          const now = new Date();
+          const localDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+          
+          if (rawDateStr && rawDateStr < localDateStr) {
+             return false;
+          }
+          return true;
         });
 
         setInterviews(upcoming.slice(0, 3));

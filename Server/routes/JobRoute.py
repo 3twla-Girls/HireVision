@@ -275,67 +275,62 @@ async def get_job(request: Request, job_id: str):
 @job_router.patch("/{job_id}/status")
 async def update_job_status(request: Request, job_id: str, background_tasks: BackgroundTasks):
     """
-    Updates the job status and triggers automation if the job is closed.
+    Updates the job status and triggers the hiring automation pipeline
+    when a job transitions to 'closed' or 'expired'.
     """
-    # 1. Access FAISS service from app state
     faiss_service_job = request.app.state.faiss_service.get("faiss_service_job")
-    
-    # 2. Initialize the Controller
+
     job_controller = await JobController.create_instance(
         db_client=request.app.db_client,
         faiss_service_job=faiss_service_job
     )
-    
+
     try:
-        # 3. Parse and validate request body
         body = await request.json()
         new_status = body.get("status")
 
-        if new_status not in ["open", "closed"]:
+        if new_status not in ["open", "closed", "expired"]:
             return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST, 
+                status_code=status.HTTP_400_BAD_REQUEST,
                 content={"signal": "INVALID_STATUS"}
             )
 
-        # 4. Fetch the existing job to check current state
-        # Note: Using find_by_id to match your JobModel method naming
         current_job = await job_controller.job_model.find_by_id(ObjectId(job_id))
-        
+
         if not current_job:
             return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND, 
+                status_code=status.HTTP_404_NOT_FOUND,
                 content={"signal": "JOB_NOT_FOUND"}
             )
 
         old_status = current_job.get("status")
 
-        # 5. Perform the update in the database
         await job_controller.job_model.update_job(
-            ObjectId(job_id), 
+            ObjectId(job_id),
             {"status": new_status}
         )
 
-        # 6. Trigger automation ONLY if status changed from 'open' to 'closed'
-        if new_status == "closed" and old_status == "open":
-            logger.info(f"Triggering automation for job: {job_id}")
+        # Trigger automation when job closes (manual close OR forced expiry)
+        closing_statuses = {"closed", "expired"}
+        if new_status in closing_statuses and old_status == "open":
+            logger.info(f"Triggering hiring pipeline for job: {job_id} (status: {new_status})")
             background_tasks.add_task(run_hiring_automation, current_job, request.app)
 
         return JSONResponse(
             content={
-                "signal": "JOB_STATUS_UPDATED", 
+                "signal": "JOB_STATUS_UPDATED",
                 "status": new_status
             }
         )
 
     except Exception as e:
-        # Crucial for debugging the '400' error in your terminal
         print(f"DEBUG ERROR in update_job_status: {e}")
         logger.error(f"Error updating job status: {e}", exc_info=True)
-        
+
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
-                "signal": "JOB_STATUS_UPDATE_FAILED", 
+                "signal": "JOB_STATUS_UPDATE_FAILED",
                 "error": str(e)
             }
         )
@@ -411,4 +406,121 @@ async def get_job_rankings(request: Request, job_id: str):
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"error": str(e)}
+        )
+
+
+# =============================
+# Trigger Hiring Pipeline (Admin)
+# =============================
+@job_router.post("/{job_id}/trigger-pipeline")
+async def trigger_pipeline(
+    request: Request,
+    job_id: str,
+    background_tasks: BackgroundTasks,
+    force: bool = False,
+):
+    """
+    Manually trigger the hiring automation pipeline for a given job.
+
+    - **force**: if True, bypasses the idempotency guard so the pipeline
+      re-runs even if candidates have already been accepted.
+
+    The pipeline runs in the background and returns immediately.
+    To run synchronously (blocking, for debugging), set `sync=true`.
+    """
+    faiss_service_job = request.app.state.faiss_service.get("faiss_service_job")
+    job_controller = await JobController.create_instance(
+        db_client=request.app.db_client,
+        faiss_service_job=faiss_service_job
+    )
+
+    try:
+        job_doc = await job_controller.job_model.find_by_id(ObjectId(job_id))
+        if not job_doc:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"signal": "JOB_NOT_FOUND"}
+            )
+
+        # Check if caller wants synchronous execution (for testing/admin)
+        body = {}
+        try:
+            body = await request.json()
+        except Exception:
+            pass
+        run_sync = body.get("sync", False)
+
+        if run_sync:
+            # Blocking — returns the full pipeline result
+            result = await run_hiring_automation(job_doc, request.app, force=force)
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={"signal": "PIPELINE_COMPLETE", "result": result}
+            )
+        else:
+            # Non-blocking — fires and returns immediately
+            background_tasks.add_task(run_hiring_automation, job_doc, request.app, force)
+            return JSONResponse(
+                status_code=status.HTTP_202_ACCEPTED,
+                content={
+                    "signal": "PIPELINE_TRIGGERED",
+                    "job_id": job_id,
+                    "force": force,
+                    "mode": "background"
+                }
+            )
+
+    except Exception as e:
+        logger.error(f"Error triggering pipeline for job {job_id}: {e}", exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"signal": "PIPELINE_TRIGGER_FAILED", "error": str(e)}
+        )
+
+
+# =============================
+# Get Pipeline Result for a Job
+# (reads accepted applications as a proxy for pipeline state)
+# =============================
+@job_router.get("/{job_id}/pipeline-status")
+async def get_pipeline_status(request: Request, job_id: str):
+    """
+    Returns a summary of the pipeline's effect on a job:
+    - How many applications are accepted_for_interview
+    - How many are rejected
+    - How many are still pending
+    """
+    from ..controllers.ApplicationController import ApplicationController
+    from ..models.enums.ApplicationEnum import ApplicationStatusEnum
+
+    try:
+        db = request.app.db_client
+        app_ctrl = await ApplicationController.create_instance(db)
+
+        from bson import ObjectId as BsonId
+        pipeline = [
+            {"$match": {"job_id": BsonId(job_id)}},
+            {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+        ]
+        collection = app_ctrl.collection
+        cursor = collection.aggregate(pipeline)
+        docs = await cursor.to_list(length=None)
+
+        counts = {doc["_id"]: doc["count"] for doc in docs}
+        total = sum(counts.values())
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "job_id": job_id,
+                "total_applications": total,
+                "breakdown": counts,
+                "pipeline_ran": ApplicationStatusEnum.ACCEPTED_FOR_INTERVIEW.value in counts
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error fetching pipeline status for job {job_id}: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": "PIPELINE_STATUS_FETCH_FAILED", "error": str(e)}
         )

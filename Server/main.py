@@ -20,6 +20,7 @@ from .routes.interview_routes import interview_router
 # from .routes.report_generator_routes import router as report_generator_route
 # Local Imports - Helpers & Config
 from .helpers.config import get_settings
+from .helpers.expiry_scheduler import start_expiry_scheduler, stop_expiry_scheduler
 
 # Local Imports - Module_1
 from Module_1.src.helpers.app_factory import create_app_services
@@ -63,9 +64,13 @@ async def lifespan(app: FastAPI):
                 f"⚠️ Could not load clusters: {e}. Will initialize from JSON."
             )
     
+    # Start expiry-date scheduler (runs immediately + every hour)
+    start_expiry_scheduler(app)
+
     yield  # Server running and accepting requests
-    
+
     # --- Shutdown ---
+    stop_expiry_scheduler()
     app.mongo_conn.close()
     print("MongoDB Connection Closed! 🛑")
 
