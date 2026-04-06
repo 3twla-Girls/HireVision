@@ -4,9 +4,7 @@ import {
   CheckCircle2, Clock, Filter,
 } from 'lucide-react'
 import ApplicationCard from '../../components/JobSeeker/ApplicationCard'
-
-// ─── Constants ───────────────────────────────────────────────────────────────
-const CURRENT_USER_ID = '69aa315763b720c25373f035'
+import { useAuth } from '../../context/AuthContext'
 
 // Two main tabs: Applications (submitted + rejected) and Feedbacks
 const TABS = [
@@ -65,6 +63,9 @@ const Skeletons = () => (
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const Applications = () => {
+  const { userData } = useAuth()
+  const candidateId = userData?._id ?? userData?.id ?? null
+
   const [applications, setApplications] = useState([])
   const [loading, setLoading]           = useState(true)
   const [error, setError]               = useState(null)
@@ -73,10 +74,11 @@ const Applications = () => {
   const [searchQuery, setSearchQuery]   = useState('')
 
   useEffect(() => {
+    if (!candidateId) return
     const fetchApplications = async () => {
       try {
         setLoading(true); setError(null)
-        const appRes = await fetch(`/api/v1/application/candidate/${CURRENT_USER_ID}`)
+        const appRes = await fetch(`/api/v1/application/candidate/${candidateId}`)
         if (!appRes.ok) throw new Error(`Failed (${appRes.status})`)
         const appData = await appRes.json()
         if (!Array.isArray(appData) || appData.length === 0) { setApplications([]); return }

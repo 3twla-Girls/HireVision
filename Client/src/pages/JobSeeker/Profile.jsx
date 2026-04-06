@@ -199,17 +199,42 @@ const Profile = () => {
     setIsResumeModalOpen(true);
   };
 
-  const handleAddSkill = () => {
+  const handleAddSkill = async () => {
     const trimmedSkill = newSkill.trim();
-    if (trimmedSkill !== "" && !skills.includes(trimmedSkill)) {
-      setSkills([...skills, trimmedSkill]);
-      // Also update the mock user data to persist during this session
-      if (currentUser && currentUser.skills) {
-        currentUser.skills.push(trimmedSkill);
-      }
+    if (!trimmedSkill || skills.includes(trimmedSkill)) {
+      setNewSkill("");
+      setIsAddingSkill(false);
+      return;
     }
+
+    // Optimistically update UI
+    setSkills(prev => [...prev, trimmedSkill]);
     setNewSkill("");
     setIsAddingSkill(false);
+
+    try {
+      const res = await fetch(`/api/v1/cv/user/${candidateId}/add-skill`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ skill: trimmedSkill }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Roll back optimistic update
+        setSkills(prev => prev.filter(s => s !== trimmedSkill));
+        if (data.signal === "NO_CV_FOUND") {
+          toast.error("Please upload a CV first before adding skills.");
+        } else {
+          toast.error("Failed to save skill. Please try again.");
+        }
+      }
+    } catch (err) {
+      // Roll back on network error
+      setSkills(prev => prev.filter(s => s !== trimmedSkill));
+      toast.error("Network error. Could not save skill.");
+    }
   };
 
   const handleKeyDown = (e) => {

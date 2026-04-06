@@ -81,14 +81,23 @@ const Job = () => {
     window.scrollTo(0, 0);
   }, [jobId]);
 
-  const matchingScore = 80;
-
   const [showApply, setShowApply] = useState(false);
   const [similarJobs, setSimilarJobs] = useState([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
+  const [applicantCount, setApplicantCount] = useState(null);
 
-  // ── Application status for this specific job ──────────────────────────────
+  // ── Application status + matching skills for this specific job ─────────────
   const [applicationStatus, setApplicationStatus] = useState(null); // null | 'pending' | 'accepted' | 'rejected'
+  const [userSkills, setUserSkills] = useState([]);
+
+  // ── Compute real matching score from userSkills vs job required skills ──────
+  const matchingScore = (() => {
+    const jobSkills = job?.skills ?? [];
+    if (!jobSkills.length || !userSkills.length) return 0;
+    const userLower = new Set(userSkills.map(s => s.toLowerCase()));
+    const matched = jobSkills.filter(s => userLower.has(s.toLowerCase())).length;
+    return Math.round((matched / jobSkills.length) * 100);
+  })();
 
   useEffect(() => {
     const checkApplicationStatus = async () => {
@@ -102,12 +111,55 @@ const Job = () => {
           ? apps.find(a => String(a.job_id) === String(currentJobId))
           : null;
         setApplicationStatus(match ? match.status : null);
+        // If application has matching_skills, use them directly
+        if (match?.matching_skills?.length) {
+          setUserSkills(match.matching_skills);
+        }
       } catch (err) {
         console.warn('Could not check application status:', err);
       }
     };
     checkApplicationStatus();
   }, [jobId, job?.id, candidateId]);
+
+  // ── Fetch applicant count for this job ───────────────────────────────────
+  useEffect(() => {
+    const currentJobId = jobId || job?.id;
+    if (!currentJobId) return;
+    const fetchApplicantCount = async () => {
+      try {
+        const res = await fetch(`/api/v1/application/job/${currentJobId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.applications ?? []);
+        setApplicantCount(list.length);
+      } catch (err) {
+        console.warn('Could not fetch applicant count:', err);
+      }
+    };
+    fetchApplicantCount();
+  }, [jobId, job?.id]);
+
+  // ── Fetch candidate CV skills ────────────────────────────────────────────
+  useEffect(() => {
+    if (!candidateId) return;
+    const fetchCandidateSkills = async () => {
+      try {
+        const res = await fetch(`/api/v1/cv/user/${candidateId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data.cvs) && data.cvs.length > 0) {
+          // Merge all extracted_skills from all CVs into one deduplicated list
+          const allSkills = data.cvs.flatMap(cv => cv.extracted_skills ?? []);
+          const unique = [...new Set(allSkills.map(s => s.toLowerCase()))];
+          setUserSkills(prev => prev.length ? prev : unique); // Don't overwrite if matching_skills already set
+        }
+      } catch (err) {
+        console.warn('Could not fetch candidate skills:', err);
+      }
+    };
+    fetchCandidateSkills();
+  }, [candidateId]);
 
   useEffect(() => {
     setSimilarJobs([]);
@@ -202,7 +254,7 @@ const Job = () => {
 
         {/* --- Center: Main Job Content --- */}
         <main className="order-1 lg:order-2 lg:col-span-6 md:col-span-4 space-y-4 w-full">
-          <JobDetails job={job} setShowApply={setShowApply} applicationStatus={applicationStatus} />
+          <JobDetails job={job} setShowApply={setShowApply} applicationStatus={applicationStatus} userSkills={userSkills} applicantCount={applicantCount} />
         </main>
 
         {/* --- Right Sidebar: Widgets --- */}
@@ -212,10 +264,10 @@ const Job = () => {
           <div className="bg-white p-6 md:p-8 rounded-3xl shadow-md flex flex-col items-center text-center border border-gray-50 transition-transform hover:scale-[1.02]">
             <CircularScore score={matchingScore} />
             <h3 className="text-lg md:text-xl font-bold text-dark-blue">
-              {matchingScore >= 75 ? "Good Matching" : matchingScore >= 50 ? "Average Matching" : "Low Matching"}
+              {matchingScore >= 75 ? "Good Match" : matchingScore >= 50 ? "Average Match" : matchingScore > 0 ? "Low Match" : "No Skills Data"}
             </h3>
             <p className="text-[13px] text-light-blue mt-2">
-              {matchingScore >= 75 ? "You are good enough to apply ✓" : matchingScore >= 50 ? "You might need more skills" : "You may want to improve your skills"}
+              {matchingScore >= 75 ? "You are a strong candidate ✓" : matchingScore >= 50 ? "You might need a few more skills" : matchingScore > 0 ? "Consider improving your skill set" : "Upload a CV to see your match"}
             </p>
           </div>
 
@@ -274,4 +326,4 @@ const Job = () => {
   );
 }
 
-export default Job;
+export default Job;

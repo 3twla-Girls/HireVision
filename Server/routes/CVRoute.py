@@ -227,6 +227,55 @@ async def get_cluster_details(cluster_id: int, request: Request):
     )
 
 # -------------------------------
+# Add a skill manually to a user's CV
+# -------------------------------
+@cv_router.patch("/user/{user_id}/add-skill")
+async def add_skill_to_cv(request: Request, user_id: str):
+    """Add a skill to the extracted_skills of the user's most recent CV."""
+    try:
+        body = await request.json()
+        skill = body.get("skill", "").strip()
+
+        if not skill:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"signal": "SKILL_REQUIRED"}
+            )
+
+        cv_model = await CVModel.create_instance(db_client=request.app.db_client)
+
+        # Find the most recent CV for this user
+        record = await cv_model.collection.find_one(
+            {"cv_user_id": ObjectId(user_id)},
+            sort=[("cv_pushed_at", -1)]
+        )
+
+        if not record:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"signal": "NO_CV_FOUND"}
+            )
+
+        # Use $addToSet to avoid duplicates
+        await cv_model.collection.update_one(
+            {"_id": record["_id"]},
+            {"$addToSet": {"extracted_skills": skill}}
+        )
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"signal": "SKILL_ADDED", "skill": skill}
+        )
+
+    except Exception as e:
+        logger.error(f"Error adding skill for user {user_id}: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": "FAILED_TO_ADD_SKILL", "error": str(e)}
+        )
+
+
+# -------------------------------
 # New Endpoint: Get all CVs by User
 # -------------------------------
 @cv_router.get("/user/{user_id}")

@@ -22,10 +22,11 @@ const appliedStatusConfig = {
   },
 }
 
-const JobDetails = ({ job, setShowApply, applicationStatus = null }) => {
+const JobDetails = ({ job, setShowApply, applicationStatus = null, userSkills = [], applicantCount = null }) => {
     if (!job) return null;
 
-    const userSkills = ["React", "HTML", "CSS", "Node", "TypeScript", "JavaScript", "Node.js", "Tailwind"];
+    // Normalize to lowercase set for case-insensitive matching
+    const userSkillsLower = new Set(userSkills.map(s => s.toLowerCase()));
     const isApplied = applicationStatus !== null;
     const statusCfg = isApplied ? (appliedStatusConfig[applicationStatus] || appliedStatusConfig.pending) : null;
 
@@ -98,10 +99,12 @@ const JobDetails = ({ job, setShowApply, applicationStatus = null }) => {
             </h3>
             <div className="text-sm text-light-blue font-medium ml-auto">
                 <Clock className="inline w-4 h-4 mr-1"/>
-                3 days ago
+                {job.postedAgo ?? 'Recently'}
             </div>
             <div className="border-2 border-light-blue rounded-lg p-1 text-sm text-light-blue font-medium ml-4">
-                120 applicants
+                {applicantCount === null
+                  ? '— applicants'
+                  : `${applicantCount} applicant${applicantCount !== 1 ? 's' : ''}`}
             </div>
         </div>
 
@@ -131,7 +134,7 @@ const JobDetails = ({ job, setShowApply, applicationStatus = null }) => {
             <div className="flex flex-wrap gap-3">
               {job.skills.map((skill, index) => (
                 <span key={index} className="bg-white text-slate-700 text-sm px-4 py-1 rounded-full shadow-sm">
-                  {userSkills.includes(skill) ? (
+                  {userSkillsLower.has(skill.toLowerCase()) ? (
                     <CircleCheckIcon className="w-4 h-4 text-green-500 inline mr-1" />
                   ) : (
                     <CircleAlertIcon className="w-4 h-4 text-red-500 inline mr-1" />
