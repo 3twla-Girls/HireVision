@@ -3,44 +3,6 @@ import api from "../../api/axios";
 import { useParams } from "react-router-dom";
 import CircularScore from "../../components/shared/CircularScore";
 
-// ─── Mock Data for Question Reference ──────────────────────────────────────────
-const questionsWithAnswers = [
-  {
-    question_id: "69b1ec6cabedd68d25e8c66f",
-    type: "short",
-    question: "What is CSS specificity and how is it calculated?",
-    reference_answer: "CSS specificity determines which styles are applied...",
-  },
-  {
-    question_id: "q2",
-    type: "short",
-    question:
-      "Explain the useEffect hook in React. When and how would you use it?",
-    reference_answer: "useEffect lets you perform side effects...",
-  },
-  {
-    question_id: "q3",
-    type: "short",
-    question:
-      "What is state management in React? Compare Redux, Context API, and Zustand.",
-    reference_answer: "State management organizes application state...",
-  },
-  {
-    question_id: "q4",
-    type: "short",
-    question:
-      "What techniques do you use to optimize React application performance?",
-    reference_answer: "Key techniques include code splitting...",
-  },
-  {
-    question_id: "q5",
-    type: "short",
-    question:
-      "What are some network-level performance optimizations for web applications?",
-    reference_answer: "Optimizations include CDN, HTTP/2, etc.",
-  },
-];
-
 // ─── Styling Constants ────────────────────────────────────────────────────────
 const C = {
   darkBlue: "#1B3C53",
@@ -162,6 +124,22 @@ function ScoreRing({ score, size = 80 }) {
   );
 }
 
+const parseSkill = (value) => {
+  if (!value) return { score: 0, max: 5, comment: "No data" };
+
+  const match = value.match(/^(\d+)\/(\d+)\s*–\s*(.*)$/);
+
+  if (!match) {
+    return { score: 0, max: 5, comment: value };
+  }
+
+  return {
+    score: parseInt(match[1]),
+    max: parseInt(match[2]),
+    comment: match[3],
+  };
+};
+
 function Tag({ label, color }) {
   return (
     <span
@@ -282,7 +260,9 @@ function BulletList({ items, icon, iconColor }) {
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function CandidateReport() {
   const { sessionId } = useParams();
+
   const [reportData, setReportData] = useState(null);
+  const [questionsWithAnswers, setQuestionsWithAnswers] = useState([]); // ✅ FIX
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -292,10 +272,19 @@ export default function CandidateReport() {
     const fetchData = async () => {
       try {
         if (!sessionId) return;
+
         setLoading(true);
-        const res = await api.get(`/interview/session/${sessionId}`);
-        console.log("API Response:", res.data);
-        setReportData(res.data);
+
+        // 🔥 fetch both APIs in parallel (better performance)
+        const [sessionRes, questionsRes] = await Promise.all([
+          api.get(`/interview/session/${sessionId}`),
+          api.get(`/interview/session-questions/${sessionId}`),
+        ]);
+        console.log("Session:", sessionRes.data);
+        console.log("Questions:", questionsRes.data);
+
+        setReportData(sessionRes.data);
+        setQuestionsWithAnswers(questionsRes.data.questions);
       } catch (err) {
         console.error(err);
         setError("Failed to load report. Please try again later.");
@@ -428,32 +417,7 @@ export default function CandidateReport() {
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div style={{ textAlign: "right" }}>
-            <div
-              style={{ fontWeight: 700, fontSize: 16, color: C.primaryText }}
-            >
-              Sarah Jenkins
-            </div>
-            <div style={{ fontSize: 12, color: C.secondaryText }}>
-              Senior Frontend Developer
-            </div>
-          </div>
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: "50%",
-              background: `linear-gradient(135deg, ${C.secondaryBlue}, ${C.darkBlue})`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#fff",
-              fontWeight: 800,
-              fontSize: 16,
-            }}
-          >
-            SJ
-          </div>
+          
           <div style={{ textAlign: "center" }}>
             <div
               style={{
@@ -538,7 +502,7 @@ export default function CandidateReport() {
                   questionsWithAnswers.find(
                     (qw) => qw.question_id === ans.question_id,
                   ) || questionsWithAnswers[i];
-                const sc = ans.evaluation?.score || 0;
+                const sc = ans.evaluation?.score * 10 || 0;
                 const isActive = i === activeIdx;
                 const dotColor = getQuestionDotColor(i, isActive);
                 const cardBg = getActiveCardBackground(isActive, i);
@@ -651,7 +615,7 @@ export default function CandidateReport() {
                 </h3>
               </div>
               <ScoreRing
-                score={activeAnswer.evaluation?.score || 0}
+                score={activeAnswer.evaluation?.score * 10 || 0}
                 size={78}
               />
             </div>
@@ -710,8 +674,6 @@ export default function CandidateReport() {
                   "No transcription available"}
               </div>
             </div>
-
-            
 
             <div
               style={{
@@ -819,7 +781,7 @@ export default function CandidateReport() {
               Report Snapshot
             </h3>
             {reportData.answers.map((ans, i) => {
-              const sc = ans.evaluation?.score || 0;
+              const sc = ans.evaluation?.score * 10 || 0;
               const questionColor = questionColors[i % questionColors.length];
               return (
                 <div
@@ -1092,52 +1054,60 @@ export default function CandidateReport() {
           <div
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}
           >
+            {/* Skill Assessment */}
             <div style={{ background: "#fff", padding: 22, borderRadius: 16 }}>
               <h3 style={{ margin: "0 0 16px", fontSize: 15 }}>
                 Skill Assessment
               </h3>
+
               {Object.entries(technicalData.skill_assessment || {}).map(
-                ([skill, data]) => (
-                  <div
-                    key={skill}
-                    style={{
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 12,
-                      padding: "14px",
-                      marginBottom: 12,
-                    }}
-                  >
+                ([skill, value]) => {
+                  const parsed = parseSkill(value);
+
+                  return (
                     <div
+                      key={skill}
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 12,
+                        padding: "14px",
+                        marginBottom: 12,
                       }}
                     >
-                      <span style={{ fontWeight: 700, fontSize: 14 }}>
-                        {skill}
-                      </span>
-                      <span
+                      <div
                         style={{
-                          fontSize: 18,
-                          fontWeight: 800,
-                          color: scoreColor((data?.score || 0) * 10),
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
                         }}
                       >
-                        {data?.score || 0}/10
-                      </span>
+                        <span style={{ fontWeight: 700, fontSize: 14 }}>
+                          {skill}
+                        </span>
+
+                        <span
+                          style={{
+                            fontSize: 18,
+                            fontWeight: 800,
+                            color: scoreColor((parsed.score / parsed.max) * 10),
+                          }}
+                        >
+                          {parsed.score}/{parsed.max}
+                        </span>
+                      </div>
+
+                      <p
+                        style={{
+                          margin: "8px 0 0",
+                          fontSize: 12,
+                          color: C.secondaryText,
+                        }}
+                      >
+                        {parsed.comment}
+                      </p>
                     </div>
-                    <p
-                      style={{
-                        margin: "8px 0 0",
-                        fontSize: 12,
-                        color: C.secondaryText,
-                      }}
-                    >
-                      {data?.comments || "No comments available"}
-                    </p>
-                  </div>
-                ),
+                  );
+                },
               )}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

@@ -204,3 +204,21 @@ async def generate_summary(request: Request, session_id: str):
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"error": str(e)}
         )
+        
+# ============================================================================
+# Questions of interview session
+# ============================================================================
+@interview_router.get("/session-questions/{session_id}")
+async def get_session_questions(request: Request, session_id: str):
+    try:
+        controller = await InterviewController.create_instance(
+            request.app.db_client
+        )
+        result = await controller.get_session_questions(session_id)
+        return JSONResponse(status_code=status.HTTP_200_OK, content=result)
+    except Exception as e:
+        logger.error(f"Error retrieving session questions: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"error": str(e)}
+        )

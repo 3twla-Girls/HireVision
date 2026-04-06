@@ -368,3 +368,54 @@ class InterviewController(BaseController):
             "session_id": session_id,
             "summary": updated_session.get("final_summary")
         }
+    
+    async def get_session_questions(self, session_id: str) -> Dict[str, Any]:
+        # Step 1: Get session
+        session = await self.sessions_collection.find_one(
+            {"_id": ObjectId(session_id)}
+        )
+
+        if not session:
+            raise Exception(f"Session {session_id} not found")
+
+        # Step 2: Extract question_ids
+        question_ids = [
+            ans.get("question_id")
+            for ans in session.get("answers", [])
+            if ans.get("question_id")
+        ]
+
+        if not question_ids:
+            return {
+                "session_id": session_id,
+                "questions": []
+            }
+
+        # Step 3: Fetch questions from DB
+        job_questions = await self.questions_collection.find({
+            "questions_w_answers.question_id": {"$in": question_ids}
+        }).to_list(length=None)
+
+        questions_map = {}
+
+        for doc in job_questions:
+            for q in doc.get("questions_w_answers", []):
+                if q["question_id"] in question_ids:
+                    questions_map[str(q["question_id"])] = {
+                        "question_id": str(q["question_id"]),
+                        "question": q.get("question"),
+                        "type": q.get("type"),
+                        "reference_answer": q.get("reference_answer")
+                    }
+
+        # Step 4: Preserve order of answers
+        ordered_questions = [
+            questions_map.get(str(qid))
+            for qid in question_ids
+            if str(qid) in questions_map
+        ]
+
+        return {
+            "session_id": session_id,
+            "questions": ordered_questions
+        }
