@@ -10,6 +10,7 @@ import Interviews from "./pages/JobSeeker/Interviews";
 import InterviewLive from "./pages/JobSeeker/InterviewLive";
 import InterviewSetup from "./pages/JobSeeker/InterviewSetup";
 import Profile from "./pages/JobSeeker/Profile";
+import CandidateReport from "./pages/JobSeeker/candidateReport";
 
 // Recruiter Pages
 import CandidateProfile from "./pages/Recruiter/CandidateProfile";
@@ -53,7 +54,7 @@ const App = () => {
           <Route path="profile" element={<Profile />} />
           <Route path="interview/:type/:jobName?" element={<InterviewSetup />} />
           <Route path="interview/:type/live" element={<InterviewLive />} />
-
+          <Route path="candidate-report/:sessionId" element={<CandidateReport />} />
           {/* Recruiter */}
           <Route path="candidate-profile/:applicationId" element={<CandidateProfile />} />
           <Route path="dashboard" element={<Dashboard />} />
