@@ -368,9 +368,29 @@ export default function InterviewLive() {
 
       const sendRequest = async (endpoint) => {
         const formData = new FormData();
-        formData.append('file', videoBlob, `video_${qId}.webm`);
+        // formData.append('file', videoBlob, `video_${qId}.webm`);
+        // questions[currentStep]?.type === 'mcq' && formData.append('selected_option', selectedOption);
+        if (currentQuestion.type === 'mcq' && !selectedOption) {
+          console.error("No option selected!");
+          return;
+        }
+        if (currentQuestion.type === 'mcq') {
+            formData.append('selected_option', selectedOption);
+        } else {
+            formData.append('file', videoBlob, `video_${qId}.webm`);
+        }
+        console.log("selected option in form data", selectedOption)
         return api.post(endpoint, formData, {
-          params: { session_id: sId, question_id: qId },
+          params: { session_id: sId, question_id: qId  },
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      };
+      const sendRequestPhone = async (endpoint) => {
+        const formData = new FormData();
+        formData.append('file', videoBlob, `video_${qId}.webm`);
+        console.log("selected option in form data", selectedOption)
+        return api.post(endpoint, formData, {
+          params: { session_id: sId, question_id: qId  },
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       };
@@ -378,7 +398,7 @@ export default function InterviewLive() {
       try {
         const [resAnswer, resPhone] = await Promise.allSettled([
           sendRequest('/interview/submit-answer'),
-          sendRequest('/interview/analyze-phone-usage')
+          sendRequestPhone('/interview/analyze-phone-usage')
         ]);
 
         if (resAnswer.status === 'fulfilled') console.log('✅ Answer Uploaded for:', qId);
@@ -387,11 +407,37 @@ export default function InterviewLive() {
       } catch (err) {
         console.error('❌ General Upload Error:', err);
       }
-    };
+      
+      
+    // const sendAnswer = async () => {
+    //   const formData = new FormData();
 
+    //   if (currentQuestion.type === 'mcq') {
+    //     formData.append('selected_option', selectedOption);
+    //   } else {
+    //     formData.append('file', videoBlob);
+    //   }
+
+    //   return api.post('/interview/submit-answer', formData, {
+    //     params: { session_id: sId, question_id: qId },
+    //   });
+    // };
+    
+    // const sendPhoneAnalysis = async () => {
+    //   if (currentQuestion.type === 'mcq') return; // 🚫 skip
+      
+    //   const formData = new FormData();
+    //   formData.append('file', videoBlob);
+      
+    //   return api.post('/interview/analyze-phone-usage', formData, {
+    //     params: { session_id: sId, question_id: qId },
+    //   });
+    // };
+    
+  };
     recorder.start();
     mediaRecorderRef.current = recorder;
-  }, [location]);
+  }, [location, questions, currentStep, selectedOption]);
 
   // ── Camera ────────────────────────────────────────────────────
   const stopCamera = useCallback(() => {

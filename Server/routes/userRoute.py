@@ -86,6 +86,23 @@ async def create_user(
         )
 
 # =============================
+# Login (MUST stay above /{user_id})
+# =============================
+@user_router.get("/login")
+async def login(request: Request, email: str, password: str):
+    controller = await UserController.create_instance(request.app.db_client)
+    try:
+        logger.info(f"[LOGIN] email={email!r}  password={password!r}")
+        user = await controller.get_user_email_password(email, password)
+        return JSONResponse(content={"user": user})
+    except Exception as e:
+        logger.warning(f"[LOGIN] failed: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"signal": str(e)}
+        )
+
+# =============================
 # Get User
 # =============================
 @user_router.get("/{user_id}")

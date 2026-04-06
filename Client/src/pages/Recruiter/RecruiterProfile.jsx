@@ -3,9 +3,7 @@ import {
   MapPin, Mail, Briefcase, Globe, Building2, Calendar,
   GraduationCap, Loader2, Pencil, Check, X, Camera
 } from 'lucide-react'
-
-// ── Recruiter whose profile we are viewing ──────────────────────────────────
-const CURRENT_RECRUITER_ID = '69aa302c63b720c25373f034'
+import { useAuth } from '../../context/AuthContext'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate = (iso) => {
@@ -98,6 +96,9 @@ const StatCard = ({ value, label, color }) => (
 
 // ── Main component ────────────────────────────────────────────────────────────
 const RecruiterProfile = () => {
+  const { userData } = useAuth()
+  const recruiterId = userData?._id
+
   const [user, setUser]         = useState(null)
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState(null)
@@ -107,12 +108,13 @@ const RecruiterProfile = () => {
 
   // ── Fetch recruiter data + job stats in parallel ───────────────────────────
   useEffect(() => {
+    if (!recruiterId) return
     const fetchAll = async () => {
       try {
         setLoading(true)
         const [userRes, jobsRes] = await Promise.all([
-          fetch(`/api/v1/user/${CURRENT_RECRUITER_ID}`),
-          fetch(`/api/v1/job/all/${CURRENT_RECRUITER_ID}`),
+          fetch(`/api/v1/user/${recruiterId}`),
+          fetch(`/api/v1/job/all/${recruiterId}`),
         ])
         if (userRes.ok) {
           const data = await userRes.json()
@@ -145,7 +147,7 @@ const RecruiterProfile = () => {
     setSaving(true)
     setSaveMsg(null)
     try {
-      const res = await fetch(`/api/v1/user/${CURRENT_RECRUITER_ID}`, {
+      const res = await fetch(`/api/v1/user/${recruiterId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [field]: value }),
