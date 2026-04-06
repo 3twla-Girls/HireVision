@@ -426,7 +426,8 @@ export default function HireVision() {
 
       try {
         const response = await api.get(
-          `/user/${email}/${password}`,
+          `/user/login`,
+          { params: { email, password } }
         );
 
         if (response.data.user) {
