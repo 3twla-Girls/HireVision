@@ -67,35 +67,77 @@ const StatusBadge = ({ status, small = false }) => {
 };
 
 /* ─── Bulk Invite Modal ─────────────────────────────────────── */
+/**
+ * BulkInviteModal
+ *
+ * Opens when the recruiter closes a job. It:
+ *  1. Fetches the list of shortlisted session IDs from the backend
+ *     (GET /api/v1/job/{job_id}/shortlisted-sessions).
+ *  2. Lets the recruiter optionally customise the interview date/link/notes.
+ *  3. Posts to /api/v1/email/bulk-invite with the real session IDs.
+ *
+ * Note: The pipeline already auto-sent a first-pass email right after closing.
+ * This modal lets the recruiter resend with a confirmed date + link.
+ */
 const BulkInviteModal = ({ job, recruiterId, onClose, onSuccess }) => {
   const [interviewDate, setInterviewDate] = useState("");
   const [interviewLink, setInterviewLink] = useState("");
-  const [extraNotes, setExtraNotes] = useState("");
-  const [sending, setSending] = useState(false);
+  const [extraNotes, setExtraNotes]       = useState("");
+  const [sending, setSending]             = useState(false);
 
+  // Shortlisted session IDs — fetched from backend on mount
+  const [sessionIds, setSessionIds]       = useState([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [sessionError, setSessionError]   = useState(null);
+
+  // ── Fetch accepted session IDs as soon as the modal opens ────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchSessions = async () => {
+      setLoadingSessions(true);
+      setSessionError(null);
+      try {
+        const res = await api.get(`/job/${job.id}/shortlisted-sessions`);
+        if (!cancelled) {
+          setSessionIds(res.data.session_ids || []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to fetch shortlisted sessions:", err);
+          setSessionError(
+            "Could not load shortlisted candidates. The pipeline may still be running."
+          );
+        }
+      } finally {
+        if (!cancelled) setLoadingSessions(false);
+      }
+    };
+
+    fetchSessions();
+    return () => { cancelled = true; };
+  }, [job.id]);
+
+  // ── Send invitations ─────────────────────────────────────────────────
   const handleSend = async () => {
     if (!interviewDate.trim()) {
       toast.error("Please enter an interview date.");
       return;
     }
 
-    // Collect session IDs from the job's applicants (session IDs)
-    // job.sessionIds is populated from the backend; fall back to empty array
-    const sessionIds = job.sessionIds || [];
-
     if (sessionIds.length === 0) {
-      toast.error("No candidate sessions found for this job.");
+      toast.error("No shortlisted candidates found for this job.");
       return;
     }
 
     setSending(true);
     try {
       const res = await api.post("/email/bulk-invite", {
-        session_ids: sessionIds,
-        recruiter_id: recruiterId,
+        session_ids:    sessionIds,
+        recruiter_id:   recruiterId,
         interview_date: interviewDate,
         interview_link: interviewLink,
-        extra_notes: extraNotes,
+        extra_notes:    extraNotes,
       });
 
       const { sent_count, failed_count } = res.data;
@@ -118,11 +160,12 @@ const BulkInviteModal = ({ job, recruiterId, onClose, onSuccess }) => {
     }
   };
 
+  // ── Render ───────────────────────────────────────────────────────────
   return (
     /* Backdrop */
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        
+
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-[#1B3C53] to-[#456882] px-7 py-5 flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -134,7 +177,7 @@ const BulkInviteModal = ({ job, recruiterId, onClose, onSuccess }) => {
                 Send Interview Invitations
               </h3>
               <p className="text-white/60 text-xs mt-0.5">
-                Job closed · Notify all applied candidates
+                Job closed · Notify shortlisted candidates
               </p>
             </div>
           </div>
@@ -151,14 +194,43 @@ const BulkInviteModal = ({ job, recruiterId, onClose, onSuccess }) => {
           <Briefcase size={14} className="text-[#FF914D]" />
           <span className="text-sm font-bold text-[#1B3C53]">{job.title}</span>
           <span className="text-gray-300">·</span>
-          <span className="text-xs text-[#456882] font-medium">
-            {job.applicants || 0} candidate{job.applicants !== 1 ? "s" : ""}
-          </span>
+
+          {/* Candidate count — live from shortlisted sessions */}
+          {loadingSessions ? (
+            <span className="text-xs text-[#456882] font-medium flex items-center gap-1">
+              <Loader2 size={11} className="animate-spin" />
+              Loading shortlisted…
+            </span>
+          ) : sessionError ? (
+            <span className="text-xs text-red-500 font-medium">Pipeline still running</span>
+          ) : (
+            <span className="text-xs text-[#456882] font-medium">
+              {sessionIds.length} shortlisted candidate{sessionIds.length !== 1 ? "s" : ""}
+            </span>
+          )}
         </div>
+
+        {/* Pipeline-still-running notice */}
+        {!loadingSessions && sessionError && (
+          <div className="mx-7 mt-5 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
+            ⏳ {sessionError}
+            <br />
+            You can still fill in the details below and send once the pipeline finishes,
+            or close and retry in a moment.
+          </div>
+        )}
+
+        {/* Auto-sent notice — shown when pipeline already emailed them */}
+        {!loadingSessions && !sessionError && sessionIds.length > 0 && (
+          <div className="mx-7 mt-5 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-800 font-medium">
+            ✉️ An automatic invitation was already sent when the job closed. Use this
+            form to resend with a <strong>confirmed date and link</strong>.
+          </div>
+        )}
 
         {/* Form */}
         <div className="px-7 py-6 space-y-5">
-          
+
           {/* Interview Date */}
           <div>
             <label className="block text-xs font-black text-[#456882] uppercase tracking-[0.1em] mb-2">
@@ -216,7 +288,7 @@ const BulkInviteModal = ({ job, recruiterId, onClose, onSuccess }) => {
           </button>
           <button
             onClick={handleSend}
-            disabled={sending}
+            disabled={sending || loadingSessions || sessionIds.length === 0}
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#FF914D] hover:bg-[#e07d3c] text-white text-sm font-black transition-all shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {sending ? (
@@ -227,7 +299,7 @@ const BulkInviteModal = ({ job, recruiterId, onClose, onSuccess }) => {
             ) : (
               <>
                 <Send size={16} />
-                Send Invitations
+                Send to {loadingSessions ? "…" : sessionIds.length} Candidates
               </>
             )}
           </button>
@@ -466,8 +538,6 @@ const JobManagement = () => {
             salary: "Not specified",
             skills: j.required_skills || [],
             applicants: j.applicants_count || 0,
-            // Session IDs for bulk invite — backend must include these
-            sessionIds: j.session_ids || [],
             status: j.status === "open" ? "Open" : "Closed",
           }));
           setJobs(mappedJobs);
@@ -530,9 +600,12 @@ const JobManagement = () => {
 
         toast.success(`Job status updated to ${newStatus}`);
 
-        // ── If the job is being CLOSED, open the invite modal ──
+        // ── If the job is being CLOSED, open the invite modal.
+        // The modal will fetch shortlisted session IDs from the backend.
+        // Note: the pipeline runs in the background simultaneously —
+        // the modal shows a "pipeline still running" notice if sessions
+        // aren't ready yet. The recruiter can close + retry later.
         if (newStatus === "closed") {
-          // Pass the updated job object (with new status) to the modal
           setInviteModalJob({ ...job, status: "Closed" });
         }
       }
