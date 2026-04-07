@@ -251,6 +251,7 @@ const MockCard = ({ interview }) => {
             : 'text-red-500'
 
     return (
+        //console.log('Rendering MockCard with score:', interview.id),
         <div
             className="bg-white rounded-2xl shadow-sm border border-light-gray2/60 px-6 py-5
                  hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group

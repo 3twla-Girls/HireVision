@@ -1,0 +1,73 @@
+{
+  "session_id": "69d4d7aaff9f1023d0cdbf58",
+  "interview_id": "69d11a3d98cf8cfbd89d6ecb",
+  "submitted_at": "2026-04-07T10:13:06.249760Z",
+  "total_warnings": 1,
+  "total_duration": 21.6,
+  "events": [
+    {
+      "type": "log_event",
+      "at": "01:32",
+      "duration": 2.1,
+      "head_dir": "Forward",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "log_event",
+      "at": "01:40",
+      "duration": 2.1,
+      "head_dir": "Forward",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "log_event",
+      "at": "03:10",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "03:14",
+      "duration": 2.0,
+      "head_dir": "Forward",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "log_event",
+      "at": "03:16",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "warning",
+      "at": "03:19",
+      "duration": 5.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward",
+      "warning_number": 1
+    },
+    {
+      "type": "log_event",
+      "at": "03:22",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Up"
+    },
+    {
+      "type": "log_event",
+      "at": "03:28",
+      "duration": 2.0,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    },
+    {
+      "type": "log_event",
+      "at": "03:31",
+      "duration": 2.1,
+      "head_dir": "Down",
+      "gaze_dir": "Forward"
+    }
+  ]
+}

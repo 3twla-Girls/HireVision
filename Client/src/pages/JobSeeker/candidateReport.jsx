@@ -417,7 +417,6 @@ export default function CandidateReport() {
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          
           <div style={{ textAlign: "center" }}>
             <div
               style={{
@@ -502,12 +501,14 @@ export default function CandidateReport() {
                   questionsWithAnswers.find(
                     (qw) => qw.question_id === ans.question_id,
                   ) || questionsWithAnswers[i];
-                const sc = ans.evaluation?.score * 10 || 0;
+                let sc = ans.evaluation?.score * 10 || 0;
+                if (!ans.evaluation.score && ans.evaluation.type === "mcq") {
+                  ans.evaluation.is_correct ? (sc = 100) : (sc = 0);
+                }
                 const isActive = i === activeIdx;
                 const dotColor = getQuestionDotColor(i, isActive);
                 const cardBg = getActiveCardBackground(isActive, i);
                 const cardBorderColor = getActiveCardBorder(isActive, i);
-
                 return (
                   <div
                     key={i}
@@ -615,11 +616,54 @@ export default function CandidateReport() {
                 </h3>
               </div>
               <ScoreRing
-                score={activeAnswer.evaluation?.score * 10 || 0}
+                score={
+                  activeAnswer.evaluation?.score !== undefined &&
+                  activeAnswer.evaluation?.score !== null
+                    ? activeAnswer.evaluation.score * 10
+                    : activeAnswer.evaluation?.type === "mcq"
+                      ? activeAnswer.evaluation?.is_correct
+                        ? 100
+                        : 0
+                      : 0
+                }
                 size={78}
               />
             </div>
+            {activeQuestion?.type === "mcq" && activeQuestion?.options && (
+              <div style={{ marginBottom: 16 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: C.secondaryBlue,
+                    marginBottom: 8,
+                  }}
+                >
+                  Options
+                </div>
 
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                >
+                  {activeQuestion.options.map((opt, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: "10px 12px",
+                        borderRadius: 8,
+                        border: "1px solid #eee",
+                        background: "#f9f9f9",
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: C.primaryText,
+                      }}
+                    >
+                      {opt}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Answer & Reference */}
             <div style={{ marginBottom: 16 }}>
               <div
@@ -670,58 +714,69 @@ export default function CandidateReport() {
                   lineHeight: 1.75,
                 }}
               >
-                {activeAnswer.speech_to_text?.transcription ||
-                  "No transcription available"}
+                {activeAnswer.type === "mcq"
+                  ? activeAnswer.selected_option
+                  : activeAnswer.speech_to_text?.transcription ||
+                    "No transcription available"}
               </div>
             </div>
 
-            <div
-              style={{
-                background: C.lightTeal,
-                border: `1.5px solid ${C.teal}44`,
-                borderRadius: 10,
-                padding: "10px 14px",
-                marginBottom: 16,
-                fontSize: 13,
-                color: C.darkBlue,
-                lineHeight: 1.6,
-              }}
-            >
-              💬 <strong>Evaluator Feedback:</strong>{" "}
-              {activeAnswer.evaluation?.overall_feedback ||
-                "No feedback available"}
-            </div>
+            {activeQuestion?.type !== "mcq" && (
+              <>
+                <div
+                  style={{
+                    background: C.lightTeal,
+                    border: `1.5px solid ${C.teal}44`,
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    marginBottom: 16,
+                    fontSize: 13,
+                    color: C.darkBlue,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  💬 <strong>Evaluator Feedback:</strong>{" "}
+                  {activeAnswer.evaluation?.overall_feedback ||
+                    "No feedback available"}
+                </div>
 
-            {/* Sections */}
-            <CollapsibleSection
-              title="Positive Indicators"
-              icon="✓"
-              color={C.success}
-            >
-              <BulletList
-                items={activeAnswer.evaluation?.strengths}
-                icon="✓"
-                iconColor={C.success}
-              />
-            </CollapsibleSection>
-            <CollapsibleSection
-              title="Growth Areas"
-              icon="⚠️"
-              color={C.warning}
-            >
-              <BulletList
-                items={activeAnswer.evaluation?.weaknesses}
-                icon="⚠"
-                iconColor={C.warning}
-              />
-            </CollapsibleSection>
-            <CollapsibleSection title="Knowledge Gaps" icon="✖" color={C.error}>
-              <BulletList
-                items={activeAnswer.evaluation?.missing_points}
-                icon="•"
-                iconColor={C.error}
-              />
-            </CollapsibleSection>
+                <CollapsibleSection
+                  title="Positive Indicators"
+                  icon="✓"
+                  color={C.success}
+                >
+                  <BulletList
+                    items={activeAnswer.evaluation?.strengths}
+                    icon="✓"
+                    iconColor={C.success}
+                  />
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  title="Growth Areas"
+                  icon="⚠️"
+                  color={C.warning}
+                >
+                  <BulletList
+                    items={activeAnswer.evaluation?.weaknesses}
+                    icon="⚠"
+                    iconColor={C.warning}
+                  />
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  title="Knowledge Gaps"
+                  icon="✖"
+                  color={C.error}
+                >
+                  <BulletList
+                    items={activeAnswer.evaluation?.missing_points}
+                    icon="•"
+                    iconColor={C.error}
+                  />
+                </CollapsibleSection>
+              </>
+            )}
 
             <div
               style={{
@@ -781,7 +836,10 @@ export default function CandidateReport() {
               Report Snapshot
             </h3>
             {reportData.answers.map((ans, i) => {
-              const sc = ans.evaluation?.score * 10 || 0;
+              let sc = ans.evaluation?.score * 10 || 0;
+              if (!ans.evaluation.score && ans.evaluation.type === "mcq") {
+                ans.evaluation.is_correct ? (sc = 100) : (sc = 0);
+              }
               const questionColor = questionColors[i % questionColors.length];
               return (
                 <div

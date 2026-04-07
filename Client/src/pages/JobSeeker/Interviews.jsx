@@ -357,6 +357,7 @@ const Interviews = () => {
                 {searchQuery && ` for "${searchQuery}"`}
               </p>
               {filtered.map((interview) => (
+                //console.log('Rendering interview card for:', interview.id),
                 <InterviewCard key={interview.id} interview={interview} />
               ))}
             </>

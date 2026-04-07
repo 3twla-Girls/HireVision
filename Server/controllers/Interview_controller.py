@@ -459,6 +459,7 @@ class InterviewController(BaseController):
                         "question_id": str(q["question_id"]),
                         "question": q.get("question"),
                         "type": q.get("type"),
+                        "options": q.get("options", []),
                         "reference_answer": q.get("reference_answer")
                     }
 
