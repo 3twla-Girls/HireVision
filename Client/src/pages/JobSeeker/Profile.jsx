@@ -74,6 +74,8 @@ const Profile = () => {
   const [loadingProfile, setLoadingProfile] = React.useState(true);
   const [isUploading, setIsUploading] = React.useState(false);
   const [skills, setSkills] = React.useState([]);
+  const [showAllSkills, setShowAllSkills] = React.useState(false);
+  const SKILLS_LIMIT = 15;
   const [resumes, setResumes] = React.useState([]);
   const [stats, setStats] = React.useState({ totalApplications: 0, interviews: 0, accepted: 0 });
 
@@ -397,7 +399,7 @@ const Profile = () => {
               </div>
 
               <div className="flex flex-wrap gap-2.5 items-center">
-                {skills.map((skill, index) => (
+                {(showAllSkills ? skills : skills.slice(0, SKILLS_LIMIT)).map((skill, index) => (
                   <SkillBadge key={index} label={skill} />
                 ))}
 
@@ -422,6 +424,17 @@ const Profile = () => {
                   </div>
                 )}
               </div>
+
+              {skills.length > SKILLS_LIMIT && (
+                <button
+                  onClick={() => setShowAllSkills(prev => !prev)}
+                  className="mt-3 text-[13px] font-semibold text-orange hover:text-dark-orange transition-colors flex items-center gap-1"
+                >
+                  {showAllSkills
+                    ? 'Show less'
+                    : `+${skills.length - SKILLS_LIMIT} more`}
+                </button>
+              )}
 
             </div>
 
