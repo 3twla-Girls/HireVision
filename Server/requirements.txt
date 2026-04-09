@@ -23,7 +23,7 @@ torch
 opencv-python
 sentence_transformers
 ultralytics
-facenet-pytorch
+facenet-pytorch==2.5.3
 torch
 torchvision
 torchaudio

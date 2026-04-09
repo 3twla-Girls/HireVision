@@ -164,14 +164,23 @@ async def get_jobs_by_cluster(request: Request, cluster_id: int):
 # =============================
 @job_router.get("/all/{recruiter_id}")
 async def get_jobs(request: Request, recruiter_id: str):
+    from ..controllers.ApplicationController import ApplicationController
+    from bson import ObjectId
     faiss_service_job=request.app.state.faiss_service["faiss_service_job"]
     job_controller = await JobController.create_instance(
         db_client=request.app.db_client,
         faiss_service_job=faiss_service_job
     )
+    app_controller = await ApplicationController.create_instance(request.app.db_client)
 
     try:
         jobs = await job_controller.get_jobs_by_recruiter(recruiter_id=recruiter_id)
+        
+        # Populate applicants_count dynamically
+        for job in jobs:
+            count = await app_controller.collection.count_documents({"job_id": ObjectId(job.id)})
+            job.applicants_count = count
+
         return jobs
 
     except Exception as e:
@@ -217,6 +226,8 @@ async def get_recommended_jobs(request: Request, user_id: str):
 # =============================
 @job_router.get("/{job_id}")
 async def get_job(request: Request, job_id: str):
+    from ..controllers.ApplicationController import ApplicationController
+    from bson import ObjectId
     faiss_service_job=request.app.state.faiss_service["faiss_service_job"]
     job_controller = await JobController.create_instance(
         db_client=request.app.db_client,
@@ -225,6 +236,12 @@ async def get_job(request: Request, job_id: str):
 
     try:
         job = await job_controller.get_job(job_id=job_id)
+        
+        # Populate applicants_count dynamically
+        app_controller = await ApplicationController.create_instance(request.app.db_client)
+        count = await app_controller.collection.count_documents({"job_id": ObjectId(job.id)})
+        job.applicants_count = count
+        
         return job
 
     except Exception as e:
@@ -404,7 +421,7 @@ async def get_shortlisted_sessions(request: Request, job_id: str):
 
     try:
         collection = request.app.db_client[
-            DataBaseEnum.COLLECTION_INTERVIEW_SESSIONS_NAME.value
+            DataBaseEnum.COLLECTION_APPLICATION_NAME.value
         ]
 
         cursor = collection.find(

@@ -93,14 +93,28 @@ const BulkInviteModal = ({ job, recruiterId, onClose, onSuccess }) => {
   // ── Fetch accepted session IDs as soon as the modal opens ────────────
   useEffect(() => {
     let cancelled = false;
+    let pollTimeout;
 
-    const fetchSessions = async () => {
-      setLoadingSessions(true);
-      setSessionError(null);
+    const fetchSessions = async (retryCount = 0) => {
+      if (cancelled) return;
+      
       try {
+        // 1. Check pipeline status first
+        const statusRes = await api.get(`/job/${job.id}/pipeline-status`);
+        const { breakdown, total_applications } = statusRes.data;
+        const pendingCount = breakdown?.pending || 0;
+        
+        // If there are pending applications and we haven't timed out (e.g. 10 retries = 20s)
+        if (total_applications > 0 && pendingCount > 0 && retryCount < 10) {
+           pollTimeout = setTimeout(() => fetchSessions(retryCount + 1), 2000);
+           return; // wait for next poll
+        }
+
+        // 2. Fetch the actual shortlisted sessions once pipeline is done (or timed out)
         const res = await api.get(`/job/${job.id}/shortlisted-sessions`);
         if (!cancelled) {
           setSessionIds(res.data.session_ids || []);
+          setLoadingSessions(false);
         }
       } catch (err) {
         if (!cancelled) {
@@ -108,14 +122,19 @@ const BulkInviteModal = ({ job, recruiterId, onClose, onSuccess }) => {
           setSessionError(
             "Could not load shortlisted candidates. The pipeline may still be running."
           );
+          setLoadingSessions(false);
         }
-      } finally {
-        if (!cancelled) setLoadingSessions(false);
       }
     };
 
+    setLoadingSessions(true);
+    setSessionError(null);
     fetchSessions();
-    return () => { cancelled = true; };
+
+    return () => { 
+      cancelled = true; 
+      if (pollTimeout) clearTimeout(pollTimeout);
+    };
   }, [job.id]);
 
   // ── Send invitations ─────────────────────────────────────────────────
@@ -483,7 +502,7 @@ const JobDetailPanel = ({ job, onToggleStatus, onBack }) => {
               size={16}
               className="group-hover:scale-110 transition-transform"
             />
-            Review {job.applicants.length || 0} Applicants
+            Review {job.applicants || 0} Applicants
           </button>
         </div>
       </div>

@@ -172,7 +172,7 @@ async def _fetch_accepted_sessions(db_client, job_id: str) -> list[str]:
     from bson import ObjectId
 
     try:
-        collection = db_client[DataBaseEnum.COLLECTION_INTERVIEW_SESSIONS_NAME.value]
+        collection = db_client[DataBaseEnum.COLLECTION_APPLICATION_NAME.value]
         cursor = collection.find(
             {
                 "job_id": ObjectId(job_id),

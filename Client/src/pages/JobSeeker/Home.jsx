@@ -162,7 +162,8 @@ const Skeletons = () => (
 // ── Home Page ────────────────────────────────────────────────────────────────
 const Home = () => {
   const [filterOpen, setFilterOpen] = useState(false);
-  const [jobs, setJobs] = useState([]);
+  const [recommendedJobs, setRecommendedJobs] = useState([]);
+  const [otherJobs, setOtherJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({ checked: {}, searchValues: {} });
@@ -201,6 +202,7 @@ const Home = () => {
         setLoading(true);
         setError(null);
         let recList = [];
+        let allList = [];
 
         // 1️⃣ Try recommended jobs first
         try {
@@ -213,26 +215,31 @@ const Home = () => {
           }
         } catch (err) {
           console.warn(
-            "Recommended jobs API failed, falling back to all jobs",
+            "Recommended jobs API failed, falling back",
             err,
           );
         }
 
-        if (recList.length > 0) {
-          // Has CVs → personalised recommendations
-          setJobs(recList.map(mapJob));
-          setIsGenericList(false);
-        } else {
-          // 2️⃣ No CV / API error → fall back to latest 10 jobs
+        // 2️⃣ Fetch all remaining jobs
+        try {
           const allRes = await fetch("/api/v1/job/all_jobs");
           if (!allRes.ok) throw new Error(`Server error: ${allRes.status}`);
           const allData = await allRes.json();
-          const allList = Array.isArray(allData)
+          allList = Array.isArray(allData)
             ? allData
             : (allData.jobs ?? []);
-          setJobs(allList.slice(0, 10).map(mapJob));
-          setIsGenericList(true);
+        } catch (err) {
+          console.warn("All jobs API failed", err);
         }
+
+        const mappedRec = recList.map(mapJob);
+        const recIds = new Set(mappedRec.map(j => j.id));
+        const mappedOther = allList.map(mapJob).filter(j => !recIds.has(j.id));
+
+        setRecommendedJobs(mappedRec);
+        setOtherJobs(mappedOther);
+        setIsGenericList(mappedRec.length === 0);
+
       } catch (err) {
         console.error("Failed to fetch jobs:", err);
         setError("Could not load jobs. Please try again later.");
@@ -241,13 +248,20 @@ const Home = () => {
       }
     };
     fetchJobs();
-  }, []);
+  }, [CURRENT_USER_ID]);
 
   // Re-compute filtered list whenever jobs or filters change
-  const filteredJobs = useMemo(
-    () => applyFilters(jobs, filters),
-    [jobs, filters],
+  const filteredRecJobs = useMemo(
+    () => applyFilters(recommendedJobs, filters),
+    [recommendedJobs, filters],
   );
+
+  const filteredOtherJobs = useMemo(
+    () => applyFilters(otherJobs, filters),
+    [otherJobs, filters],
+  );
+
+  const totalFilteredCount = filteredRecJobs.length + filteredOtherJobs.length;
 
   // Are any filters currently active?
   const isFiltered =
@@ -276,10 +290,10 @@ const Home = () => {
           <p className="text-sm text-red-500 font-medium">{error}</p>
         </div>
       );
-    if (filteredJobs.length === 0) {
+    if (totalFilteredCount === 0) {
       return (
         <EmptyState
-          isFiltered={isFiltered && jobs.length > 0}
+          isFiltered={isFiltered && (recommendedJobs.length > 0 || otherJobs.length > 0)}
           onClear={handleClearFilters}
         />
       );
@@ -314,9 +328,30 @@ const Home = () => {
             </a>
           </div>
         )}
-        {filteredJobs.map((job) => (
-          <JobCard key={job.id} job={job} />
-        ))}
+        
+        {/* RECOMMENDED SECTION */}
+        {filteredRecJobs.length > 0 && !isGenericList && (
+           <>
+              {filteredRecJobs.map((job) => (
+                <JobCard key={job.id} job={job} />
+              ))}
+              
+              {filteredOtherJobs.length > 0 && (
+                 <div className="mt-6 mb-2">
+                    <h2 className="text-xl font-bold text-dark-blue border-b border-gray-100 pb-3">More Jobs You Might Like</h2>
+                 </div>
+              )}
+           </>
+        )}
+        
+        {/* OTHER JOBS SECTION */}
+        {filteredOtherJobs.length > 0 && (
+           <>
+              {filteredOtherJobs.map((job) => (
+                 <JobCard key={job.id} job={job} />
+              ))}
+           </>
+        )}
       </div>
     );
   };
@@ -334,7 +369,7 @@ const Home = () => {
             </h1>
             {!loading && !error && (
               <span className="text-sm text-dark-gray3 font-medium">
-                {filteredJobs.length} job{filteredJobs.length !== 1 ? "s" : ""}
+                {totalFilteredCount} job{totalFilteredCount !== 1 ? "s" : ""}
               </span>
             )}
           </div>
@@ -357,8 +392,8 @@ const Home = () => {
               <div className="flex items-center gap-3">
                 {!loading && !error && (
                   <span className="text-sm text-dark-gray3 font-medium">
-                    {filteredJobs.length} job
-                    {filteredJobs.length !== 1 ? "s" : ""}
+                    {totalFilteredCount} job
+                    {totalFilteredCount !== 1 ? "s" : ""}
                   </span>
                 )}
                 <button

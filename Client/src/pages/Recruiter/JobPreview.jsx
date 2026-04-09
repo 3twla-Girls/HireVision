@@ -103,7 +103,7 @@ const inferType = (jobType) => {
                             {new Date(job?.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                         <div className="bg-blue-50 px-3 py-1 rounded-lg text-sm text-light-blue font-bold border border-blue-100">
-                            {job?.applicants || 0} applicants
+                            {job?.applicants_count || 0} applicants
                         </div>
                     </div>
                 </div>
@@ -173,7 +173,7 @@ const inferType = (jobType) => {
             <div className="bg-light-blue rounded-3xl p-6 shadow-md space-y-4">
                 <h3 className="text-white font-bold text-lg border-b pb-3">Hiring Pipeline</h3>
                 
-                <StatRow label="Total Applicants" value={job?.applicants || "0"} color="bg-blue-400" />
+                <StatRow label="Total Applicants" value={job?.applicants_count || "0"} color="bg-blue-400" />
                 <StatRow label="Interviewed" value="0" color="bg-purple-400" />
                 <StatRow label="Shortlisted (Passed)" value="0" color="bg-emerald-400" />
                 <StatRow label="Rejected" value="0" color="bg-red-400" />

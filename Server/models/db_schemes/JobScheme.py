@@ -34,6 +34,7 @@ class JobScheme(BaseModel):
     max_applications_count: int = 50
     top_candidates_count: int = 10
     interview_gap_days: int = 2
+    applicants_count: int = 0
     # min_matching_score: int = 70
     
     # -------------------------------------------------
