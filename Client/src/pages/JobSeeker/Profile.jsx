@@ -77,7 +77,11 @@ const Profile = () => {
   const [showAllSkills, setShowAllSkills] = React.useState(false);
   const SKILLS_LIMIT = 15;
   const [resumes, setResumes] = React.useState([]);
-  const [stats, setStats] = React.useState({ totalApplications: 0, interviews: 0, accepted: 0 });
+  const [stats, setStats] = React.useState({
+    totalApplications: 0,
+    interviews: 0,
+    accepted: 0,
+  });
 
   React.useEffect(() => {
     if (!candidateId) return;

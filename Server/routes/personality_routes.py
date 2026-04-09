@@ -6,13 +6,13 @@ from Server.controllers.personality_controller import (
     generate_overall_report
 )
 
-router = APIRouter()
+personalityRouter = APIRouter(
+    prefix="/api/v1/personality",
+    tags=["api_v1", "personality"],
+)
 
 # ----------- SAVE RAW SCORES ------------
-from bson import ObjectId
-from fastapi import APIRouter, UploadFile, File
-
-@router.post("/predict/{session_id}")
+@personalityRouter.post("/predict/{session_id}")
 async def predict_personality(session_id: str, file: UploadFile = File(...)):
     result = await predict_personality_controller(file)
 
@@ -31,10 +31,7 @@ async def predict_personality(session_id: str, file: UploadFile = File(...)):
 
     return result
 # ----------- GENERATE FINAL REPORT ------------
-from fastapi import APIRouter, HTTPException
-from bson import ObjectId
-
-@router.post("/process/{session_id}")
+@personalityRouter.post("/process/{session_id}")
 async def process_personality(session_id: str):
     # No await here
     session = db.interview_sessions.find_one({"_id": ObjectId(session_id)})

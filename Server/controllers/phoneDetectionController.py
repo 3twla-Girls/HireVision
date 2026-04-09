@@ -12,6 +12,59 @@ predictor = PhoneUsagePredictor("Module_2/Phone_detection/weights/yolov8_phone_u
 print("Phone usage model loaded.")
 
 
+# async def analyze_phone_usage(file: UploadFile, session_id: str, question_id: str):
+#     await file.seek(0)
+#     if not file.filename.endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
+#         raise HTTPException(status_code=400, detail="Invalid video format")
+
+#     temp_path = f"uploads/{session_id}_{question_id}_{file.filename}"
+#     os.makedirs("uploads", exist_ok=True)
+
+#     try:
+#         # Save uploaded video
+#         with open(temp_path, "wb") as buffer:
+#             shutil.copyfileobj(file.file, buffer)
+
+#         # Run predictor
+#         results = predictor.predict(temp_path)
+
+#         # Object to store under phone_detection
+#         phone_obj = {
+#             "is_cheating"    : results["summary"]["is_cheating"],
+#             "severity"       : results["summary"]["severity"],
+#             "cheating_events": results["cheating_events"],
+#             "summary"        : results["summary"],
+#             "per_frame"      : results["per_frame"],
+#             "updated_at"     : datetime.utcnow()
+#         }
+
+#         # Check if session exists
+#         existing = interview_sessions.find_one({"_id": ObjectId(session_id)})
+
+#         if existing:
+#             interview_sessions.update_one(
+#                 {"_id": ObjectId(session_id)},
+#                 {
+#                     "$set": {
+#                         f"phone_detection.{question_id}": phone_obj,
+#                         "updated_at": datetime.utcnow()
+#                     }
+#                 }
+#             )
+#         else:
+#             raise HTTPException(status_code=404, detail="Session not found")
+
+#         return {
+#             "status"     : "success",
+    #         "session_id" : session_id,
+    #         "question_id": question_id,
+    #         **results
+    #     }
+
+    # finally:
+    #     if os.path.exists(temp_path):
+    #         os.remove(temp_path)
+    
 async def analyze_phone_usage(file: UploadFile, session_id: str, question_id: str):
     await file.seek(0)
     if not file.filename.endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
@@ -25,8 +78,16 @@ async def analyze_phone_usage(file: UploadFile, session_id: str, question_id: st
         with open(temp_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        # Run predictor
-        results = predictor.predict(temp_path)
+        try:
+            results = predictor.predict(temp_path)
+        except Exception as e:
+            print(f"❌ Predictor failed: {str(e)}")
+            return {
+                "status": "warning",
+                "message": "AI model could not process this video file",
+                "detail": str(e)
+            }
+        # ---------------------------------------
 
         # Object to store under phone_detection
         phone_obj = {
@@ -60,6 +121,10 @@ async def analyze_phone_usage(file: UploadFile, session_id: str, question_id: st
             "question_id": question_id,
             **results
         }
+
+    except Exception as general_e:
+        print(f"❌ General Error in analyze_phone_usage: {str(general_e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error during analysis")
 
     finally:
         if os.path.exists(temp_path):

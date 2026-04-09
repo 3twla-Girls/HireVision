@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 
 # Local Imports - Routes
-from .routes import base, userRoute, CVRoute, applicationRoute, JobRoute , cheating_eyeGaze_route ,proctoring_router ,phone_routes
+from .routes import base, userRoute, CVRoute, applicationRoute, JobRoute , cheating_eyeGaze_route ,proctoring_router ,phone_routes, personality_routes
 from .routes.questions_with_answers import router as questions_with_answers
 from .routes.interview_routes import interview_router
 #from .routes.personality_routes import router as personality_router
@@ -63,8 +63,14 @@ async def lifespan(app: FastAPI):
             logger.warning(
                 f"⚠️ Could not load clusters: {e}. Will initialize from JSON."
             )
-    
-    # Start expiry-date scheduler (runs immediately + every hour)
+    else:
+        try:
+            os.makedirs(os.path.dirname(CLUSTER_FILE), exist_ok=True)
+            clustering_controller.save_clusters(CLUSTER_FILE)
+            logger.info(f"🆕 Created new cluster file at {CLUSTER_FILE}")
+        except Exception as e:
+            logger.error(f"❌ Failed to create cluster file: {e}")
+            
     start_expiry_scheduler(app)
 
     yield  # Server running and accepting requests
@@ -100,6 +106,7 @@ app.include_router(userRoute.user_router)
 app.include_router(applicationRoute.application_router)
 app.include_router(cheating_eyeGaze_route.eyeGazeCheating_router)
 app.include_router(proctoring_router.proctringRouter)
+app.include_router(personality_routes.personalityRouter)
 
 # # Module 2 Routes
 # app.include_router(personality_router, prefix="/personality", tags=["Personality"])

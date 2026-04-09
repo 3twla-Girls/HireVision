@@ -92,7 +92,7 @@ class HybridSkillMatcher:
     def _semantic_match_batch(self, job_id: str, cv_embedding: np.ndarray):
         results = {}
         job_entry = skills_embedder.get_job_skills(job_id)
-
+        
         if not  job_entry:
             return {skill: 0.0 for skill in  job_entry.keys()}
         

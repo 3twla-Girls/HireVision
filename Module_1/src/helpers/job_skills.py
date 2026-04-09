@@ -28,7 +28,13 @@ class JobSkillsStore:
         else:
 
             self.store = {}
-
+    def _reload(self):
+        if os.path.exists(self.path):
+            with open(self.path, "rb") as f:
+                self.store = pickle.load(f)
+        else:
+            self.store = {}
+            
     def save(self):
 
         with open(self.path, "wb") as f:
@@ -65,11 +71,12 @@ class JobSkillsStore:
         }
 
     def get_job_skills(self, job_id):
-
+        self._reload()
+        print(f"Retrieving skills for job_id: {self.store.get(job_id)}")
         return self.store.get(job_id)
     
     def delete_job_skills_embeddings(self, job_id):
-
+        self._reload()
         if job_id not in self.store:
             return {
                 "job_id": job_id,

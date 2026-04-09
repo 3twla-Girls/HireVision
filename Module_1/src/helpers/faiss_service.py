@@ -13,9 +13,9 @@ from Server.helpers.config import get_settings
 class FAISSService:
     """FAISS service for managing embeddings and similarity search."""
     def __init__(self, dimension=1024,
-                 index_path="../Module-1/faiss_store/cv_embeddings.index",
-                 mapping_path="../Module-1/faiss_store/id_mapping.pkl",
-                 embedding_store_path="../Module-1/faiss_store/embedding_store.pkl"):
+                 index_path="../Module-1/faiss_store/cv_embedding_store.index",
+                 mapping_path="../Module-1/faiss_store/cv_id_mapping.pkl",
+                 embedding_store_path="../Module-1/faiss_store/cv_embedding_store.pkl"):
 
         self.dimension = dimension
         self.index_path = index_path
@@ -95,6 +95,7 @@ class FAISSService:
         # Save mappings
         self.id_mapping[faiss_id] = mongo_id
         self.embedding_store[mongo_id] = vector[0]  # store single embedding
+        print("Vector shape:", vector.shape)
 
         self._save_all()
         return {

@@ -98,7 +98,7 @@ class CandidateClusteringController:
         # Combine job and skills with weighting
         # Give more weight to skills (80%) vs job role (20%)
         skills_mean = np.mean(valid_skill_embeddings, axis=0)
-        combined =0.2 * job_emb + 0.8* skills_mean
+        combined =0.5 * job_emb + 0.5 * skills_mean
         
         # Normalize the combined vector for cosine similarity
         norm = np.linalg.norm(combined)

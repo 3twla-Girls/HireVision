@@ -42,6 +42,7 @@ async def upload_cv(
     job_role: str = Form(...),
     app_settings: Settings = Depends(get_settings)
 ):
+    print(f"Received CV upload request for user_id: {user_id}, filename: {file.filename}, job_role: {job_role}")
     faiss_service = request.app.state.faiss_service["faiss_service_cv"]
     skills_controller = request.app.state.faiss_service["skills_controller"]
     clustering_controller = request.app.state.faiss_service["clustering_controller"]
@@ -188,7 +189,7 @@ async def delete_cv(request: Request, cv_id: str):
         logger.info(f"Cloudinary deletion result: {result}")
     
     # removed_from_cluster
-    clustering_controller.remove_candidate(candidate_id=cv_id)
+    #clustering_controller.remove_candidate(candidate_id=cv_id)
     # Delete from DB
     deleted = await cv_model.delete_cv_by_id(cv_id)
     faiss_service.delete_cv_by_mongo_id(cv_id)

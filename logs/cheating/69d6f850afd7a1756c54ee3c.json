@@ -1,0 +1,173 @@
+{
+  "session_id": "69d6f850afd7a1756c54ee3c",
+  "interview_id": "69d11a3d98cf8cfbd89d6ecb",
+  "submitted_at": "2026-04-09T00:54:12.711692Z",
+  "total_warnings": 10,
+  "total_duration": 75.9,
+  "events": [
+    {
+      "type": "log_event",
+      "at": "00:05",
+      "duration": 2.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "00:08",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 1
+    },
+    {
+      "type": "log_event",
+      "at": "00:10",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "log_event",
+      "at": "00:19",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "00:22",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 2
+    },
+    {
+      "type": "log_event",
+      "at": "00:24",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "00:27",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 3
+    },
+    {
+      "type": "log_event",
+      "at": "00:37",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "00:40",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 4
+    },
+    {
+      "type": "log_event",
+      "at": "00:42",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "00:45",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 5
+    },
+    {
+      "type": "log_event",
+      "at": "00:54",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "00:57",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 6
+    },
+    {
+      "type": "log_event",
+      "at": "00:59",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:02",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 7
+    },
+    {
+      "type": "log_event",
+      "at": "01:10",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:13",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 8
+    },
+    {
+      "type": "log_event",
+      "at": "01:15",
+      "duration": 2.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:18",
+      "duration": 5.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 9
+    },
+    {
+      "type": "log_event",
+      "at": "01:27",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    },
+    {
+      "type": "warning",
+      "at": "01:30",
+      "duration": 5.0,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face",
+      "warning_number": 10
+    },
+    {
+      "type": "log_event",
+      "at": "01:32",
+      "duration": 2.1,
+      "head_dir": "No Face",
+      "gaze_dir": "No Face"
+    }
+  ]
+}
