@@ -1,4 +1,4 @@
-import React, { useState, useMemo,useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Briefcase,
@@ -16,6 +16,13 @@ import {
   Plus,
   Building2,
   TrendingUp,
+  Mail,
+  Calendar,
+  Link,
+  FileText,
+  X,
+  Send,
+  Loader2,
 } from "lucide-react";
 import { JOBS } from "../../data/jobs";
 import api from "../../api/axios";
@@ -56,6 +63,249 @@ const StatusBadge = ({ status, small = false }) => {
       />
       {status}
     </span>
+  );
+};
+
+/* ─── Bulk Invite Modal ─────────────────────────────────────── */
+/**
+ * BulkInviteModal
+ *
+ * Opens when the recruiter closes a job. It:
+ *  1. Fetches the list of shortlisted session IDs from the backend
+ *     (GET /api/v1/job/{job_id}/shortlisted-sessions).
+ *  2. Lets the recruiter optionally customise the interview date/link/notes.
+ *  3. Posts to /api/v1/email/bulk-invite with the real session IDs.
+ *
+ * Note: The pipeline already auto-sent a first-pass email right after closing.
+ * This modal lets the recruiter resend with a confirmed date + link.
+ */
+const BulkInviteModal = ({ job, recruiterId, onClose, onSuccess }) => {
+  const [interviewDate, setInterviewDate] = useState("");
+  const [interviewLink, setInterviewLink] = useState("");
+  const [extraNotes, setExtraNotes]       = useState("");
+  const [sending, setSending]             = useState(false);
+
+  // Shortlisted session IDs — fetched from backend on mount
+  const [sessionIds, setSessionIds]       = useState([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [sessionError, setSessionError]   = useState(null);
+
+  // ── Fetch accepted session IDs as soon as the modal opens ────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchSessions = async () => {
+      setLoadingSessions(true);
+      setSessionError(null);
+      try {
+        const res = await api.get(`/job/${job.id}/shortlisted-sessions`);
+        if (!cancelled) {
+          setSessionIds(res.data.session_ids || []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to fetch shortlisted sessions:", err);
+          setSessionError(
+            "Could not load shortlisted candidates. The pipeline may still be running."
+          );
+        }
+      } finally {
+        if (!cancelled) setLoadingSessions(false);
+      }
+    };
+
+    fetchSessions();
+    return () => { cancelled = true; };
+  }, [job.id]);
+
+  // ── Send invitations ─────────────────────────────────────────────────
+  const handleSend = async () => {
+    if (!interviewDate.trim()) {
+      toast.error("Please enter an interview date.");
+      return;
+    }
+
+    if (sessionIds.length === 0) {
+      toast.error("No shortlisted candidates found for this job.");
+      return;
+    }
+
+    setSending(true);
+    try {
+      const res = await api.post("/email/bulk-invite", {
+        session_ids:    sessionIds,
+        recruiter_id:   recruiterId,
+        interview_date: interviewDate,
+        interview_link: interviewLink,
+        extra_notes:    extraNotes,
+      });
+
+      const { sent_count, failed_count } = res.data;
+      if (sent_count > 0) {
+        toast.success(
+          `✅ Invitations sent to ${sent_count} candidate${sent_count > 1 ? "s" : ""}${
+            failed_count > 0 ? ` · ${failed_count} failed` : ""
+          }`
+        );
+      } else {
+        toast.error(`All ${failed_count} invitation(s) failed to send.`);
+      }
+
+      onSuccess();
+    } catch (err) {
+      console.error("Bulk invite error:", err);
+      toast.error(err.response?.data?.signal || "Failed to send invitations.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // ── Render ───────────────────────────────────────────────────────────
+  return (
+    /* Backdrop */
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+
+        {/* Modal Header */}
+        <div className="bg-gradient-to-r from-[#1B3C53] to-[#456882] px-7 py-5 flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+              <Mail size={20} className="text-white" />
+            </div>
+            <div>
+              <h3 className="text-white font-black text-lg leading-tight">
+                Send Interview Invitations
+              </h3>
+              <p className="text-white/60 text-xs mt-0.5">
+                Job closed · Notify shortlisted candidates
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/50 hover:text-white transition-colors mt-0.5"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Job Info Banner */}
+        <div className="bg-[#F8FAFC] border-b border-gray-100 px-7 py-3 flex items-center gap-2">
+          <Briefcase size={14} className="text-[#FF914D]" />
+          <span className="text-sm font-bold text-[#1B3C53]">{job.title}</span>
+          <span className="text-gray-300">·</span>
+
+          {/* Candidate count — live from shortlisted sessions */}
+          {loadingSessions ? (
+            <span className="text-xs text-[#456882] font-medium flex items-center gap-1">
+              <Loader2 size={11} className="animate-spin" />
+              Loading shortlisted…
+            </span>
+          ) : sessionError ? (
+            <span className="text-xs text-red-500 font-medium">Pipeline still running</span>
+          ) : (
+            <span className="text-xs text-[#456882] font-medium">
+              {sessionIds.length} shortlisted candidate{sessionIds.length !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+
+        {/* Pipeline-still-running notice */}
+        {!loadingSessions && sessionError && (
+          <div className="mx-7 mt-5 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
+            ⏳ {sessionError}
+            <br />
+            You can still fill in the details below and send once the pipeline finishes,
+            or close and retry in a moment.
+          </div>
+        )}
+
+        {/* Auto-sent notice — shown when pipeline already emailed them */}
+        {!loadingSessions && !sessionError && sessionIds.length > 0 && (
+          <div className="mx-7 mt-5 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-800 font-medium">
+            ✉️ An automatic invitation was already sent when the job closed. Use this
+            form to resend with a <strong>confirmed date and link</strong>.
+          </div>
+        )}
+
+        {/* Form */}
+        <div className="px-7 py-6 space-y-5">
+
+          {/* Interview Date */}
+          <div>
+            <label className="block text-xs font-black text-[#456882] uppercase tracking-[0.1em] mb-2">
+              <Calendar size={12} className="inline mr-1.5" />
+              Interview Date & Time <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. 2026-04-15 03:00 PM"
+              value={interviewDate}
+              onChange={(e) => setInterviewDate(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm font-medium text-[#1B3C53] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B3C53]/20 focus:border-[#1B3C53]/40 transition"
+            />
+          </div>
+
+          {/* Interview Link */}
+          <div>
+            <label className="block text-xs font-black text-[#456882] uppercase tracking-[0.1em] mb-2">
+              <Link size={12} className="inline mr-1.5" />
+              Interview Link <span className="text-gray-400 font-normal normal-case">(optional)</span>
+            </label>
+            <input
+              type="url"
+              placeholder="https://meet.google.com/..."
+              value={interviewLink}
+              onChange={(e) => setInterviewLink(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm font-medium text-[#1B3C53] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B3C53]/20 focus:border-[#1B3C53]/40 transition"
+            />
+          </div>
+
+          {/* Extra Notes */}
+          <div>
+            <label className="block text-xs font-black text-[#456882] uppercase tracking-[0.1em] mb-2">
+              <FileText size={12} className="inline mr-1.5" />
+              Notes for Candidates <span className="text-gray-400 font-normal normal-case">(optional)</span>
+            </label>
+            <textarea
+              rows={3}
+              placeholder="e.g. Please have your portfolio ready and join 5 minutes early."
+              value={extraNotes}
+              onChange={(e) => setExtraNotes(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm font-medium text-[#1B3C53] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B3C53]/20 focus:border-[#1B3C53]/40 transition resize-none"
+            />
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="px-7 pb-6 flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={sending}
+            className="flex-1 py-3 rounded-xl border border-gray-200 text-[#456882] text-sm font-bold hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            Skip for Now
+          </button>
+          <button
+            onClick={handleSend}
+            disabled={sending || loadingSessions || sessionIds.length === 0}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#FF914D] hover:bg-[#e07d3c] text-white text-sm font-black transition-all shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {sending ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Sending…
+              </>
+            ) : (
+              <>
+                <Send size={16} />
+                Send to {loadingSessions ? "…" : sessionIds.length} Candidates
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -251,16 +501,19 @@ const JobManagement = () => {
   const [filterStatus, setFilterStatus] = useState("All");
   const [mobileView, setMobileView] = useState("list");
 
-  const user = JSON.parse(sessionStorage.getItem("user"));
+  // ── Bulk invite modal state ──────────────────────────────────
+  const [inviteModalJob, setInviteModalJob] = useState(null); // job object | null
 
+  const user = JSON.parse(sessionStorage.getItem("user"));
 
   useEffect(() => {
     if (!user) {
-      navigate("/Register"); // Redirect to register page if user is not found
+      navigate("/Register");
     }
   }, [user, navigate]);
 
   const CURRENT_RECRUITER_ID = user._id;
+
   React.useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -284,11 +537,10 @@ const JobManagement = () => {
               : "Recently",
             salary: "Not specified",
             skills: j.required_skills || [],
-            applicants: 0, // To do: wire up applicants count
+            applicants: j.applicants_count || 0,
             status: j.status === "open" ? "Open" : "Closed",
           }));
           setJobs(mappedJobs);
-          console.log("Jobs")
 
           if (mappedJobs.length > 0) {
             setSelectedJobId(mappedJobs[0].id);
@@ -315,7 +567,7 @@ const JobManagement = () => {
           filterStatus === "All" || job.status === filterStatus;
         return matchSearch && matchFilter;
       }),
-    [jobs, search, filterStatus],
+    [jobs, search, filterStatus]
   );
 
   const stats = useMemo(
@@ -323,49 +575,21 @@ const JobManagement = () => {
       open: jobs.filter((j) => j.status === "Open").length,
       closed: jobs.filter((j) => j.status === "Closed").length,
     }),
-    [jobs],
+    [jobs]
   );
 
-  // const toggleStatus = async (id) => {
-  //   const job = jobs.find((j) => j.id === id);
-  //   if (!job) return;
-  //   const newStatus = job.status === "Open" ? "closed" : "open";
-  //   try {
-  //     // const res = await fetch(`/api/v1/job/${id}/status`, {
-  //     //   method: "PATCH",
-  //     //   headers: { "Content-Type": "application/json" },
-  //     //   body: JSON.stringify({ status: newStatus }),
-  //     // });
-  //     const res = await api.patch(`/api/v1/job/${id}/status`,{ status: newStatus })
-  //     if (!res.status==200) throw new Error("Failed to update status");
-  //     // Only update UI after DB confirms
-  //     setJobs((prev) =>
-  //       prev.map((j) =>
-  //         j.id === id
-  //           ? { ...j, status: newStatus === "open" ? "Open" : "Closed" }
-  //           : j,
-  //       ),
-  //     );
-  //   } catch (err) {
-  //     console.error("Could not update job status:", err);
-  //   }
-  // };
+  // ── Toggle job status ────────────────────────────────────────
   const toggleStatus = async (id) => {
     const job = jobs.find((j) => j.id === id);
     if (!job) return;
 
-    // Ensure status is sent in lowercase to match your Backend logic ("open"/"closed")
     const newStatus = job.status.toLowerCase() === "open" ? "closed" : "open";
 
     try {
-      // 1. Use the 'api' (axios instance) instead of 'fetch'
-      // This automatically uses the BaseURL: http://localhost:8000/api/v1
-      const res = await api.patch(`/job/${id}/status`, { 
-        status: newStatus 
-      });
+      const res = await api.patch(`/job/${id}/status`, { status: newStatus });
 
-      // 2. Axios returns data directly in 'res.data'
       if (res.status === 200) {
+        // Update local UI immediately
         setJobs((prev) =>
           prev.map((j) =>
             j.id === id
@@ -373,11 +597,20 @@ const JobManagement = () => {
               : j
           )
         );
+
         toast.success(`Job status updated to ${newStatus}`);
+
+        // ── If the job is being CLOSED, open the invite modal.
+        // The modal will fetch shortlisted session IDs from the backend.
+        // Note: the pipeline runs in the background simultaneously —
+        // the modal shows a "pipeline still running" notice if sessions
+        // aren't ready yet. The recruiter can close + retry later.
+        if (newStatus === "closed") {
+          setInviteModalJob({ ...job, status: "Closed" });
+        }
       }
     } catch (err) {
       console.error("Could not update job status:", err);
-      // Use your toast for better UI feedback
       const errorMsg = err.response?.data?.signal || "Failed to update status";
       toast.error(`Error: ${errorMsg}`);
     }
@@ -390,6 +623,17 @@ const JobManagement = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-24">
+
+      {/* ── Bulk Invite Modal ── */}
+      {inviteModalJob && (
+        <BulkInviteModal
+          job={inviteModalJob}
+          recruiterId={CURRENT_RECRUITER_ID}
+          onClose={() => setInviteModalJob(null)}
+          onSuccess={() => setInviteModalJob(null)}
+        />
+      )}
+
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-[60px] py-8 space-y-6">
         {/* ── Page Header ── */}
         <div className="flex items-center gap-3 mb-2">

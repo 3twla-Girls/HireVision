@@ -237,46 +237,16 @@ async def get_job(request: Request, job_id: str):
 # =============================
 # Update Job Status only
 # =============================
-# @job_router.patch("/{job_id}/status")
-# async def update_job_status(request: Request, job_id: str, background_tasks: BackgroundTasks):
-#     faiss_service_job = request.app.state.faiss_service["faiss_service_job"]
-#     job_controller = await JobController.create_instance(
-#         db_client=request.app.db_client,
-#         faiss_service_job=faiss_service_job
-#     )
-#     try:
-#         body = await request.json()
-#         new_status = body.get("status")
-#         if new_status not in ("open", "closed"):
-#             return JSONResponse(
-#                 status_code=status.HTTP_400_BAD_REQUEST,
-#                 content={"signal": "INVALID_STATUS"}
-#             )
-            
-#         current_job = await job_controller.job_model.get_job_by_id(ObjectId(job_id))
-#         if not current_job:
-#             return JSONResponse(status_code=404, content={"signal": "JOB_NOT_FOUND"})
-        
-#         await job_controller.job_model.update_job(
-#             ObjectId(job_id),
-#             {"status": new_status}
-#         )
-        
-#         if new_status == "closed" and current_job.get("status") == "open":
-#             background_tasks.add_task(run_hiring_automation, current_job, request.app)
-            
-#         return JSONResponse(content={"signal": "JOB_STATUS_UPDATED", "status": new_status})
-#     except Exception as e:
-#         logger.error(f"Error updating job status: {e}")
-#         return JSONResponse(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             content={"signal": "JOB_STATUS_UPDATE_FAILED"}
-#         )
 @job_router.patch("/{job_id}/status")
 async def update_job_status(request: Request, job_id: str, background_tasks: BackgroundTasks):
     """
     Updates the job status and triggers the hiring automation pipeline
     when a job transitions to 'closed' or 'expired'.
+
+    The pipeline (run_hiring_automation) will:
+      1. Rank all applicants
+      2. Select the top N candidates  (status → accepted_for_interview)
+      3. AUTO-SEND interview invitation emails to every accepted candidate
     """
     faiss_service_job = request.app.state.faiss_service.get("faiss_service_job")
 
@@ -310,7 +280,8 @@ async def update_job_status(request: Request, job_id: str, background_tasks: Bac
             {"status": new_status}
         )
 
-        # Trigger automation when job closes (manual close OR forced expiry)
+        # Trigger automation when job closes (manual close OR forced expiry).
+        # The pipeline will rank candidates and then auto-email invitations.
         closing_statuses = {"closed", "expired"}
         if new_status in closing_statuses and old_status == "open":
             logger.info(f"Triggering hiring pipeline for job: {job_id} (status: {new_status})")
@@ -406,6 +377,60 @@ async def get_job_rankings(request: Request, job_id: str):
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"error": str(e)}
+        )
+
+
+# =============================
+# Get shortlisted session IDs
+# =============================
+@job_router.get("/{job_id}/shortlisted-sessions")
+async def get_shortlisted_sessions(request: Request, job_id: str):
+    """
+    Returns the list of interview session IDs whose status is
+    'accepted_for_interview' for the given job.
+
+    Used by the frontend BulkInviteModal to pre-populate session IDs
+    so the recruiter can re-send or customise invitations after the
+    pipeline has already run automatically.
+
+    Response:
+        {
+            "job_id": "<job_id>",
+            "session_ids": ["<id1>", "<id2>", ...],
+            "count": 2
+        }
+    """
+    from ..models.enums.DataBaseEnum import DataBaseEnum
+
+    try:
+        collection = request.app.db_client[
+            DataBaseEnum.COLLECTION_INTERVIEW_SESSIONS_NAME.value
+        ]
+
+        cursor = collection.find(
+            {
+                "job_id": ObjectId(job_id),
+                "status": "accepted_for_interview",
+            },
+            {"_id": 1}
+        )
+        docs = await cursor.to_list(length=None)
+        session_ids = [str(doc["_id"]) for doc in docs]
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "job_id":      job_id,
+                "session_ids": session_ids,
+                "count":       len(session_ids),
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Error fetching shortlisted sessions for job {job_id}: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"signal": "SHORTLISTED_SESSIONS_FETCH_FAILED", "error": str(e)}
         )
 
 

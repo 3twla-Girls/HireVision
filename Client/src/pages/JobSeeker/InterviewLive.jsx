@@ -356,81 +356,28 @@ export default function InterviewLive() {
   // ── Recording ─────────────────────────────────────────────────
   const startRecording = useCallback((stream) => {
     videoChunksRef.current = [];
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    // const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    const recorder = new MediaRecorder(stream, { 
+      mimeType: 'video/webm;codecs=vp8,opus' 
+    });
 
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) videoChunksRef.current.push(e.data);
     };
 
-  //   recorder.onstop = async () => {
-  //     const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
-  //     const sId = location.state?.sessionId || localStorage.getItem('sessionId');
-  //     const activeStep = stepRef.current;
-  //     const currentQuestion = questionsRef.current[activeStep];
-  //     const qId = currentQuestion?.question_id || currentQuestion?._id || currentQuestion?.id;
-
-  //     if (!qId || !sId) {
-  //       console.error('Missing IDs!', { sId, qId });
-  //       return;
-  //     }
-
-  //     const sendRequest = async (endpoint) => {
-  //       const formData = new FormData();
-  //       // formData.append('file', videoBlob, `video_${qId}.webm`);
-  //       // questions[currentStep]?.type === 'mcq' && formData.append('selected_option', selectedOption);
-  //       const currentSelection = selectedOptionRef.current;
-  //       if (currentQuestion.type === 'mcq' && !currentSelection) {
-  //         console.error("No option selected!");
-  //         return;
-  //       }
-  //       if (currentQuestion.type === 'mcq') {
-  //           formData.append('selected_option', currentSelection);
-  //       } else {
-  //           formData.append('file', videoBlob, `video_${qId}.webm`);
-  //       }
-  //       console.log("selected option in form data", currentSelection)
-  //       return api.post(endpoint, formData, {
-  //         params: { session_id: sId, question_id: qId  },
-  //         headers: { 'Content-Type': 'multipart/form-data' },
-  //       });
-  //     };
-  //     const sendRequestPhone = async (endpoint) => {
-  //       const formData = new FormData();
-  //       formData.append('file', videoBlob, `video_${qId}.webm`);
-  //       return api.post(endpoint, formData, {
-  //         params: { session_id: sId, question_id: qId  },
-  //         headers: { 'Content-Type': 'multipart/form-data' },
-  //       });
-  //     };
-
-  //     try {
-  //       const [resAnswer, resPhone] = await Promise.allSettled([
-  //         sendRequest('/interview/submit-answer'),
-  //         sendRequestPhone('/interview/analyze-phone-usage')
-  //       ]);
-
-  //       if (resAnswer.status === 'fulfilled') console.log('✅ Answer Uploaded for:', qId);
-  //       if (resPhone.status === 'fulfilled') console.log('✅ Phone Detection Done for:', qId);
-        
-  //     } catch (err) {
-  //       console.error('❌ General Upload Error:', err);
-  //     }
-  // };
     recorder.onstop = async () => {
+      if (videoChunksRef.current.length === 0) return;
+
       const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
       const sId = location.state?.sessionId || localStorage.getItem('sessionId');
       const activeStep = stepRef.current;
       const currentQuestion = questionsRef.current[activeStep];
       const qId = currentQuestion?.question_id || currentQuestion?._id || currentQuestion?.id;
-      
-      if (!qId || !sId) {
-        console.error('Missing IDs!', { sId, qId });
-        return;
-      }
 
-      const sendRequest = async (endpoint) => {
+      if (!qId || !sId) return;
+
+      const sendRequest = async (endpoint, isPhoneLog = false) => {
         const formData = new FormData();
-        
         formData.append('file', videoBlob, `video_${qId}.webm`);
 
         const requestParams = {
@@ -452,19 +399,41 @@ export default function InterviewLive() {
       };
 
       try {
-        const [resAnswer, resPhone] = await Promise.allSettled([
-          sendRequest('/interview/submit-answer'),
-          sendRequest('/interview/analyze-phone-usage')
-        ]);
+        const formData = new FormData();
+        formData.append('file', videoBlob, `video_${qId}.webm`);
 
-        if (resAnswer.status === 'fulfilled') {
-          console.log('✅ Answer & Video Uploaded:', qId);
-        } else {
-          console.error('❌ Answer Post Failed:', resAnswer.reason);
+        const requestParams = {
+          session_id: sId,
+          question_id: qId
+        };
+
+        if (currentQuestion.type === 'mcq') {
+          const currentSelection = selectedOptionRef.current;
+          if (currentSelection) {
+            requestParams.selected_option = currentSelection;
+          }
         }
 
-        if (resPhone.status === 'fulfilled') {
-          console.log('✅ Phone Detection Processed');
+        const [resAnswer, resPhone, resPersonality] = await Promise.allSettled([
+          api.post('/interview/submit-answer', formData, { params: requestParams }),
+          api.post('/interview/analyze-phone-usage', formData, { params: requestParams }),
+          api.post(`personality/predict/${sId}`, formData)
+        ]);
+
+        if (resAnswer.status === 'fulfilled') 
+          console.log('✅ Answer & Video Uploaded');
+        else
+          console.error('❌ Answer Upload Failed:', resAnswer.reason?.response?.data);
+        
+        if (resPhone.status === 'fulfilled') 
+          console.log('✅ Phone Detection Done');
+        else
+          console.error('❌ Phone Detection Failed:', resPhone.reason?.response?.data);
+        
+        if (resPersonality.status === 'fulfilled') {
+          console.log('✅ Personality traits captured');
+        } else {
+          console.error('❌ Personality Predict Failed:', resPersonality.reason?.response?.data);
         }
       } catch (err) {
         console.error('❌ Critical Error during submission:', err);
@@ -564,6 +533,7 @@ export default function InterviewLive() {
     if (!isLastQuestion) {
       stopCamera();
       stopMic();
+
       setGapTime(GAP_TIME);
       setShowGap(true);
       return;
@@ -574,6 +544,9 @@ export default function InterviewLive() {
     try {
       toast.loading('Generating your interview summary...', { id: 'summary' });
       await postSummary();
+
+      await api.post(`/personality/process/${sId}`);
+
       await api.post(`/interview/final-summary/${sId}`);
       toast.success('Interview completed! Redirecting...', { id: 'summary' });
       cleanup();
@@ -607,6 +580,11 @@ export default function InterviewLive() {
     const id = setInterval(() => setGapTime((p) => p - 1), 1000);
     return () => clearInterval(id);
   }, [showGap, gapTime, startCamera, startMic]);
+
+  useEffect(() => {
+    setSelectedOption(null);
+    selectedOptionRef.current = null;
+  }, [currentStep]);
 
   // ── Derived values ────────────────────────────────────────────
   const isLast      = currentStep === questions.length - 1;
