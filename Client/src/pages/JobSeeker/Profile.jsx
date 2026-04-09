@@ -475,7 +475,7 @@ const Profile = () => {
                   </div>
                 )}
               </div>
-<<<<<<< HEAD
+
 
               {skills.length > SKILLS_LIMIT && (
                 <button
