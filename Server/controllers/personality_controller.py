@@ -12,7 +12,7 @@ predictor = PersonalityPredictor(
 
 
 async def predict_personality_controller(file: UploadFile):
-    if not file.filename.endswith(('.mp4', '.avi', '.mov', '.mkv')):
+    if not file.filename.endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
         raise HTTPException(status_code=400, detail="Invalid video format")
 
     temp_path = f"uploads/{file.filename}"
