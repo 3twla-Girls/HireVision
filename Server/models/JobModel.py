@@ -73,4 +73,5 @@ class JobModel(BaseDataModel):
 
     async def find_jobs_by_status(self, status: str):
         """Return all jobs matching a given status string."""
-        return await self.collection.find({"status": status}).to_list(length=None)
+        return await self.collection.find({"status": status}).to_list(length=None)  
+    

@@ -63,8 +63,14 @@ async def lifespan(app: FastAPI):
             logger.warning(
                 f"⚠️ Could not load clusters: {e}. Will initialize from JSON."
             )
-    
-    # Start expiry-date scheduler (runs immediately + every hour)
+    else:
+        try:
+            os.makedirs(os.path.dirname(CLUSTER_FILE), exist_ok=True)
+            clustering_controller.save_clusters(CLUSTER_FILE)
+            logger.info(f"🆕 Created new cluster file at {CLUSTER_FILE}")
+        except Exception as e:
+            logger.error(f"❌ Failed to create cluster file: {e}")
+            
     start_expiry_scheduler(app)
 
     yield  # Server running and accepting requests

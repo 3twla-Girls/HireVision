@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   MapPin,
   Download,
@@ -15,14 +15,13 @@ import {
   Database,
   Trash2,
   Upload,
-  Loader2
-} from 'lucide-react';
-import { assets } from '../../assets/assets';
-import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
-import FeedbackModal from '../../components/JobSeeker/FeedbackModal';
-import safwaResume from '../../data/Safwa Ibrahim Resume (1).pdf';
-
+  Loader2,
+} from "lucide-react";
+import { assets } from "../../assets/assets";
+import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
+import FeedbackModal from "../../components/JobSeeker/FeedbackModal";
+import safwaResume from "../../data/Safwa Ibrahim Resume (1).pdf";
 
 const normalizeSkill = (skill) => {
   return skill
@@ -38,16 +37,13 @@ const normalizeSkill = (skill) => {
 };
 
 const SkillBadge = ({ label }) => {
-
   const iconName = normalizeSkill(label);
 
   const isRestApi =
-    label.toLowerCase() === "rest apis" ||
-    label.toLowerCase() === "rest api";
+    label.toLowerCase() === "rest apis" || label.toLowerCase() === "rest api";
 
   return (
     <div className="flex items-center gap-2 bg-light-gray1 px-4 py-2 rounded-full border border-light-gray2/40">
-
       {isRestApi ? (
         <Database size={16} className="text-logo-blue" />
       ) : (
@@ -60,11 +56,9 @@ const SkillBadge = ({ label }) => {
       <span className="text-[13px] font-semibold text-dark-blue/80">
         {label}
       </span>
-
     </div>
   );
 };
-
 
 const Profile = () => {
   const { userData } = useAuth();
@@ -75,7 +69,11 @@ const Profile = () => {
   const [isUploading, setIsUploading] = React.useState(false);
   const [skills, setSkills] = React.useState([]);
   const [resumes, setResumes] = React.useState([]);
-  const [stats, setStats] = React.useState({ totalApplications: 0, interviews: 0, accepted: 0 });
+  const [stats, setStats] = React.useState({
+    totalApplications: 0,
+    interviews: 0,
+    accepted: 0,
+  });
 
   React.useEffect(() => {
     if (!candidateId) return;
@@ -99,19 +97,21 @@ const Profile = () => {
           const cvData = await cvRes.json();
           const fetchedCVs = cvData.cvs || [];
 
-          const mappedResumes = fetchedCVs.map(cv => ({
+          const mappedResumes = fetchedCVs.map((cv) => ({
             id: cv.id,
             name: cv.cv_name,
-            created_at: cv.created_at ? new Date(cv.created_at).toLocaleDateString() : 'Unknown Date',
+            created_at: cv.created_at
+              ? new Date(cv.created_at).toLocaleDateString()
+              : "Unknown Date",
             url: cv.url ?? null,
           }));
 
           setResumes(mappedResumes);
 
           const combinedSkills = new Set();
-          fetchedCVs.forEach(cv => {
+          fetchedCVs.forEach((cv) => {
             if (cv.extracted_skills && Array.isArray(cv.extracted_skills)) {
-              cv.extracted_skills.forEach(skill => combinedSkills.add(skill));
+              cv.extracted_skills.forEach((skill) => combinedSkills.add(skill));
             }
           });
           setSkills(Array.from(combinedSkills));
@@ -120,15 +120,14 @@ const Profile = () => {
         if (appRes.ok) {
           const apps = await appRes.json();
           const list = Array.isArray(apps) ? apps : [];
-          const accepted = list.filter(a => a.status === 'accepted').length;
+          const accepted = list.filter((a) => a.status === "accepted").length;
           // interviews = sessions might need separate API; use accepted as fallback count
           setStats({
             totalApplications: list.length,
-            interviews: list.filter(a => a.status === 'accepted').length,
+            interviews: list.filter((a) => a.status === "accepted").length,
             accepted,
           });
         }
-
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
@@ -147,46 +146,49 @@ const Profile = () => {
 
   const [pendingUploadFile, setPendingUploadFile] = React.useState(null);
   const [uploadName, setUploadName] = React.useState("");
+  const [uploadJobRole, setUploadJobRole] = React.useState("");
   const [isNamePromptOpen, setIsNamePromptOpen] = React.useState(false);
 
   const fileInputRef = React.useRef(null);
 
   const handleDeleteResume = async (id) => {
-    const toastId = toast.loading('Deleting CV…');
+    const toastId = toast.loading("Deleting CV…");
     try {
-      const res = await fetch(`/api/v1/cv/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed');
-      setResumes(prev => prev.filter(r => r.id !== id));
-      toast.success('CV deleted successfully.', { id: toastId });
+      const res = await fetch(`/api/v1/cv/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      setResumes((prev) => prev.filter((r) => r.id !== id));
+      toast.success("CV deleted successfully.", { id: toastId });
     } catch (err) {
       console.error(err);
-      toast.error('Failed to delete CV. Please try again.', { id: toastId });
+      toast.error("Failed to delete CV. Please try again.", { id: toastId });
     }
   };
 
   const handleRenameResume = (id, newName) => {
-    setResumes(resumes.map(resume =>
-      resume.id === id ? { ...resume, name: newName } : resume
-    ));
+    setResumes(
+      resumes.map((resume) =>
+        resume.id === id ? { ...resume, name: newName } : resume,
+      ),
+    );
     // Simulate updating mock data
     if (currentUser) {
-      const match = currentUser.resumes.find(r => r.id === id);
+      const match = currentUser.resumes.find((r) => r.id === id);
       if (match) match.name = newName;
     }
   };
 
   const handleDownloadResume = (resumeId, resumeName) => {
-    const resumeToDownload = resumes.find(r => r.id === resumeId);
+    const resumeToDownload = resumes.find((r) => r.id === resumeId);
     let hrefToUse = safwaResume; // fallback to the static one
 
     if (resumeToDownload?.url) {
       hrefToUse = resumeToDownload.url;
     }
 
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = hrefToUse;
     link.download = resumeName;
-    link.target = '_blank';
+    link.target = "_blank";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -208,7 +210,7 @@ const Profile = () => {
     }
 
     // Optimistically update UI
-    setSkills(prev => [...prev, trimmedSkill]);
+    setSkills((prev) => [...prev, trimmedSkill]);
     setNewSkill("");
     setIsAddingSkill(false);
 
@@ -223,7 +225,7 @@ const Profile = () => {
 
       if (!res.ok) {
         // Roll back optimistic update
-        setSkills(prev => prev.filter(s => s !== trimmedSkill));
+        setSkills((prev) => prev.filter((s) => s !== trimmedSkill));
         if (data.signal === "NO_CV_FOUND") {
           toast.error("Please upload a CV first before adding skills.");
         } else {
@@ -232,15 +234,15 @@ const Profile = () => {
       }
     } catch (err) {
       // Roll back on network error
-      setSkills(prev => prev.filter(s => s !== trimmedSkill));
+      setSkills((prev) => prev.filter((s) => s !== trimmedSkill));
       toast.error("Network error. Could not save skill.");
     }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleAddSkill();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setIsAddingSkill(false);
       setNewSkill("");
     }
@@ -254,36 +256,38 @@ const Profile = () => {
     const file = e.target.files[0];
     if (file) {
       setPendingUploadFile(file);
-      setUploadName(file.name.replace(/\.[^/.]+$/, "")); // Strip extension for default name
+      setUploadName(file.name.replace(/\.[^/.]+$/, ""));
+      setUploadJobRole(currentUser?.job_title || ""); // 👈 pre-fill from profile
       setIsNamePromptOpen(true);
     }
-    // reset input
-    e.target.value = '';
+    e.target.value = "";
   };
 
   const handleConfirmUpload = () => {
     if (!pendingUploadFile) return;
 
-    // 1. Prepare data
     const fileToUpload = pendingUploadFile;
     const newName = uploadName.trim() || fileToUpload.name;
-    const finalName = newName.toLowerCase().endsWith('.pdf') ? newName : `${newName}.pdf`;
-
+    const finalName = newName.toLowerCase().endsWith(".pdf")
+      ? newName
+      : `${newName}.pdf`;
+    const jobRoleForApi =
+      uploadJobRole.trim() || currentUser?.job_title || "Software Engineer"; // 👈 use state
     const formData = new FormData();
     formData.append("file", fileToUpload, finalName);
-    formData.append("job_role", currentUser?.job_title || "Software Engineer");
+    formData.append("job_role", jobRoleForApi); // 👈 now uses the user-entered value
 
-    // 2. Immediately close the modal and reset states so user can continue
     setIsUploading(true);
     setIsNamePromptOpen(false);
     setPendingUploadFile(null);
     setUploadName("");
+    setUploadJobRole(""); // 👈 reset
 
     // 3. Run the upload in the background with a toast promise
     const uploadPromise = async () => {
       try {
         const response = await fetch(`/api/v1/cv/upload/${candidateId}`, {
-          method: 'POST',
+          method: "POST",
           body: formData,
         });
 
@@ -296,15 +300,19 @@ const Profile = () => {
         const newResume = {
           id: data.file_id || `temp_${Date.now()}`,
           name: finalName,
-          created_at: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-          url: data.file_url
+          created_at: new Date().toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
+          url: data.file_url,
         };
 
         // Add to state once finished
         setResumes((prev) => [...prev, newResume]);
 
         if (data.extracted_skills && Array.isArray(data.extracted_skills)) {
-          setSkills(prevSkills => {
+          setSkills((prevSkills) => {
             const combined = new Set([...prevSkills, ...data.extracted_skills]);
             return Array.from(combined);
           });
@@ -317,9 +325,9 @@ const Profile = () => {
     };
 
     toast.promise(uploadPromise(), {
-      loading: 'Uploading & Extracting CV Data... (This takes a few minutes)',
-      success: 'CV uploaded automatically! Resume data extracted.',
-      error: 'Failed to upload CV. Please try again.',
+      loading: "Uploading & Extracting CV Data... (This takes a few minutes)",
+      success: "CV uploaded automatically! Resume data extracted.",
+      error: "Failed to upload CV. Please try again.",
     });
   };
 
@@ -327,12 +335,14 @@ const Profile = () => {
     setIsNamePromptOpen(false);
     setPendingUploadFile(null);
     setUploadName("");
+    setUploadJobRole(""); // 👈 reset
   };
-
   if (loadingProfile) {
     return (
       <div className="min-h-screen py-8 flex items-center justify-center">
-        <div className="text-dark-blue font-semibold animate-pulse text-lg">Loading Profile...</div>
+        <div className="text-dark-blue font-semibold animate-pulse text-lg">
+          Loading Profile...
+        </div>
       </div>
     );
   }
@@ -343,38 +353,60 @@ const Profile = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content (Left) */}
           <div className="lg:col-span-2 flex flex-col gap-6">
-
             {/* Header Card */}
             <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-light-gray2/60">
               <div className="flex flex-col md:flex-row gap-6 items-start">
                 <img
-                  src={currentUser?.profile_image_url || assets?.profileIcon || "https://via.placeholder.com/256"}
+                  src={
+                    currentUser?.profile_image_url ||
+                    assets?.profileIcon ||
+                    "https://via.placeholder.com/256"
+                  }
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = assets?.profileIcon || "https://via.placeholder.com/256";
+                    e.target.src =
+                      assets?.profileIcon || "https://via.placeholder.com/256";
                   }}
                   alt={currentUser?.name || "Job Seeker"}
                   className="w-32 h-32 rounded-full object-cover border-[3px] border-light-gray1 bg-white"
                 />
                 <div className="flex-1">
-                  <h1 className="text-2xl md:text-3xl font-bold text-dark-blue">{currentUser?.name || "Name"}</h1>
-                  <p className="text-[17px] text-dark-blue/80 mt-1">{currentUser?.job_title || "Job Title"}</p>
+                  <h1 className="text-2xl md:text-3xl font-bold text-dark-blue">
+                    {currentUser?.name || "Name"}
+                  </h1>
+                  <p className="text-[17px] text-dark-blue/80 mt-1">
+                    {currentUser?.job_title || "Job Title"}
+                  </p>
                   <div className="flex items-center gap-1.5 text-dark-gray3 mt-2">
                     <MapPin size={16} />
-                    <span className="text-[15px]">{currentUser?.location || "Location"}</span>
+                    <span className="text-[15px]">
+                      {currentUser?.location || "Location"}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-3 mt-6">
-                    <a href={currentUser?.socials?.github || "#"} className="w-10 h-10 rounded-full bg-light-gray1 flex items-center justify-center text-dark-gray4 hover:bg-gray-200 transition-colors">
+                    <a
+                      href={currentUser?.socials?.github || "#"}
+                      className="w-10 h-10 rounded-full bg-light-gray1 flex items-center justify-center text-dark-gray4 hover:bg-gray-200 transition-colors"
+                    >
                       <Github size={18} />
                     </a>
-                    <a href={currentUser?.socials?.linkedin || "#"} className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors">
+                    <a
+                      href={currentUser?.socials?.linkedin || "#"}
+                      className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-colors"
+                    >
                       <Linkedin size={18} />
                     </a>
-                    <a href={currentUser?.socials?.website || "#"} className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 hover:bg-blue-100 transition-colors">
+                    <a
+                      href={currentUser?.socials?.website || "#"}
+                      className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 hover:bg-blue-100 transition-colors"
+                    >
                       <Globe size={18} />
                     </a>
-                    <a href={`mailto:${currentUser?.email}`} className="w-10 h-10 rounded-full bg-orange/10 flex items-center justify-center text-orange hover:bg-orange/20 transition-colors">
+                    <a
+                      href={`mailto:${currentUser?.email}`}
+                      className="w-10 h-10 rounded-full bg-orange/10 flex items-center justify-center text-orange hover:bg-orange/20 transition-colors"
+                    >
                       <Mail size={18} />
                     </a>
                   </div>
@@ -385,7 +417,9 @@ const Profile = () => {
             {/* Skills & Tools */}
             <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-light-gray2/60">
               <div className="flex justify-between items-center mb-5">
-                <h2 className="text-xl font-bold text-dark-blue">Skills & Tools</h2>
+                <h2 className="text-xl font-bold text-dark-blue">
+                  Skills & Tools
+                </h2>
                 {!isAddingSkill && (
                   <button
                     onClick={() => setIsAddingSkill(true)}
@@ -412,32 +446,51 @@ const Profile = () => {
                       autoFocus
                       className="bg-transparent outline-none text-[13px] font-semibold text-dark-blue/80 w-24 px-2"
                     />
-                    <button onClick={handleAddSkill} className="text-green-600 hover:text-green-700 p-1">
+                    <button
+                      onClick={handleAddSkill}
+                      className="text-green-600 hover:text-green-700 p-1"
+                    >
                       <CheckCircle2 size={16} />
                     </button>
-                    <button onClick={() => { setIsAddingSkill(false); setNewSkill(""); }} className="text-red-500 hover:text-red-600 p-1">
-                      <Eye size={16} className="hidden" /> {/* Using a text fallback, or just an 'x' since X icon isn't imported from lucide */}
-                      <span className="font-bold text-[14px] leading-none px-1">×</span>
+                    <button
+                      onClick={() => {
+                        setIsAddingSkill(false);
+                        setNewSkill("");
+                      }}
+                      className="text-red-500 hover:text-red-600 p-1"
+                    >
+                      <Eye size={16} className="hidden" />{" "}
+                      {/* Using a text fallback, or just an 'x' since X icon isn't imported from lucide */}
+                      <span className="font-bold text-[14px] leading-none px-1">
+                        ×
+                      </span>
                     </button>
                   </div>
                 )}
               </div>
-
             </div>
 
             {/* Education 1 */}
             <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-light-gray2/60">
-              <h2 className="text-xl font-bold text-dark-blue mb-4">Education</h2>
+              <h2 className="text-xl font-bold text-dark-blue mb-4">
+                Education
+              </h2>
               <div>
-                <h3 className="text-[16px] font-bold text-dark-blue">{currentUser?.education}</h3>
-                <p className="text-[14px] text-dark-gray3 mt-1">Class of {currentUser?.date_of_birth ? new Date(currentUser.date_of_birth).getFullYear() + 22 : "2026"}</p>
+                <h3 className="text-[16px] font-bold text-dark-blue">
+                  {currentUser?.education}
+                </h3>
+                <p className="text-[14px] text-dark-gray3 mt-1">
+                  Class of{" "}
+                  {currentUser?.date_of_birth
+                    ? new Date(currentUser.date_of_birth).getFullYear() + 22
+                    : "2026"}
+                </p>
               </div>
             </div>
           </div>
 
           {/* Sidebar (Right) */}
           <div className="lg:col-span-1 flex flex-col gap-6">
-
             <FeedbackModal
               isOpen={isResumeModalOpen}
               onClose={() => {
@@ -452,21 +505,49 @@ const Profile = () => {
 
             {/* Rename Prompt Modal */}
             {isNamePromptOpen && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={handleCancelUpload}>
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+                onClick={handleCancelUpload}
+              >
                 <div
                   className="bg-white rounded-3xl p-6 w-[90%] max-w-sm shadow-xl animate-[fadeInScale_0.2s_ease-out]"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <h3 className="text-lg font-bold text-dark-blue mb-4">Name your resume</h3>
+                  <h3 className="text-lg font-bold text-dark-blue mb-4">
+                    Upload Resume
+                  </h3>
+
+                  {/* Name field — unchanged */}
+                  <label className="block text-[13px] font-semibold text-dark-gray3 mb-1">
+                    Resume Name
+                  </label>
                   <input
                     type="text"
                     value={uploadName}
                     onChange={(e) => setUploadName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleConfirmUpload()}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleConfirmUpload()
+                    }
                     autoFocus
                     placeholder="e.g. Frontend Resume"
+                    className="w-full border border-light-gray2 rounded-lg px-3 py-2 text-dark-blue mb-4 outline-none focus:border-orange focus:ring-1 focus:ring-orange transition-all"
+                  />
+
+                  {/* 👇 New Job Role field */}
+                  <label className="block text-[13px] font-semibold text-dark-gray3 mb-1">
+                    Target Job Role
+                  </label>
+                  <input
+                    type="text"
+                    value={uploadJobRole}
+                    onChange={(e) => setUploadJobRole(e.target.value)}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleConfirmUpload()
+                    }
+                    placeholder="e.g. Frontend Developer"
                     className="w-full border border-light-gray2 rounded-lg px-3 py-2 text-dark-blue mb-5 outline-none focus:border-orange focus:ring-1 focus:ring-orange transition-all"
                   />
+
                   <div className="flex justify-end gap-3">
                     <button
                       onClick={handleCancelUpload}
@@ -489,7 +570,9 @@ const Profile = () => {
             {/* Resumes */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-light-gray2/60">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-[17px] font-bold text-dark-blue">Resumes</h2>
+                <h2 className="text-[17px] font-bold text-dark-blue">
+                  Resumes
+                </h2>
                 <button
                   onClick={handleUploadClick}
                   className="flex items-center gap-1.5 text-[13px] font-semibold text-orange hover:bg-orange/10 px-3 py-1.5 rounded-lg transition-colors"
@@ -512,45 +595,74 @@ const Profile = () => {
                     name={resume.name}
                     date={`Uploaded ${resume.created_at}`}
                     onView={() => handleViewResume(resume)}
-                    onDownload={() => handleDownloadResume(resume.id, resume.name)}
+                    onDownload={() =>
+                      handleDownloadResume(resume.id, resume.name)
+                    }
                     onDelete={() => handleDeleteResume(resume.id)}
                     hasUrl={!!resume.url}
                   />
                 ))}
                 {resumes.length === 0 && (
-                  <p className="text-[13px] text-dark-gray3 text-center py-2">No resumes uploaded yet.</p>
+                  <p className="text-[13px] text-dark-gray3 text-center py-2">
+                    No resumes uploaded yet.
+                  </p>
                 )}
               </div>
             </div>
 
             {/* Profile Stats */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-light-gray2/60">
-              <h2 className="text-[17px] font-bold text-dark-blue mb-5">Profile Stats</h2>
+              <h2 className="text-[17px] font-bold text-dark-blue mb-5">
+                Profile Stats
+              </h2>
               <div className="flex flex-col gap-4">
-                <StatItem icon={Briefcase} label="Applications" value={stats.totalApplications} iconBg="bg-light-gray1" iconColor="text-dark-blue/70" />
-                <StatItem icon={Calendar} label="Interviews" value={stats.interviews} iconBg="bg-light-gray1" iconColor="text-dark-blue/70" />
-                <StatItem icon={CheckCircle2} label="Accepted" value={stats.accepted} iconBg="bg-light-teal" iconColor="text-teal" />
+                <StatItem
+                  icon={Briefcase}
+                  label="Applications"
+                  value={stats.totalApplications}
+                  iconBg="bg-light-gray1"
+                  iconColor="text-dark-blue/70"
+                />
+                <StatItem
+                  icon={Calendar}
+                  label="Interviews"
+                  value={stats.interviews}
+                  iconBg="bg-light-gray1"
+                  iconColor="text-dark-blue/70"
+                />
+                <StatItem
+                  icon={CheckCircle2}
+                  label="Accepted"
+                  value={stats.accepted}
+                  iconBg="bg-light-teal"
+                  iconColor="text-teal"
+                />
               </div>
             </div>
 
             {/* Contact Info */}
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-light-gray2/60">
-              <h2 className="text-[17px] font-bold text-dark-blue mb-5">Contact Info</h2>
+              <h2 className="text-[17px] font-bold text-dark-blue mb-5">
+                Contact Info
+              </h2>
               <div className="flex flex-col gap-4">
                 <ContactItem icon={Mail} value={currentUser?.email || "N/A"} />
-                <ContactItem icon={Phone} value={currentUser?.socials?.phone || "N/A"} />
-                <ContactItem icon={MapPin} value={currentUser?.location || "N/A"} />
+                <ContactItem
+                  icon={Phone}
+                  value={currentUser?.socials?.phone || "N/A"}
+                />
+                <ContactItem
+                  icon={MapPin}
+                  value={currentUser?.location || "N/A"}
+                />
               </div>
             </div>
-
           </div>
         </div>
       </div>
     </div>
   );
 };
-
-
 
 const ResumeItem = ({ name, date, onView, onDownload, onDelete }) => (
   <div className="flex items-center justify-between p-3 bg-light-gray1 rounded-xl border border-light-gray2/30">
@@ -559,18 +671,32 @@ const ResumeItem = ({ name, date, onView, onDownload, onDelete }) => (
         <FileText size={18} />
       </div>
       <div>
-        <p className="text-[14px] font-bold text-dark-blue truncate max-w-[150px]">{name}</p>
+        <p className="text-[14px] font-bold text-dark-blue truncate max-w-[150px]">
+          {name}
+        </p>
         <p className="text-[11px] text-dark-gray3 mt-0.5">{date}</p>
       </div>
     </div>
     <div className="flex items-center gap-1.5 text-dark-gray3">
-      <button onClick={onView} title="View Resume" className="p-1 hover:bg-light-gray2/50 hover:text-dark-blue rounded-md transition-colors">
+      <button
+        onClick={onView}
+        title="View Resume"
+        className="p-1 hover:bg-light-gray2/50 hover:text-dark-blue rounded-md transition-colors"
+      >
         <Eye size={16} />
       </button>
-      <button onClick={onDownload} title="Download Resume" className="p-1 hover:bg-light-gray2/50 hover:text-dark-blue rounded-md transition-colors">
+      <button
+        onClick={onDownload}
+        title="Download Resume"
+        className="p-1 hover:bg-light-gray2/50 hover:text-dark-blue rounded-md transition-colors"
+      >
         <Download size={16} />
       </button>
-      <button onClick={onDelete} title="Delete Resume" className="p-1 hover:bg-red-100 text-red-400 hover:text-red-600 rounded-md transition-colors ml-1">
+      <button
+        onClick={onDelete}
+        title="Delete Resume"
+        className="p-1 hover:bg-red-100 text-red-400 hover:text-red-600 rounded-md transition-colors ml-1"
+      >
         <Trash2 size={16} />
       </button>
     </div>
@@ -589,7 +715,9 @@ const ContactItem = ({ icon: Icon, value }) => (
 const StatItem = ({ icon: Icon, label, value, iconBg, iconColor }) => (
   <div className="flex items-center justify-between p-1">
     <div className="flex items-center gap-3">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg} ${iconColor}`}>
+      <div
+        className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg} ${iconColor}`}
+      >
         <Icon size={18} />
       </div>
       <span className="text-[15px] font-medium text-dark-blue/80">{label}</span>
