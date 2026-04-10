@@ -124,20 +124,25 @@ function ScoreRing({ score, size = 80 }) {
   );
 }
 
+// const parseSkill = (value) => {
+//   if (!value) return { score: 0, max: 5, comment: "No data" };
+
+//   const match = value.match(/^(\d+)\/(\d+)\s*–\s*(.*)$/);
+
+//   if (!match) {
+//     return { score: 0, max: 5, comment: value };
+//   }
+
+//   return {
+//     score: parseInt(match[1]),
+//     max: parseInt(match[2]),
+//     comment: match[3],
+//   };
+// };
+
 const parseSkill = (value) => {
-  if (!value) return { score: 0, max: 5, comment: "No data" };
-
-  const match = value.match(/^(\d+)\/(\d+)\s*–\s*(.*)$/);
-
-  if (!match) {
-    return { score: 0, max: 5, comment: value };
-  }
-
-  return {
-    score: parseInt(match[1]),
-    max: parseInt(match[2]),
-    comment: match[3],
-  };
+  if (!value) return "No data available";
+  return value;
 };
 
 function Tag({ label, color }) {
@@ -367,6 +372,11 @@ export default function CandidateReport() {
     }
     return [];
   };
+
+  const status =
+  reportData.final_summary?.integrity?.face_auth?.status || "N/A";
+
+  const statusColor = status === "Failed" ? C.error : C.success;
 
   return (
     <div
@@ -955,20 +965,20 @@ export default function CandidateReport() {
                 background: "#fff",
                 padding: 20,
                 borderRadius: 16,
-                borderTop: `4px solid ${C.success}`,
+                borderTop: `4px solid ${statusColor}`,
               }}
             >
               <h4 style={{ margin: "0 0 8px", color: C.secondaryText }}>
                 Face Auth
               </h4>
-              <div style={{ fontSize: 20, fontWeight: 800, color: C.success }}>
-                {reportData.final_summary?.integrity?.face_auth?.status ||
-                  "N/A"}
+
+              <div style={{ fontSize: 20, fontWeight: 800, color: statusColor }}>
+                {status}
               </div>
+
               <p style={{ margin: "8px 0 0", fontSize: 13 }}>
                 Incidents:{" "}
-                {reportData.final_summary?.integrity?.face_auth
-                  ?.incidents_count || 0}
+                {reportData.final_summary?.integrity?.face_auth?.incidents_count || 0}
               </p>
             </div>
             <div
@@ -1028,14 +1038,14 @@ export default function CandidateReport() {
                 }}
               >
                 {Object.entries(
-                  reportData.personality.overall?.traits || {},
+                  reportData.personality?.overall?.traits || {},
                 ).map(([key, data]) => (
                   <PersonalityTrait key={key} traitKey={key} traitData={data} />
                 ))}
               </div>
 
               {/* Candidate Insights Summary */}
-              {reportData.personality.overall.candidate_view?.summary && (
+              {reportData.personality?.overall?.candidate_view?.summary && (
                 <div
                   style={{
                     background: `${C.teal}10`,
@@ -1056,7 +1066,7 @@ export default function CandidateReport() {
                   </h4>
                   <BulletList
                     items={
-                      reportData.personality.overall.candidate_view.summary
+                      reportData.personality?.overall?.candidate_view?.summary
                     }
                     icon="✨"
                     iconColor={C.teal}
@@ -1118,7 +1128,7 @@ export default function CandidateReport() {
                 Skill Assessment
               </h3>
 
-              {Object.entries(technicalData.skill_assessment || {}).map(
+              {/* {Object.entries(technicalData.skill_assessment || {}).map(
                 ([skill, value]) => {
                   const parsed = parseSkill(value);
 
@@ -1166,7 +1176,36 @@ export default function CandidateReport() {
                     </div>
                   );
                 },
-              )}
+              )} */}
+              {Object.entries(technicalData.skill_assessment || {}).map(([skill, value]) => (
+                <div
+                  key={skill}
+                  style={{
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 12,
+                    padding: "14px",
+                    marginBottom: 12,
+                    background: "#fff",
+                  }}
+                >
+                  <div style={{ marginBottom: "6px" }}>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: C.darkBlue }}>
+                      {skill.replace(/_/g, " ")}:
+                    </span>
+                  </div>
+
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 13,
+                      color: C.secondaryText,
+                      lineHeight: "1.5",
+                    }}
+                  >
+                    {parseSkill(value)}
+                  </p>
+                </div>
+              ))}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div
