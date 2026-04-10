@@ -113,9 +113,10 @@ async def create_job(request: Request, recruiter_id: str, job: JobScheme,
 
     except Exception as e:
         logger.error(f"Error creating job: {e}")
+        signal = "JOB_ALREADY_EXISTS" if str(e) == "JOB_ALREADY_EXISTS" else "JOB_CREATION_FAILED"
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"signal": "JOB_CREATION_FAILED"}
+            content={"signal": signal}
         )
         
 # =============================

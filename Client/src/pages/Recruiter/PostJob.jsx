@@ -89,13 +89,12 @@ const PostJob = () => {
 
     const finalData = {
       ...formData,
-      num_questions: parseInt(formData.num_questions),
-      number_of_questions_per_interview: parseInt(formData.number_of_questions_per_interview),
-      max_applications_count: parseInt(formData.max_applications_count),
-      top_candidates_count: parseInt(formData.top_candidates_count),
-      interview_gap_days: parseInt(formData.interview_gap_days),
-      min_matching_score: parseInt(formData.min_matching_score),
-      location: `${formData.city}, ${formData.country}`,
+      num_questions: parseInt(formData.num_questions) || 10,
+      number_of_questions_per_interview: parseInt(formData.number_of_questions_per_interview) || 5,
+      max_applications_count: parseInt(formData.max_applications_count) || 50,
+      top_candidates_count: parseInt(formData.top_candidates_count) || 15,
+      interview_gap_days: parseInt(formData.interview_gap_days) || 5,
+      location: [formData.city, formData.country].filter(Boolean).join(", ") || "Unspecified",
       job_recruiter_id: recruiterId 
     };
 
@@ -121,7 +120,13 @@ const PostJob = () => {
       }
     } catch (error) {
       console.error("Full Error:", error);
-      toast.error("Failed to post job. Check required fields.");
+      if (error.response?.status === 422) {
+        toast.error("Validation failed. Description must be at least 10 characters long.");
+      } else if (error.response?.data?.signal === "JOB_ALREADY_EXISTS") {
+        toast.error("A job with this title and location already exists.");
+      } else {
+        toast.error("Failed to post job. Please check all required fields.");
+      }
     } finally {
       setLoading(false);
     }
