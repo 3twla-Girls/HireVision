@@ -125,6 +125,14 @@ function ratiosToDirection(avgH, avgV, hLow, hHigh, vLow, vHigh) {
 function isLookingAway(headDir, gazeDir) {
   if (headDir.includes("Down")) return true;
 
+  // ── QUESTION PANEL EXCEPTION ───────────────────────────────
+  // The question is displayed on the left side of the screen, so
+  // any leftward gaze (eyes or head) is legitimate reading behaviour
+  // and must never be flagged as cheating.
+  if (gazeDir.includes("Left")) return false;
+  if (headDir.includes("Left")) return false;
+  // ───────────────────────────────────────────────────────────
+
   const headFwd = headDir === "Forward";
   const gazeFwd = gazeDir === "Forward";
 
@@ -132,9 +140,9 @@ function isLookingAway(headDir, gazeDir) {
   if (headFwd  && !gazeFwd) return true;
   if (headFwd  && gazeFwd)  return false;
 
-  const headH = headDir.includes("Left")  ? "Left"  : headDir.includes("Right") ? "Right" : null;
+  const headH = headDir.includes("Right") ? "Right" : null;  // Left already excluded above
   const headV = headDir.includes("Up")    ? "Up"    : null;
-  const gazeH = gazeDir.includes("Left")  ? "Left"  : gazeDir.includes("Right") ? "Right" : null;
+  const gazeH = gazeDir.includes("Right") ? "Right" : null;
   const gazeV = gazeDir.includes("Up")    ? "Up"    : null;
 
   return (headH !== null && headH === gazeH) || (headV !== null && headV === gazeV);
