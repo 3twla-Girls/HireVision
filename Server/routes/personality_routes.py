@@ -23,9 +23,9 @@ async def predict_personality(session_id: str, file: UploadFile = File(...)):
             "$push": {
                 "personality.traits_list": result["traits"]
             },
-            "$set": {
-                "personality.status": "collecting"
-            }
+            #"$set": {
+             #   "personality.status": "collecting"
+            #}
         }
     )
 

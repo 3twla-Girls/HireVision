@@ -64,7 +64,7 @@ class InterviewController(BaseController):
                     "face_auth": None,
                     "eye_gaze": None 
                 },
-                "personality": None
+                
             }
         }
 
@@ -397,10 +397,10 @@ class InterviewController(BaseController):
             "$set": {
                 "final_summary.technical": technical_summary,
                 "final_summary.integrity.face_auth": face_auth_report,
-                "final_summary.personality": {
-                                                "status": "collecting",
-                                                "traits_list": []
-                                             }
+                #"final_summary.personality": {
+                                                #"status": "collecting",
+                                                #"traits_list": []
+                                             #}'''
             }
         }
 
