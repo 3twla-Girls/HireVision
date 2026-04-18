@@ -86,7 +86,7 @@ class QuestionGenerationController(BaseController):
                     "type": q["type"],
                     "question": q["question"],
                     "options": q.get("options", []),
-                    "reference_answer": q.get("reference_answer")
+                    "reference_answer": q.get("reference_answer") or "",
                 })
 
             # 4. Build document using the existing utility function, passing the target_id and is_mock flag

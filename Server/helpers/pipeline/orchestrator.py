@@ -38,7 +38,7 @@ async def run_pipeline(job_data: dict, app, force: bool = False) -> dict:
     job_id    = str(job_data.get("_id", ""))
     job_title = job_data.get("job_title", "Unknown Job")
     top_n     = job_data.get("top_candidates_count", 10)
-    gap_days  = job_data.get("interview_gap_days", 5)
+    gap_days  = job_data.get("interview_gap_days", 0)
 
     result = {
         "job_id":     job_id,

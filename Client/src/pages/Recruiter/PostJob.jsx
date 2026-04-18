@@ -93,7 +93,7 @@ const PostJob = () => {
       number_of_questions_per_interview: parseInt(formData.number_of_questions_per_interview) || 5,
       max_applications_count: parseInt(formData.max_applications_count) || 50,
       top_candidates_count: parseInt(formData.top_candidates_count) || 15,
-      interview_gap_days: parseInt(formData.interview_gap_days) || 5,
+      interview_gap_days: (v => isNaN(v) ? 5 : v)(parseInt(formData.interview_gap_days)),
       location: [formData.city, formData.country].filter(Boolean).join(", ") || "Unspecified",
       job_recruiter_id: recruiterId 
     };

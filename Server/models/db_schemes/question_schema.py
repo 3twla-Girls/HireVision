@@ -9,7 +9,7 @@ class QuestionItem(BaseModel):
     type: str
     question: str
     options: List[str] = Field(default_factory=list)
-    reference_answer: str
+    reference_answer: Optional[str] = ""
 
     model_config = {
         "arbitrary_types_allowed": True,
@@ -115,7 +115,7 @@ def build_questions_with_answers_document(job_info: Any, questions: list, is_moc
             type=q.get("type", "technical"),
             question=q["question"],
             options=q.get("options", []),
-            reference_answer=q.get("reference_answer")
+            reference_answer=q.get("reference_answer") or ""
         ) for q in questions
     ]
     

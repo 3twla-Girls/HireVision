@@ -1,16 +1,12 @@
 """
 Step 5 – Schedule Interviews
 ==============================
-Assigns each shortlisted candidate an interview date by spreading them
-across consecutive days starting from:
+Assigns ALL shortlisted candidates the same interview date:
 
-    base_date = now + interview_gap_days
+    interview_date = now + interview_gap_days
 
-Slot assignment:
-    candidate[0] → base_date + 0 days  
-    candidate[1] → base_date + 1 day  
-    candidate[2] → base_date + 2 days  
-    …
+Every accepted candidate shares the same date so they all know
+when to appear for their interview.
 
 Each application document is updated with:
     - scheduled_interview_date  (YYYY-MM-DD string)
@@ -52,7 +48,7 @@ async def schedule_interviews(
             logger.warning(f"[Step 5] Entry missing application_id – skipping: {entry}")
             continue
 
-        interview_date = base_date + timedelta(days=slot_index)
+        interview_date = base_date  # all candidates share the same date
         scheduled_date_str = interview_date.strftime("%Y-%m-%d")
 
         try:
