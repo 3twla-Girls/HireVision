@@ -26,3 +26,4 @@ Module-3/STT/utils/__pycache__/video_utils.cpython-313.pyc
 *.mp4
 myenv
 Module_1/faiss_store/
+Module_1/faiss_store/candidate_clusters.pkl
