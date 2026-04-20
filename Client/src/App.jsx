@@ -27,6 +27,7 @@ import Layout from "./pages/shared/Layout";
 import Login from "./pages/shared/Login";
 import Register from "./pages/shared/Register";
 import { useAuth } from "./context/AuthContext";
+import CandidateInterviewReport from "./pages/Recruiter/CadidateInterviewReport";
 
 const App = () => {
   // const userData = JSON.parse(sessionStorage.getItem("user"));
@@ -57,6 +58,7 @@ const App = () => {
           <Route path="candidate-report/:sessionId" element={<CandidateReport />} />
           {/* Recruiter */}
           <Route path="candidate-profile/:applicationId" element={<CandidateProfile />} />
+          <Route path="candidate-interview-report/:applicationId" element={<CandidateInterviewReport />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="job-management" element={<JobManagement />} />
           <Route path="post-job" element={<PostJob />} />

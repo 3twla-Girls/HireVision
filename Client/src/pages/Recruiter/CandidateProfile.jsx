@@ -5,6 +5,7 @@ import {
   CheckCircle, XCircle, Layers, FileText, User,
   Briefcase, Star, AlertCircle, Loader2
 } from 'lucide-react';
+import api from '../../api/axios';
 
 /* ─── Circular Progress ─────────────────────────────────────── */
 const CircularScore = ({ score, color, size = 120 }) => {
@@ -90,6 +91,7 @@ const CandidateProfile = () => {
 
         // 1. Application
         const appRes = await fetch(`/api/v1/application/${applicationId}`);
+        // const appRes = await api.get(`/application/${applicationId}`);
         if (!appRes.ok) throw new Error('Application not found');
         const appData = await appRes.json();
         setApp(appData);
@@ -372,6 +374,22 @@ const CandidateProfile = () => {
                 <Send size={16} /> Send Email
               </a>
             </div>
+            <div className="flex gap-3">
+              {appStatus === 'accepted_for_interview' || appStatus === 'pending' ? (
+                <div className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-400 font-bold py-4 rounded-2xl text-xs border border-gray-200 cursor-not-allowed">
+                  <AlertCircle size={16} />
+                  <span>Candidate hasn't started the interview yet</span>
+                </div>
+              ) : (
+                <button
+                  onClick={() => navigate(`/candidate-interview-report/${applicationId}`)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-[#FF914D] hover:bg-[#e07d3c] text-white font-black py-3.5 rounded-2xl text-sm transition-all shadow-md hover:shadow-lg"
+                >
+                  <FileText size={16} /> View Interview Report
+                </button>
+              )}
+            </div>
+
 
           </div>
         </div>
