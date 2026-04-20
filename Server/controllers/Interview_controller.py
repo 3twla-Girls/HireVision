@@ -64,8 +64,21 @@ class InterviewController(BaseController):
                     "face_auth": None,
                     "eye_gaze": None 
                 },
+            
                 
-            }
+            },
+            "tab_proctoring": {
+                "counts": {
+                    "TAB_SWITCH": 0,
+                    "WINDOW_BLUR": 0,
+                    "WINDOW_FOCUS": 0,
+                    "EXIT_FULLSCREEN": 0,
+                    "COPY_ATTEMPT": 0,
+                    "PASTE_ATTEMPT": 0,
+                    "SHORTCUT_BLOCKED": 0
+                },
+                "events": []
+            },
         }
 
         result = await self.sessions_collection.insert_one(session)

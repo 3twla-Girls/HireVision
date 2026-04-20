@@ -15,6 +15,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from .routes import base, userRoute, CVRoute, applicationRoute, JobRoute , cheating_eyeGaze_route ,proctoring_router ,phone_routes, personality_routes
 from .routes.questions_with_answers import router as questions_with_answers
 from .routes.interview_routes import interview_router
+from .routes.cheating_routes import router as cheating_router
 #from .routes.personality_routes import router as personality_router
 # from .routes.phone_routes import router as phone_router
 # from .routes.report_generator_routes import router as report_generator_route
@@ -112,6 +113,7 @@ app.include_router(personality_routes.personalityRouter)
 # app.include_router(personality_router, prefix="/personality", tags=["Personality"])
 app.include_router(phone_routes.PhoneRouter)
 # app.include_router(report_generator_route)
+app.include_router(cheating_router)
 
 # Module_3 Routes (Questions, Interviews)
 app.include_router(questions_with_answers)

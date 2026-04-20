@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useCheatingDetection } from '../../components/JobSeeker/useCheatingDetection';
 import { useAuth } from '../../context/AuthContext';
-
+import  useTabCheatingDetection from "../../hooks/useCheatingDetection";
 // ─── Constants ────────────────────────────────────────────────────────────────
 const QUESTION_TIME  = 120;
 const GAP_TIME       = 5;
@@ -251,7 +251,19 @@ export default function InterviewLive() {
   const targetID = isMock
     ? candidateId                      // candidateId for mock
     : (location.state?.jobId); // real job_id
-
+    useEffect(() => {
+      //if (!sessionId) return;
+      const enterFullscreen = async () => {
+          if (document.documentElement.requestFullscreen) {
+              await document.documentElement.requestFullscreen();
+          }
+      };
+  
+      enterFullscreen();
+  }, []);
+  const sId = location.state?.sessionId || localStorage.getItem('sessionId');
+  console.log("Session ID:", sId);
+  useTabCheatingDetection(sId);
   // ── Refs ──────────────────────────────────────────────────────
   const videoRef         = useRef(null);
   const streamRef        = useRef(null);
