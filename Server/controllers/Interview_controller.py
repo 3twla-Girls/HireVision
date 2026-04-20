@@ -205,6 +205,72 @@ class InterviewController(BaseController):
         # Re-sort descending by date
         sessions.sort(key=lambda x: str(x.get("session_date", "")), reverse=True)
         return sessions
+    async def get_sessions_by_job(self, job_id: str) -> list:
+        """Return all real (non-mock) interview sessions for a given job."""
+        job_ids = [job_id]
+        if ObjectId.is_valid(job_id):
+            job_ids.append(ObjectId(job_id))
+            
+        cursor = self.sessions_collection.find(
+            {"job_id": {"$in": job_ids}, "is_mock": {"$ne": True}}
+        ).sort("session_date", -1)
+
+        sessions = await cursor.to_list(length=None)
+
+        for s in sessions:
+            s["_id"] = str(s["_id"])
+            s["candidate_id"] = str(s["candidate_id"])
+            if s.get("job_id"):
+                s["job_id"] = str(s["job_id"])
+            for ans in s.get("answers", []):
+                if ans.get("question_id"):
+                    ans["question_id"] = str(ans["question_id"])
+
+            # Compute a flat technical_score for convenience
+            tech = (s.get("final_summary") or {}).get("technical") or {}
+            overall = tech.get("overall_score")
+            
+            if overall is None:
+                # LLM sometimes returns 'final_score': '0%'
+                overall_str = tech.get("final_score")
+                if isinstance(overall_str, str):
+                    try:
+                        overall = float(overall_str.replace('%', '').strip())
+                    except Exception:
+                        pass
+                elif isinstance(overall_str, (int, float)):
+                    overall = float(overall_str)
+
+            if overall is None:
+                # Fallback: average scores from individual answers
+                scores = []
+                for ans in s.get("answers", []):
+                    ev = ans.get("evaluation") or {}
+                    
+                    if ans.get("type") == "mcq":
+                        if ev.get("is_correct"):
+                            scores.append(100.0)
+                        else:
+                            scores.append(0.0)
+                        continue
+
+                    sc = ev.get("score")
+                    if sc is not None:
+                        try:
+                            if isinstance(sc, str):
+                                sc = sc.replace('%', '').strip()
+                            scores.append(float(sc))
+                        except (TypeError, ValueError):
+                            pass
+                overall = round(sum(scores) / len(scores), 1) if scores else None
+            s["technical_score"] = overall
+
+            # Flatten integrity status
+            integrity = (s.get("final_summary") or {}).get("integrity") or {}
+            face = integrity.get("face_auth") or {}
+            s["integrity_status"] = face.get("status")  # "Passed" | "Suspected" | None
+
+        return sessions
 
 
     # ========== UPDATE ==========
@@ -299,7 +365,7 @@ class InterviewController(BaseController):
         # 🧠 Handle each type
         if q_type == "mcq":
             if not selected_option:
-                raise Exception("MCQ answer required")
+                selected_option = "None"
 
             is_correct = selected_option.strip().upper() == reference_answer.strip().upper()
 

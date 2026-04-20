@@ -8,13 +8,13 @@ import {
 } from 'lucide-react';
 import { useCheatingDetection } from '../../components/JobSeeker/useCheatingDetection';
 import { useAuth } from '../../context/AuthContext';
-import  useTabCheatingDetection from "../../hooks/useCheatingDetection";
+import useTabCheatingDetection from "../../hooks/useCheatingDetection";
 // ─── Constants ────────────────────────────────────────────────────────────────
-const QUESTION_TIME  = 120;
-const GAP_TIME       = 5;
+const QUESTION_TIME = 120;
+const GAP_TIME = 5;
 const AUTO_DISMISS_MS = 4000;
-const MIN_SHOW_MS     = 2500;
-const CALIB_SEC       = 3;
+const MIN_SHOW_MS = 2500;
+const CALIB_SEC = 3;
 
 const formatTime = (s) =>
   `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -22,48 +22,48 @@ const formatTime = (s) =>
 // ─── Video glow style (shifts border colour as look-away timer grows) ─────────
 function getVideoGlowStyle(progress) {
   if (progress <= 0) return {
-    border:     '4px solid white',
-    boxShadow:  '0 20px 50px rgba(0,0,0,0.2)',
+    border: '4px solid white',
+    boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
     transition: 'box-shadow 600ms ease, border-color 600ms ease',
   };
   if (progress < 0.5) {
     const i = progress * 2;
     return {
-      border:     '4px solid #fbbf24',
-      boxShadow:  `0 20px 50px rgba(0,0,0,0.2), 0 0 ${12 + i * 16}px rgba(251,191,36,${0.3 + i * 0.35})`,
+      border: '4px solid #fbbf24',
+      boxShadow: `0 20px 50px rgba(0,0,0,0.2), 0 0 ${12 + i * 16}px rgba(251,191,36,${0.3 + i * 0.35})`,
       transition: 'box-shadow 300ms ease, border-color 300ms ease',
     };
   }
   if (progress < 0.8) {
     const i = (progress - 0.5) / 0.3;
     return {
-      border:     '4px solid #f97316',
-      boxShadow:  `0 20px 50px rgba(0,0,0,0.2), 0 0 ${28 + i * 14}px rgba(249,115,22,${0.55 + i * 0.2})`,
+      border: '4px solid #f97316',
+      boxShadow: `0 20px 50px rgba(0,0,0,0.2), 0 0 ${28 + i * 14}px rgba(249,115,22,${0.55 + i * 0.2})`,
       transition: 'box-shadow 200ms ease, border-color 200ms ease',
     };
   }
   return {
-    border:     '4px solid #ef4444',
-    boxShadow:  '0 20px 50px rgba(0,0,0,0.2), 0 0 44px rgba(239,68,68,0.75), 0 0 88px rgba(239,68,68,0.3)',
+    border: '4px solid #ef4444',
+    boxShadow: '0 20px 50px rgba(0,0,0,0.2), 0 0 44px rgba(239,68,68,0.75), 0 0 88px rgba(239,68,68,0.3)',
     transition: 'box-shadow 150ms ease, border-color 150ms ease',
   };
 }
 
 // ─── CalibrationOverlay ───────────────────────────────────────────────────────
 function CalibrationOverlay({ isCalibrating, calibProgress }) {
-  const remaining  = Math.max(CALIB_SEC * (1 - calibProgress), 0);
-  const circumf    = 2 * Math.PI * 36;
+  const remaining = Math.max(CALIB_SEC * (1 - calibProgress), 0);
+  const circumf = 2 * Math.PI * 36;
   const strokeDash = circumf * (1 - calibProgress);
 
   return (
     <div
       className="absolute inset-0 flex flex-col items-center justify-center z-20 rounded-3xl overflow-hidden"
       style={{
-        background:     'rgba(10,15,30,0.82)',
+        background: 'rgba(10,15,30,0.82)',
         backdropFilter: 'blur(4px)',
-        opacity:        isCalibrating ? 1 : 0,
-        transition:     'opacity 600ms ease',
-        pointerEvents:  isCalibrating ? 'auto' : 'none',
+        opacity: isCalibrating ? 1 : 0,
+        transition: 'opacity 600ms ease',
+        pointerEvents: isCalibrating ? 'auto' : 'none',
       }}
     >
       <svg width="88" height="88" viewBox="0 0 88 88" className="-rotate-90 mb-4">
@@ -85,21 +85,21 @@ function CalibrationOverlay({ isCalibrating, calibProgress }) {
 // ─── CameraFocusPill (level-1 nudge: floats above the video) ─────────────────
 function CameraFocusPill({ progress }) {
   const visible = progress > 0;
-  const bg     = progress < 0.5 ? 'rgba(245,158,11,0.92)'
-               : progress < 0.8 ? 'rgba(249,115,22,0.92)'
-               :                  'rgba(239,68,68,0.92)';
+  const bg = progress < 0.5 ? 'rgba(245,158,11,0.92)'
+    : progress < 0.8 ? 'rgba(249,115,22,0.92)'
+      : 'rgba(239,68,68,0.92)';
   const shadow = progress < 0.5 ? '0 2px 12px rgba(245,158,11,0.4)'
-               : progress < 0.8 ? '0 2px 12px rgba(249,115,22,0.45)'
-               :                  '0 2px 12px rgba(239,68,68,0.5)';
+    : progress < 0.8 ? '0 2px 12px rgba(249,115,22,0.45)'
+      : '0 2px 12px rgba(239,68,68,0.5)';
 
   return (
     <div
       aria-live="polite"
       className="flex justify-center pointer-events-none"
       style={{
-        opacity:      visible ? 1 : 0,
-        transform:    visible ? 'translateY(0)' : 'translateY(6px)',
-        transition:   'opacity 400ms ease, transform 400ms ease',
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(6px)',
+        transition: 'opacity 400ms ease, transform 400ms ease',
         marginBottom: '-2px',
       }}
     >
@@ -116,9 +116,9 @@ function CameraFocusPill({ progress }) {
 
 // ─── NudgeToast (level-2 warning: shown inside the video card) ───────────────
 function NudgeToast({ warningCount, selfCorrected, visible }) {
-  const [shown, setShown]    = useState(false);
-  const autoTimerRef         = useRef(null);
-  const shownAtRef           = useRef(null);
+  const [shown, setShown] = useState(false);
+  const autoTimerRef = useRef(null);
+  const shownAtRef = useRef(null);
 
   useEffect(() => {
     if (!visible) return;
@@ -143,15 +143,15 @@ function NudgeToast({ warningCount, selfCorrected, visible }) {
       aria-live="polite"
       aria-atomic="true"
       style={{
-        position:      'absolute',
-        top:           '16px',
-        left:          '50%',
-        zIndex:        10,
+        position: 'absolute',
+        top: '16px',
+        left: '50%',
+        zIndex: 10,
         pointerEvents: 'none',
-        transform:     shown ? 'translateX(-50%) translateY(0px)' : 'translateX(-50%) translateY(-8px)',
-        opacity:       shown ? 1 : 0,
-        transition:    'opacity 400ms ease, transform 400ms ease',
-        whiteSpace:    'nowrap',
+        transform: shown ? 'translateX(-50%) translateY(0px)' : 'translateX(-50%) translateY(-8px)',
+        opacity: shown ? 1 : 0,
+        transition: 'opacity 400ms ease, transform 400ms ease',
+        whiteSpace: 'nowrap',
       }}
     >
       <div className="flex items-center gap-2.5 bg-white/90 backdrop-blur-sm border border-amber-200 shadow-lg rounded-full px-4 py-2">
@@ -173,11 +173,10 @@ function VolumeMeter({ level }) {
         <div
           key={i}
           style={{ height: `${50 + i * 5}%`, transition: 'opacity 80ms' }}
-          className={`w-1.5 rounded-sm ${
-            level > (i + 1) / 10
+          className={`w-1.5 rounded-sm ${level > (i + 1) / 10
               ? i < 6 ? 'bg-emerald-500' : i < 8 ? 'bg-yellow-400' : 'bg-red-500'
               : 'bg-white/30'
-          }`}
+            }`}
         />
       ))}
     </div>
@@ -234,10 +233,10 @@ function GapScreen({ gapTime, currentStep }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function InterviewLive() {
-  const navigate  = useNavigate();
-  const location  = useLocation();
-  const { type }  = useParams();
-  const isMock    = type === 'mock';
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { type } = useParams();
+  const isMock = type === 'mock';
 
   const { userData } = useAuth();
   const candidateId = userData?._id;
@@ -251,49 +250,49 @@ export default function InterviewLive() {
   const targetID = isMock
     ? candidateId                      // candidateId for mock
     : (location.state?.jobId); // real job_id
-    useEffect(() => {
-      //if (!sessionId) return;
-      const enterFullscreen = async () => {
-          if (document.documentElement.requestFullscreen) {
-              await document.documentElement.requestFullscreen();
-          }
-      };
-  
-      enterFullscreen();
+  useEffect(() => {
+    //if (!sessionId) return;
+    const enterFullscreen = async () => {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+    };
+
+    enterFullscreen();
   }, []);
   const sId = location.state?.sessionId || localStorage.getItem('sessionId');
   console.log("Session ID:", sId);
   useTabCheatingDetection(sId);
   // ── Refs ──────────────────────────────────────────────────────
-  const videoRef         = useRef(null);
-  const streamRef        = useRef(null);
-  const audioContextRef  = useRef(null);
-  const analyserRef      = useRef(null);
-  const animFrameRef     = useRef(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animFrameRef = useRef(null);
   const mediaRecorderRef = useRef(null);
-  const videoChunksRef   = useRef([]);
-  const questionsRef     = useRef([]);
-  const stepRef          = useRef(0);
+  const videoChunksRef = useRef([]);
+  const questionsRef = useRef([]);
+  const stepRef = useRef(0);
   const selectedOptionRef = useRef(null);
 
   // ── State ─────────────────────────────────────────────────────
-  const [questions,    setQuestions]    = useState([]);
-  const [cameraOn,     setCameraOn]     = useState(false);
-  const [micOn,        setMicOn]        = useState(false);
-  const [audioLevel,   setAudioLevel]   = useState(0);
-  const [currentStep,  setCurrentStep]  = useState(0);
-  const [timeLeft,     setTimeLeft]     = useState(QUESTION_TIME);
-  const [showGap,      setShowGap]      = useState(false);
-  const [gapTime,      setGapTime]      = useState(GAP_TIME);
+  const [questions, setQuestions] = useState([]);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [micOn, setMicOn] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(QUESTION_TIME);
+  const [showGap, setShowGap] = useState(false);
+  const [gapTime, setGapTime] = useState(GAP_TIME);
   const [selectedOption, setSelectedOption] = useState(null);
 
   // Keep stepRef in sync (used inside async callbacks)
   useEffect(() => { stepRef.current = currentStep; }, [currentStep]);
 
   // ── Cheating detection ────────────────────────────────────────
-  
+
   // ── Fetch questions ───────────────────────────────────────────
-  const passedQuestions  = location.state?.questions;
+  const passedQuestions = location.state?.questions;
   const sessionIDFromState = location.state?.sessionId;
   const {
     isReady, isCalibrating, calibProgress,
@@ -301,11 +300,11 @@ export default function InterviewLive() {
     lookAwayProgress, postSummary,
   } = useCheatingDetection({
     videoRef,
-    enabled:     cameraOn && !showGap,
-    sessionId:   sessionIDFromState || localStorage.getItem('sessionId') || location.state?.sessionId,
+    enabled: cameraOn && !showGap,
+    sessionId: sessionIDFromState || localStorage.getItem('sessionId') || location.state?.sessionId,
     interviewId: targetID,
   });
-  
+
   const showNudges = !isCalibrating;
 
   useEffect(() => {
@@ -347,13 +346,13 @@ export default function InterviewLive() {
 
   const startAudioAnalyser = useCallback((stream) => {
     stopAudioAnalyser();
-    const ctx      = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 512;
     analyser.smoothingTimeConstant = 0.6;
     ctx.createMediaStreamSource(stream).connect(analyser);
     audioContextRef.current = ctx;
-    analyserRef.current     = analyser;
+    analyserRef.current = analyser;
 
     const data = new Uint8Array(analyser.frequencyBinCount);
     const tick = () => {
@@ -369,8 +368,8 @@ export default function InterviewLive() {
   const startRecording = useCallback((stream) => {
     videoChunksRef.current = [];
     // const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-    const recorder = new MediaRecorder(stream, { 
-      mimeType: 'video/webm;codecs=vp8,opus' 
+    const recorder = new MediaRecorder(stream, {
+      mimeType: 'video/webm;codecs=vp8,opus'
     });
 
     recorder.ondataavailable = (e) => {
@@ -432,16 +431,16 @@ export default function InterviewLive() {
           api.post(`personality/predict/${sId}`, formData)
         ]);
 
-        if (resAnswer.status === 'fulfilled') 
+        if (resAnswer.status === 'fulfilled')
           console.log('✅ Answer & Video Uploaded');
         else
           console.error('❌ Answer Upload Failed:', resAnswer.reason?.response?.data);
-        
-        if (resPhone.status === 'fulfilled') 
+
+        if (resPhone.status === 'fulfilled')
           console.log('✅ Phone Detection Done');
         else
           console.error('❌ Phone Detection Failed:', resPhone.reason?.response?.data);
-        
+
         if (resPersonality.status === 'fulfilled') {
           console.log('✅ Personality traits captured');
         } else {
@@ -453,7 +452,7 @@ export default function InterviewLive() {
     };
     recorder.start();
     mediaRecorderRef.current = recorder;
-  }, [location, questions, currentStep, selectedOption,selectedOptionRef]);
+  }, [location, questions, currentStep, selectedOption, selectedOptionRef]);
 
   // ── Camera ────────────────────────────────────────────────────
   const stopCamera = useCallback(() => {
@@ -480,7 +479,7 @@ export default function InterviewLive() {
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => videoRef.current.play().catch(() => {});
+        videoRef.current.onloadedmetadata = () => videoRef.current.play().catch(() => { });
       }
 
       startRecording(stream);
@@ -535,14 +534,37 @@ export default function InterviewLive() {
 
   // ── handleNext ────────────────────────────────────────────────
   const handleNext = useCallback(async () => {
-    // Stop recording for current question
+    // Validate MCQ
+    const currentQuestion = questions[currentStep];
+    if (currentQuestion?.type === 'mcq' && !selectedOptionRef.current && timeLeft > 0) {
+      toast.error('Please select an option before proceeding.');
+      return;
+    }
+
+    // We need to wait for the recording to stop and the upload to finish
+    let uploadPromise = Promise.resolve();
+
     if (mediaRecorderRef.current?.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+      uploadPromise = new Promise((resolve) => {
+        // Store the original onstop to call it, but intercept it to resolve our promise
+        const originalOnStop = mediaRecorderRef.current.onstop;
+        mediaRecorderRef.current.onstop = async (e) => {
+          if (originalOnStop) {
+            await originalOnStop(e);
+          }
+          resolve();
+        };
+        mediaRecorderRef.current.stop();
+      });
     }
 
     const isLastQuestion = currentStep === questions.length - 1;
 
     if (!isLastQuestion) {
+      toast.loading('Saving answer...', { id: 'save-answer' });
+      await uploadPromise;
+      toast.dismiss('save-answer');
+
       stopCamera();
       stopMic();
 
@@ -551,10 +573,13 @@ export default function InterviewLive() {
       return;
     }
 
-    // Last question — wrap up interview
-    const sId = location.state?.sessionId || localStorage.getItem('sessionId');
+    // Last question — wrap up interview. Wait for the final answer to upload first!
     try {
+      toast.loading('Saving your final answer...', { id: 'summary' });
+      await uploadPromise;
+
       toast.loading('Generating your interview summary...', { id: 'summary' });
+      const sId = location.state?.sessionId || localStorage.getItem('sessionId');
       await postSummary();
 
       await api.post(`/personality/process/${sId}`);
@@ -599,9 +624,9 @@ export default function InterviewLive() {
   }, [currentStep]);
 
   // ── Derived values ────────────────────────────────────────────
-  const isLast      = currentStep === questions.length - 1;
+  const isLast = currentStep === questions.length - 1;
   const timerUrgent = timeLeft <= 30;
-  const canProceed  = timeLeft <= QUESTION_TIME - 10;
+  const canProceed = timeLeft <= QUESTION_TIME - 10;
 
   // ── Gap screen ────────────────────────────────────────────────
   if (showGap) return <GapScreen gapTime={gapTime} currentStep={currentStep} />;
@@ -618,7 +643,7 @@ export default function InterviewLive() {
           </h1>
           <div className="flex items-center gap-2">
             {cameraOn ? <Camera size={18} className="text-emerald-500" /> : <CameraOff size={18} className="text-red-400" />}
-            {micOn    ? <Mic    size={18} className="text-emerald-500" /> : <MicOff    size={18} className="text-red-400" />}
+            {micOn ? <Mic size={18} className="text-emerald-500" /> : <MicOff size={18} className="text-red-400" />}
           </div>
         </div>
         <div className="w-full h-3 bg-white rounded-full flex overflow-hidden shadow-inner border border-gray-200">
@@ -648,32 +673,31 @@ export default function InterviewLive() {
             {questions[currentStep]?.type === 'mcq' && (
               <div className="mt-2 space-y-3 space-x-3">
                 {questions[currentStep]?.options.map((option, idx) => {
-                    const optionLetter = String.fromCharCode(65 + idx); 
-                    return(
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      setSelectedOption(optionLetter);
-                      selectedOptionRef.current = optionLetter;
-                    }}
-                    className={`w-fit text-left p-4 pr-6 rounded-xl border-2 transition-all ${
-                      selectedOption === optionLetter
-                        ? 'border-dark-blue bg-dark-blue/5 shadow-md'
-                        : 'border-gray-100 hover:border-gray-300 bg-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold ${
-                        selectedOption === optionLetter ? 'bg-dark-blue text-white' : 'text-gray-400'
-                      }`}>
-                        {String.fromCharCode(65 + idx)} {/* A, B, C, D */}
-                      </span>
-                      <span className={selectedOption === optionLetter ? 'font-bold text-dark-blue' : 'text-gray-700'}>
-                        {option}
-                      </span>
-                    </div>
-                  </button>
-              )})}
+                  const optionLetter = String.fromCharCode(65 + idx);
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSelectedOption(optionLetter);
+                        selectedOptionRef.current = optionLetter;
+                      }}
+                      className={`w-fit text-left p-4 pr-6 rounded-xl border-2 transition-all ${selectedOption === optionLetter
+                          ? 'border-dark-blue bg-dark-blue/5 shadow-md'
+                          : 'border-gray-100 hover:border-gray-300 bg-white'
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold ${selectedOption === optionLetter ? 'bg-dark-blue text-white' : 'text-gray-400'
+                          }`}>
+                          {String.fromCharCode(65 + idx)} {/* A, B, C, D */}
+                        </span>
+                        <span className={selectedOption === optionLetter ? 'font-bold text-dark-blue' : 'text-gray-700'}>
+                          {option}
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -691,9 +715,8 @@ export default function InterviewLive() {
 
           {/* Timer + warning badge */}
           <div className="flex items-center justify-between">
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-mono font-bold text-sm transition-colors ${
-              timerUrgent ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white border-gray-200 text-dark-blue'
-            }`}>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-mono font-bold text-sm transition-colors ${timerUrgent ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white border-gray-200 text-dark-blue'
+              }`}>
               <span className={`w-2 h-2 rounded-full ${timerUrgent ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
               <Timer size={15} />
               {formatTime(timeLeft)}

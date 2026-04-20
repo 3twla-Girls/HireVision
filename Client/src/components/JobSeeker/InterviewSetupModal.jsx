@@ -249,40 +249,50 @@ export default function InterviewSetupModal({ setShowSetup, isMock = false, jobI
       let sessionId;
       let generatedQuestions = [];
 
-      if (!isMock && existingSessionId) {
-        // Real interview with pre-existing session.
-        // Pass sessionId only; InterviewLive will fetch questions itself via job ID (targetID).
-        sessionId = existingSessionId;
-      } else {
-        // ── New session (mock or real without existing session) ──
-        const sessionResponse = isMock
-          ? await api.post(`/interview/start-mock-session/${candidateId}`, {
-              job_title: jobInfo?.job_title || null
-            })
-          : await api.post(`/interview/start-session/${applicantId}`);
+      if (isMock) {
+        // ── New Mock Session ──
+        const sessionResponse = await api.post(`/interview/start-mock-session/${candidateId}`, {
+          job_title: jobInfo?.job_title || null
+        });
 
         if (sessionResponse.status !== 201) {
           toast.error('Could not start session. Please try again.');
           return;
         }
 
-        const sessionData = sessionResponse.data;
-        sessionId = sessionData.session_id;
+        sessionId = sessionResponse.data.session_id;
 
-        if (isMock) {
-          const mockRequestData = {
-            candidate_id: candidateId,
-            job_title: jobInfo?.job_title || "Software Engineer",
-            skills: jobInfo?.required_skills || [],
-            experience_level: jobInfo?.experience_level || "Junior",
-            num_questions: jobInfo?.num_questions || 5
-          };
-          const questionsResponse = await api.post('/questions/generate-mock-questions', mockRequestData);
-          if (questionsResponse.status === 201) {
-            generatedQuestions = questionsResponse.data.questions || [];
-          }
+        const mockRequestData = {
+          candidate_id: candidateId,
+          job_title: jobInfo?.job_title || "Software Engineer",
+          skills: jobInfo?.required_skills || [],
+          experience_level: jobInfo?.experience_level || "Junior",
+          num_questions: jobInfo?.num_questions || 5
+        };
+        const questionsResponse = await api.post('/questions/generate-mock-questions', mockRequestData);
+        if (questionsResponse.status === 201) {
+          generatedQuestions = questionsResponse.data.questions || [];
         }
+      } else {
+        // ── Real Interview Session ──
+        // existingSessionId is actually the applicantId passed from the routing state
+        const applicantId_to_use = existingSessionId; 
+        
+        if (!applicantId_to_use) {
+          toast.error("Application ID is missing");
+          return;
+        }
+
+        const sessionResponse = await api.post(`/interview/start-session/${applicantId_to_use}`);
+        
+        if (sessionResponse.status !== 201) {
+          toast.error('Could not start session. Please try again.');
+          return;
+        }
+        
+        sessionId = sessionResponse.data.session_id;
       }
+
 
       cleanup();
       setShowSetup(false);

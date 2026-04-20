@@ -98,7 +98,7 @@ async def _dispatch_invitations(job_data: dict, pipeline_result: dict, app) -> d
 
     Returns a dict with sent/failed counts (never raises).
     """
-    from .EmailController import EmailController
+    from ..controllers.EmailController import EmailController
     from bson import ObjectId
 
     job_id      = str(job_data.get("_id", ""))

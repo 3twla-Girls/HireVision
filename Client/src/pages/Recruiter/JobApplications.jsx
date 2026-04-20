@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Eye, MessageSquare, MapPin, Pencil, Trash2, Building2 } from 'lucide-react'
+import { Eye, MessageSquare, MapPin, Pencil, Trash2, Building2, Users, Video } from 'lucide-react'
 
 import JOBS         from '../../database/jobs'
 import APPLICATIONS from '../../database/applications'
@@ -16,6 +16,7 @@ import { getScoreColor, getStatusColor, STATUS_LABEL, STATUS_LABEL_TO_KEY, timeA
 import { useDeleteJob } from '../../hooks/useDeleteJob'
 import api from '../../api/axios'
 import toast from 'react-hot-toast'
+import InterviewResultsTab from '../../components/Recruiter/InterviewResultsTab'
 
 // ── Component ─────────────────────────────────────────────────
 const JobApplications = () => {
@@ -24,6 +25,7 @@ const JobApplications = () => {
     const navigate = useNavigate()
     const [filterPanelOpen, setFilterPanelOpen] = useState(false)
     const [candidate,setCandidate] = useState(null)
+    const [activeTab, setActiveTab] = useState('cv')  // 'cv' | 'interview'
 
     const { deleteJob, isDeleting } = useDeleteJob()
 
@@ -35,6 +37,25 @@ const JobApplications = () => {
     const [job, setJob] = useState(null)
     const [filters, setFilters] = useState({ sort: '', status: {}, country: '', city: '' })
     const [applications, setApplications] = useState([])
+
+    // ── Compute interview date & whether interviews are done ────────
+    // Interview date = job.expiry_date + job.interview_gap_days (days)
+    // The tab unlocks the day AFTER the scheduled interview date
+    const interviewDate = useMemo(() => {
+        if (!job?.expiry_date) return null
+        const base = new Date(job.expiry_date)
+        const gap  = job.interview_gap_days ?? 0
+        base.setDate(base.getDate() + gap)
+        return base
+    }, [job])
+
+    const interviewsEnded = useMemo(() => {
+        if (!interviewDate) return false
+        // Unlock the tab the day after the interview date
+        const dayAfter = new Date(interviewDate)
+        dayAfter.setDate(dayAfter.getDate() + 1)
+        return new Date() >= dayAfter
+    }, [interviewDate])
 
     useEffect(() => {
         let isMounted = true;
@@ -253,19 +274,73 @@ const JobApplications = () => {
             {/* Unified responsive layout */}
             <div className="flex flex-col lg:flex-row gap-4 md:gap-5 lg:gap-6 p-4 md:p-6 lg:px-8 xl:px-12 w-full max-w-[1600px] mx-auto">
 
-                {/* Sidebar — Hidden on mobile/tablet, fixed width on desktop */}
-                <div className="hidden lg:block shrink-0 w-[270px]">
-                    <RecruiterFilterSidebar onFilterChange={setFilters} />
-                </div>
+                {/* Sidebar — Hidden on mobile/tablet, fixed width on desktop; only for CV tab */}
+                {activeTab === 'cv' && (
+                    <div className="hidden lg:block shrink-0 w-[270px]">
+                        <RecruiterFilterSidebar onFilterChange={setFilters} />
+                    </div>
+                )}
 
                 {/* Main content — Takes up remaining space */}
                 <div className="flex-1 min-w-0 w-full space-y-4 md:space-y-5">
-                    
-                    {/* Top section: Title + Filter button */}
-                    <div className="flex items-center justify-between gap-3 lg:hidden">
-                        <h2 className="text-base md:text-lg font-bold text-gray-900 truncate">{job?.job_title ?? 'Job'}</h2>
-                        <FilterBtn full={false} onClick={() => setFilterPanelOpen(true)} />
+
+                    {/* ── Tab Switcher ── */}
+                    <div className="flex items-center gap-1 p-1 bg-white border border-gray-100 rounded-xl shadow-sm w-fit">
+                        <button
+                            id="tab-cv-applicants"
+                            onClick={() => setActiveTab('cv')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                                activeTab === 'cv'
+                                    ? 'bg-dark-orange text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-800'
+                            }`}
+                        >
+                            <Users className="w-4 h-4" />
+                            CV Applicants
+                            <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
+                                activeTab === 'cv' ? 'bg-white/30 text-white' : 'bg-gray-100 text-gray-500'
+                            }`}>{applications.length}</span>
+                        </button>
+
+                        {interviewsEnded ? (
+                            <button
+                                id="tab-interview-results"
+                                onClick={() => setActiveTab('interview')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                                    activeTab === 'interview'
+                                        ? 'bg-purple-600 text-white shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-800'
+                                }`}
+                            >
+                                <Video className="w-4 h-4" />
+                                Interview Results
+                            </button>
+                        ) : (
+                            <div
+                                title={interviewDate
+                                    ? `Available after ${interviewDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                                    : 'Not yet scheduled'
+                                }
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-gray-300 cursor-not-allowed select-none"
+                            >
+                                <Video className="w-4 h-4" />
+                                Interview Results
+                                {interviewDate && (
+                                    <span className="px-1.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-400">
+                                        {interviewDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}+
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
+                    
+                    {/* Top section: Title + Filter button — CV tab only */}
+                    {activeTab === 'cv' && (
+                        <div className="flex items-center justify-between gap-3 lg:hidden">
+                            <h2 className="text-base md:text-lg font-bold text-gray-900 truncate">{job?.job_title ?? 'Job'}</h2>
+                            <FilterBtn full={false} onClick={() => setFilterPanelOpen(true)} />
+                        </div>
+                    )}
 
                     {/* Job Header — Mobile/Tablet only */}
                     <div className="block md:block lg:hidden">
@@ -313,15 +388,25 @@ const JobApplications = () => {
                         </div>
                     </div>
 
-                    {/* Applicants Table (desktop) / Cards (mobile) */}
-                    <div className="hidden lg:block">
-                        <ApplicantsTable displayed={paginatedItems} job={job} renderRow={renderRow} originalCount={displayed.length} />
-                        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-                    </div>
-                    <div className="block lg:hidden">
-                        <ApplicantsCards displayed={paginatedItems} renderCard={renderCard} originalCount={displayed.length} />
-                        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-                    </div>
+                    {/* ── CV Applicants tab ── */}
+                    {activeTab === 'cv' && (
+                        <>
+                            {/* Applicants Table (desktop) / Cards (mobile) */}
+                            <div className="hidden lg:block">
+                                <ApplicantsTable displayed={paginatedItems} job={job} renderRow={renderRow} originalCount={displayed.length} />
+                                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+                            </div>
+                            <div className="block lg:hidden">
+                                <ApplicantsCards displayed={paginatedItems} renderCard={renderCard} originalCount={displayed.length} />
+                                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+                            </div>
+                        </>
+                    )}
+
+                    {/* ── Interview Results tab ── */}
+                    {activeTab === 'interview' && interviewsEnded && (
+                        <InterviewResultsTab jobId={jobId} applications={applications} interviewDate={interviewDate} />
+                    )}
                 </div>
             </div>
 

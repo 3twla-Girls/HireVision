@@ -136,6 +136,27 @@ async def get_candidate_sessions(request: Request, candidate_id: str):
         )
 
 
+@interview_router.get("/job/{job_id}")
+async def get_sessions_by_job(request: Request, job_id: str):
+    """Return all non-mock interview sessions for a job (used by recruiter view)."""
+    try:
+        controller = await InterviewController.create_instance(
+            request.app.db_client
+        )
+        result = await controller.get_sessions_by_job(job_id)
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=jsonable_encoder(result)
+        )
+    except Exception as e:
+        logger.error(f"Error retrieving job sessions: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"error": str(e)}
+        )
+
+
+
 
 # ============================================================================
 # UPDATE - Submit Answer
