@@ -1,13 +1,11 @@
-from fastapi import APIRouter, Request, status, UploadFile, File, Form
+from fastapi import APIRouter, Request, status, UploadFile, File, Form, Depends, Header
 from fastapi.responses import JSONResponse
 import logging
-from bson import ObjectId
-from bson.errors import InvalidId
 
-from ..controllers import UserController, ApplicationController, JobController
+from ..controllers import UserController
 from ..models.db_schemes.user import CreateUserScheme
-from ..helpers.cloudinary_service import upload_file, delete_folder
-from ..models.CVModel import CVModel
+from ..helpers.cloudinary_service import upload_file
+
 logger = logging.getLogger("uvicorn.error")
 
 user_router = APIRouter(
@@ -16,7 +14,28 @@ user_router = APIRouter(
 )
 
 # =============================
-# Create User
+# Auth Dependency
+# =============================
+async def get_current_user(
+    request: Request,
+    authorization: str = Header(...)
+):
+    try:
+        token = authorization.split(" ")[1]  # Bearer <token>
+
+        controller = await UserController.create_instance(request.app.db_client)
+        user = await controller.get_current_user(token)
+
+        return user
+
+    except Exception:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"signal": "UNAUTHORIZED"}
+        )
+
+# =============================
+# Create User (Signup)
 # =============================
 @user_router.post("/create")
 async def create_user(
@@ -55,7 +74,9 @@ async def create_user(
         user_data = CreateUserScheme(**user_dict)
 
         result = await controller.create_user(user_data)
-        user_id = str(result.inserted_id)
+
+        user_id = result["user_id"]
+        token = result["access_token"]
 
         # Upload profile image
         upload_result = upload_file(
@@ -75,6 +96,7 @@ async def create_user(
         return {
             "signal": "USER_CREATED_SUCCESSFULLY",
             "user_id": user_id,
+            "access_token": token,
             "image_url": upload_result["secure_url"]
         }
 
@@ -86,25 +108,66 @@ async def create_user(
         )
 
 # =============================
-# Login (MUST stay above /{user_id})
+# 🔐 Login (POST ONLY)
 # =============================
-@user_router.get("/login")
-async def login(request: Request, email: str, password: str):
+"""@user_router.post("/login")
+async def login(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...)
+):
     controller = await UserController.create_instance(request.app.db_client)
+
     try:
-        logger.info(f"[LOGIN] email={email!r}  password={password!r}")
-        user = await controller.get_user_email_password(email, password)
-        return JSONResponse(content={"user": user})
+        result = await controller.login(email, password)
+
+        return JSONResponse(content=result)
+
     except Exception as e:
-        logger.warning(f"[LOGIN] failed: {e}")
+        logger.warning(f"[LOGIN FAILED] email={email}")
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"signal": str(e)}
+        )"""
+from pydantic import BaseModel
+
+class LoginSchema(BaseModel):
+    email: str
+    password: str
+@user_router.post("/login")
+async def login(request: Request, data: LoginSchema):
+    controller = await UserController.create_instance(request.app.db_client)
+
+    result = await controller.login(data.email, data.password)
+    return result
+# =============================
+# 🔐 Get Current User
+# =============================
+@user_router.get("/me")
+async def get_me(current_user=Depends(get_current_user)):
+    return JSONResponse(content={"user": current_user})
+
+# =============================
+# 🔐 Get User by ID (Protected)
+# =============================
+"""@user_router.get("/{user_id}")
+async def get_user(
+    request: Request,
+    user_id: str,
+    current_user=Depends(get_current_user)
+):
+    controller = await UserController.create_instance(request.app.db_client)
+
+    try:
+        user = await controller.get_user(user_id)
+        return JSONResponse(content={"user": user})
+
+    except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={"signal": str(e)}
-        )
-
-# =============================
-# Get User
-# =============================
+        )"""
+from bson.errors import InvalidId
 @user_router.get("/{user_id}")
 async def get_user(request: Request, user_id: str):
     controller = await UserController.create_instance(request.app.db_client)
@@ -123,37 +186,29 @@ async def get_user(request: Request, user_id: str):
             status_code=status.HTTP_404_NOT_FOUND,
             content={"signal": str(e)}
         )
-# =============================
-# Get User by email and password
-# =============================
-@user_router.get("/{email}/{password}")
-async def login(request: Request, email: str, password: str):
-    controller = await UserController.create_instance(request.app.db_client)
-
-    try:
-        user = await controller.get_user_email_password(email, password)
-        return JSONResponse(content={"user": user})
-
-    except InvalidId:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"signal": "INVALID_USER_ID"}
-        )
-    except Exception as e:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={"signal": str(e)}
-        )
 
 # =============================
-# Update User
+# 🔐 Update User (Protected)
 # =============================
 @user_router.patch("/{user_id}")
-async def update_user(request: Request, user_id: str, update_data: dict):
+async def update_user(
+    request: Request,
+    user_id: str,
+    update_data: dict,
+    current_user=Depends(get_current_user)
+):
     controller = await UserController.create_instance(request.app.db_client)
 
     try:
+        # Optional: only allow user to update himself
+        if current_user["_id"] != user_id:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"signal": "FORBIDDEN"}
+            )
+
         updated_user = await controller.update_user(user_id, update_data)
+
         return JSONResponse(content={"user": updated_user})
 
     except Exception:
@@ -163,84 +218,30 @@ async def update_user(request: Request, user_id: str, update_data: dict):
         )
 
 # =============================
-# Delete User
+# 🔐 Delete User (Protected)
 # =============================
 @user_router.delete("/{user_id}")
-async def delete_user(request: Request, user_id: str):
+async def delete_user(
+    request: Request,
+    user_id: str,
+    current_user=Depends(get_current_user)
+):
     controller = await UserController.create_instance(request.app.db_client)
-    clustering_controller = request.app.state.faiss_service["clustering_controller"]
+
     try:
-        user = await controller.get_user(user_id)
-        role = user["role"]
-
-        # =============================
-        # JOBSEEKER
-        # =============================
-        if role == "jobseeker":
-            # Delete Cloudinary folders
-            for folder in [f"images/{user_id}", f"profiles/{user_id}",f"feedbacks/{user_id}"]:
-                try:
-                    delete_folder(folder)
-                    logger.info(f"Cloudinary folder deleted: {folder}")
-                except Exception as e:
-                    logger.warning(f"Failed to delete folder {folder}: {e}")
-
-            # Delete CVs from FAISS + MongoDB
-            cv_model = await CVModel.create_instance(db_client=request.app.db_client)
-            all_cvs = await cv_model.get_all_user_cvs(cv_user_id=user_id)
-            mongo_ids = [str(cv.id) for cv in all_cvs]
-
-            if mongo_ids:
-                embedding_obj = request.app.state.faiss_service["faiss_service_cv"]
-                embedding_obj.delete_cvs_by_mongo_ids(mongo_ids)
-
-            await cv_model.delete_all_user_cvs(cv_user_id=user_id)
-            #delete from clustering
-            clustering_controller.remove_candidates(candidate_ids=mongo_ids)
-            # Delete applications submitted by user
-            application_controller = await ApplicationController.create_instance(request.app.db_client)
-            deleted_applications_count = await application_controller.delete_applications_by_user_id(user_id)
-            logger.info(f"Deleted {deleted_applications_count} applications for jobseeker {user_id}")
-
-        # =============================
-        # RECRUITER
-        # =============================
-        elif role == "recruiter":
-            # Delete ONLY images folder
-            try:
-                delete_folder(f"images/{user_id}")
-                delete_folder(f"feedbacks/{user_id}")
-                logger.info(f"Cloudinary images & feedbacks folder deleted for recruiter {user_id}")
-            except Exception as e:
-                logger.warning(f"Failed to delete images & feedbacks folder: {e}")
-
-            # Delete recruiter jobs from FAISS + MongoDB
-            embedding_obj = request.app.state.faiss_service["faiss_service_job"]
-            job_controller = await JobController.create_instance(
-            db_client=request.app.db_client
+        # Only allow self delete (or extend later for admin)
+        if current_user["_id"] != user_id:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={"signal": "FORBIDDEN"}
             )
-            all_jobs = await job_controller.get_jobs_by_recruiter(recruiter_id=user_id)
-            mongo_ids = [str(job.id) for job in all_jobs]  # id mapped in get_jobs_by_recruiter
-            embedding_obj.delete_cvs_by_mongo_ids(mongo_ids)
-            #delete from clustering
-            clustering_controller.remove_candidates(candidate_ids=mongo_ids)
-            # Delete applications related to recruiter jobs
-            application_controller = await ApplicationController.create_instance(request.app.db_client)
-            await application_controller.delete_applications_by_recruiter_jobs(user_id)
-            
-            deleted_jobs_count = await job_controller.delete_jobs_by_recruiter(user_id)
-            logger.info(f"Deleted {deleted_jobs_count} jobs for recruiter {user_id}")
 
-
-        # =============================
-        # Finally delete user
-        # =============================
         await controller.delete_user(user_id)
-        return JSONResponse(content={"signal": "USER_DELETED_SUCCESSFULLY"})
+
+        return JSONResponse(content={"signal": "USER_DELETED"})
 
     except Exception as e:
-        logger.error(f"Error deleting user: {e}")
         return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"signal": "USER_DELETE_FAILED"}
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"signal": str(e)}
         )

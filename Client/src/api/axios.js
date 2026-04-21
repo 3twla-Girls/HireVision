@@ -5,5 +5,15 @@ const api = axios.create({
     timeout: 60000
 })
 
+api.interceptors.request.use((config) => {
+    const token = sessionStorage.getItem("token");
+  
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  
+    return config;
+  });
 console.log("API Base URL:", import.meta.env.VITE_BASEURL)
 export default api
+
