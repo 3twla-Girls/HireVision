@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Mail, MapPin, Clock, Download, Send,
   CheckCircle, XCircle, Layers, FileText, User,
@@ -72,6 +72,8 @@ const Card = ({ children, className = '' }) => (
 const CandidateProfile = () => {
   const navigate = useNavigate();
   const { applicationId } = useParams();
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('sessionId');
 
   const [app, setApp]           = useState(null);
   const [candidate, setCandidate] = useState(null);
@@ -80,8 +82,46 @@ const CandidateProfile = () => {
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(null);
   const [saving, setSaving]     = useState(false);
+  const [interviewSession, setInterviewSession] = useState(null);
 
   // ── Fetch application + candidate + job ──────────────────────
+  // useEffect(() => {
+  //   if (!applicationId) return;
+
+  //   const fetchAll = async () => {
+  //     try {
+  //       setLoading(true);
+
+  //       // 1. Application
+  //       const appRes = await fetch(`/api/v1/application/${applicationId}`);
+  //       // const appRes = await api.get(`/application/${applicationId}`);
+  //       if (!appRes.ok) throw new Error('Application not found');
+  //       const appData = await appRes.json();
+  //       setApp(appData);
+  //       setAppStatus(appData.status ?? 'pending');
+
+  //       // 2. Candidate user (fetch in parallel with job)
+  //       const [candidateRes, jobRes] = await Promise.all([
+  //         fetch(`/api/v1/user/${appData.candidate_id}`),
+  //         fetch(`/api/v1/job/${appData.job_id}`),
+  //       ]);
+
+  //       if (candidateRes.ok) {
+  //         const userData = await candidateRes.json();
+  //         setCandidate(userData.user ?? userData);
+  //       }
+  //       if (jobRes.ok) setJob(await jobRes.json());
+
+  //     } catch (err) {
+  //       console.error(err);
+  //       setError(err.message);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchAll();
+  // }, [applicationId]);
   useEffect(() => {
     if (!applicationId) return;
 
@@ -91,23 +131,35 @@ const CandidateProfile = () => {
 
         // 1. Application
         const appRes = await fetch(`/api/v1/application/${applicationId}`);
-        // const appRes = await api.get(`/application/${applicationId}`);
         if (!appRes.ok) throw new Error('Application not found');
         const appData = await appRes.json();
         setApp(appData);
         setAppStatus(appData.status ?? 'pending');
 
-        // 2. Candidate user (fetch in parallel with job)
-        const [candidateRes, jobRes] = await Promise.all([
+        // 2. Fetch Candidate, Job, AND Interview Session (if sessionId exists)
+        const fetchPromises = [
           fetch(`/api/v1/user/${appData.candidate_id}`),
-          fetch(`/api/v1/job/${appData.job_id}`),
-        ]);
+          fetch(`/api/v1/job/${appData.job_id}`)
+        ];
 
-        if (candidateRes.ok) {
-          const userData = await candidateRes.json();
+        if (sessionId) {
+          fetchPromises.push(fetch(`/api/v1/interview/session/${sessionId}`));
+        }
+
+        const results = await Promise.all(fetchPromises);
+        
+        // User data
+        if (results[0].ok) {
+          const userData = await results[0].json();
           setCandidate(userData.user ?? userData);
         }
-        if (jobRes.ok) setJob(await jobRes.json());
+        // Job data
+        if (results[1].ok) setJob(await results[1].json());
+        
+        // Interview Session data
+        if (sessionId && results[2]?.ok) {
+          setInterviewSession(await results[2].json());
+        }
 
       } catch (err) {
         console.error(err);
@@ -118,7 +170,7 @@ const CandidateProfile = () => {
     };
 
     fetchAll();
-  }, [applicationId]);
+  }, [applicationId, sessionId]); 
 
   // ── Update status ────────────────────────────────────────────
   const handleStatusChange = async (newStatus) => {
@@ -238,13 +290,31 @@ const CandidateProfile = () => {
           <div className="space-y-5">
 
             {/* Matching Score */}
-            <Card>
+            {/* <Card>
               <h3 className="text-xs font-black text-[#456882] uppercase tracking-[0.15em] mb-5">CV Matching Score</h3>
               <div className="flex items-center justify-center gap-10">
                 <div className="flex flex-col items-center gap-2">
                   <CircularScore score={matchScore} color="green" />
                   <span className="text-xs font-bold text-[#456882]">CV Score</span>
                 </div>
+              </div>
+            </Card> */}
+            <Card>
+              <h3 className="text-xs font-black text-[#456882] uppercase tracking-[0.15em] mb-5 text-center">Scores Comparison</h3>
+              <div className="flex items-center justify-center gap-20">
+                {/* CV Score */}
+                <div className="flex flex-col items-center gap-2">
+                  <CircularScore score={matchScore} color="green" />
+                  <span className="text-xs font-bold text-[#456882]">CV Match</span>
+                </div>
+
+                {/* Technical Interview Score - only if there's an interview session */}
+                {interviewSession && (
+                  <div className="flex flex-col items-center gap-2">
+                    <CircularScore score={interviewSession?.final_summary?.technical?.final_score} color="orange" />
+                    <span className="text-xs font-bold text-[#456882]">Interview Score</span>
+                  </div>
+                )}
               </div>
             </Card>
 
@@ -374,7 +444,7 @@ const CandidateProfile = () => {
                 <Send size={16} /> Send Email
               </a>
             </div>
-            <div className="flex gap-3">
+            {/* <div className="flex gap-3">
               {appStatus === 'accepted_for_interview' || appStatus === 'pending' ? (
                 <div className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-400 font-bold py-4 rounded-2xl text-xs border border-gray-200 cursor-not-allowed">
                   <AlertCircle size={16} />
@@ -387,6 +457,28 @@ const CandidateProfile = () => {
                 >
                   <FileText size={16} /> View Interview Report
                 </button>
+              )}
+            </div> */}
+            <div className="flex gap-3">
+              {sessionId && interviewSession ? (
+                <button
+                  onClick={() => navigate(`/candidate-interview-report/${sessionId}`)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-[#FF914D] hover:bg-[#e07d3c] text-white font-black py-3.5 rounded-2xl text-sm transition-all shadow-md hover:shadow-lg"
+                >
+                  <FileText size={16} /> View This Session Report
+                </button>
+              ) : (
+                (appStatus === 'accepted_for_interview' || appStatus === 'pending') ? (
+                  <div className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-400 font-bold py-4 rounded-2xl text-xs border border-gray-200 cursor-not-allowed w-full">
+                    <AlertCircle size={16} />
+                    <span>Candidate hasn't started the interview yet</span>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-600 font-bold py-4 rounded-2xl text-xs border border-blue-100 cursor-help w-full">
+                    <Layers size={16} />
+                    <span>Please select a specific session from results to view report</span>
+                  </div>
+                )
               )}
             </div>
 

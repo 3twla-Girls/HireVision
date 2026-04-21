@@ -230,8 +230,14 @@ export default function InterviewResultsTab({ jobId, applications, interviewDate
         {/* Action */}
         <td className="px-6 py-4">
           {s.applicationId ? (
+            // <button
+            //   onClick={() => navigate(`/candidate-profile/${s.applicationId}`)}
+            //   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 hover:scale-105 text-white text-xs font-semibold rounded-lg transition"
+            // >
+            //   <Eye className="w-3.5 h-3.5" /> View Profile
+            // </button>
             <button
-              onClick={() => navigate(`/candidate-profile/${s.applicationId}`)}
+              onClick={() => navigate(`/candidate-profile/${s.applicationId}?sessionId=${s._id}`)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 hover:scale-105 text-white text-xs font-semibold rounded-lg transition"
             >
               <Eye className="w-3.5 h-3.5" /> View Profile
@@ -273,9 +279,17 @@ export default function InterviewResultsTab({ jobId, applications, interviewDate
 
         <div className="flex items-center justify-between text-xs text-gray-400 mt-2">
           <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(s.session_date)}</span>
-          {s.applicationId && (
+          {/* {s.applicationId && (
             <button
               onClick={() => navigate(`/candidate-profile/${s.applicationId}`)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition"
+            >
+              <Eye className="w-3 h-3" /> View
+            </button>
+          )} */}
+          {s.applicationId && (
+            <button
+              onClick={() => navigate(`/candidate-profile/${s.applicationId}?sessionId=${s._id}`)}
               className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition"
             >
               <Eye className="w-3 h-3" /> View
