@@ -425,32 +425,37 @@ export default function HireVision() {
       }
 
       try {
-        const response = await api.get(
-          `/user/login`,
-          { params: { email, password } }
-        );
-
+        const response = await api.post("/user/login", {
+          email,
+          password
+        });
+      
         if (response.data.user) {
-          //till doing logout
+      
+          // Clear old data
           sessionStorage.removeItem("user");
-          // Save user data in sessionStorage
+      
+          // Save user + token
           sessionStorage.setItem("user", JSON.stringify(response.data.user));
-
-          //here we save user data using context
-          login(response.data.user);
-
+          sessionStorage.setItem("token", response.data.access_token);
+      
+          // Update context
+          login(response.data);
+      
           if (response.data.user.role === "jobseeker") {
-            navigate("/"); // Redirect to Home page
+            navigate("/");
           } else if (response.data.user.role === "recruiter") {
-            navigate("/job-management"); // Redirect to Recruiter page
+            navigate("/job-management");
           }
+      
         } else {
-          alert("Error: User does not exist. Please check your credentials.");
+          alert("Invalid credentials");
         }
+      
       } catch (error) {
-        console.error("Error signing in:", error);
-        alert("Error: User does not exist. Please check your credentials.");
-      } finally {
+        console.error("Login error:", error);
+        alert("Invalid email or password");
+      }finally {
         setLoading(false);
       }
     } else {
