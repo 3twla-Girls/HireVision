@@ -2,6 +2,7 @@ import os
 import pickle
 import numpy as np
 import faiss
+import torch
 
 from sentence_transformers import SentenceTransformer
 from Server.helpers.config import get_settings
@@ -18,7 +19,10 @@ class JobSkillsStore:
 
         settings = get_settings()
 
-        self.model = SentenceTransformer(settings.EMBED_MODEL)
+        # self.model = SentenceTransformer(settings.EMBED_MODEL)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model = SentenceTransformer(settings.EMBED_MODEL, device=device)
+        self.model.to(torch.float32)
 
         if os.path.exists(self.path):
 

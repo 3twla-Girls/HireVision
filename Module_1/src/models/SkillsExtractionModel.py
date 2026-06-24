@@ -31,7 +31,10 @@ class SkillsExtractionModel:
         nlp_lg = spacy.load("en_core_web_lg")
         self.skillner = SkillExtractor(nlp_lg, SKILL_DB, PhraseMatcher)
 
-        self.embedding_model = SentenceTransformer(self.embedding_model_name)
+        # self.embedding_model = SentenceTransformer(self.embedding_model_name)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.embedding_model = SentenceTransformer(self.embedding_model_name, device=device)
+        self.embedding_model.to(torch.float32)
 
         if self.verbose:
             print("✅ Models loaded")

@@ -2,6 +2,7 @@ import os
 import faiss
 import numpy as np
 import pickle
+import torch
 from typing import List
 
 from bson import ObjectId
@@ -26,7 +27,10 @@ class FAISSService:
         os.makedirs(os.path.dirname(index_path), exist_ok=True)
 
         # Load embedding model
-        self.model = SentenceTransformer(app_settings.EMBED_MODEL)
+        # self.model = SentenceTransformer(app_settings.EMBED_MODEL)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model = SentenceTransformer(app_settings.EMBED_MODEL, device=device)
+        self.model.to(torch.float32)
 
         # Load or create FAISS index
         if os.path.exists(self.index_path):
