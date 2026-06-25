@@ -7,7 +7,7 @@ import shutil, os
 predictor = PersonalityPredictor(
     "Module_2/Personality_Traits_Detection/weights/personality_r3d_best.pth.zip"
 )
-
+print("PERSONALITY TRAITS MODEL WEIGHTS IS LOADED")
 # -------------------- STEP 1: PER VIDEO --------------------
 
 
