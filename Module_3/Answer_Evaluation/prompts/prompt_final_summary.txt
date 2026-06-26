@@ -16,3 +16,4 @@ Create an overall summary containing:
   "summary_for_recruiter": "",
   "tips_for_candidate": ""
 }}
+- final_score should be an integer from 0 to 10
