@@ -147,9 +147,13 @@ const RecruiterProfile = () => {
     setSaving(true)
     setSaveMsg(null)
     try {
+      const token = sessionStorage.getItem('token')
       const res = await fetch(`/api/v1/user/${recruiterId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ [field]: value }),
       })
       if (!res.ok) throw new Error()
