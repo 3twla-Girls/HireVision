@@ -88,7 +88,7 @@ const Applications = () => {
           return 
         }
 
-        console.log("Fetched applications: ", appData)
+        // console.log("Fetched applications: ", appData)
         const enriched = await Promise.all(
           appData.map(async (app) => {
             let job = {}

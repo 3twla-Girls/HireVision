@@ -3,7 +3,7 @@ import { useEffect } from "react";
 const API_URL = `${import.meta.env.VITE_BASEURL}/cheating/log`;
 
 export default function useTabCheatingDetection(sessionId) {
-    console.log("api url",API_URL);
+    // console.log("api url",API_URL);
     const logEvent = async (eventType) => {
         try {
             await fetch(API_URL, {

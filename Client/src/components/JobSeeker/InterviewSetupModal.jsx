@@ -304,7 +304,7 @@ export default function InterviewSetupModal({ setShowSetup, isMock = false, jobI
 
       setTimeout(() => {
         navigate(`/interview/${type}/live`, {
-          state: { sessionId, questions: generatedQuestions, jobId: existingJobId ?? null }
+          state: { sessionId, questions: generatedQuestions, jobId: existingJobId ?? null, jobTitle: jobInfo?.job_title ?? null }
         });
       }, 150);
     } catch (error) {

@@ -52,7 +52,7 @@ const ApplicationCard = ({ application, navigable = false }) => {
             navigate(`/job/${application.jobId}`)
         }
     }
-    console.log("ApplicationCard: ", application)
+    // console.log("ApplicationCard: ", application)
     const cvUrl         = application.feedbackFile ?? null;
 
     return (

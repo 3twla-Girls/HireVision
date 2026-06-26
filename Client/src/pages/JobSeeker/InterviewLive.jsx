@@ -238,6 +238,8 @@ export default function InterviewLive() {
   const { type } = useParams();
   const isMock = type === 'mock';
 
+  const jobTitle = location.state?.jobTitle || (isMock ? 'Mock Interview' : 'Interview Session');
+
   const { userData } = useAuth();
   const candidateId = userData?._id;
 
@@ -261,7 +263,7 @@ export default function InterviewLive() {
     enterFullscreen();
   }, []);
   const sId = location.state?.sessionId || localStorage.getItem('sessionId');
-  console.log("Session ID:", sId);
+  // console.log("Session ID:", sId);
   useTabCheatingDetection(sId);
   // ── Refs ──────────────────────────────────────────────────────
   const videoRef = useRef(null);
@@ -640,7 +642,7 @@ export default function InterviewLive() {
       <div className="max-w-6xl mx-auto mb-8">
         <div className="flex justify-between items-center mb-3">
           <h1 className="text-sm font-medium uppercase tracking-wider opacity-70">
-            Mock interview for: <span className="font-bold">Job Role</span>
+            Interview for: <span className="font-bold">{jobTitle}</span>
           </h1>
           <div className="flex items-center gap-2">
             {cameraOn ? <Camera size={18} className="text-emerald-500" /> : <CameraOff size={18} className="text-red-400" />}
