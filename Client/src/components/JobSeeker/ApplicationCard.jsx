@@ -47,12 +47,13 @@ const ApplicationCard = ({ application, navigable = false }) => {
     const config = statusConfig[application.status] || statusConfig['under review']
     const [showFeedback, setShowFeedback] = useState(false)
     const navigate = useNavigate()
-
     const handleCardClick = () => {
         if (navigable && application.jobId) {
             navigate(`/job/${application.jobId}`)
         }
     }
+    console.log("ApplicationCard: ", application)
+    const cvUrl         = application.feedbackFile ?? null;
 
     return (
         <>
@@ -107,23 +108,36 @@ const ApplicationCard = ({ application, navigable = false }) => {
                         className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3"
                         onClick={(e) => e.stopPropagation()}
                     >
+                        {cvUrl && (
                         <div className="flex items-center gap-3">
-                            <FileText size={18} className="text-dark-orange shrink-0" />
-                            <span className="text-[14px] font-medium text-dark-blue">
+                            {/* <span className="text-[14px] font-medium text-dark-blue">
                                 {application.feedbackFileName || 'Application/Session Feedback'}
-                            </span>
+                            </span> */}
+                                            <a
+                                            href={cvUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 text-[#1B3C53] hover:text-[#FF914D] text-sm font-bold transition-colors">
+                            <FileText size={18} className="text-dark-orange shrink-0" />
+                                            View Full CV Feedback Report
+                                            <Download size={15} /> 
+                                            </a>
+                            {/* <Download onClick={() => {}} size={18} className="text-dark-orange shrink-0 cursor-pointer" /> */}
                         </div>
+                        )}
 
                         {/* Navigate to candidate report button */}
-                        <button
-                            onClick={() => navigate(`/candidate-report/${application.sessionId || application.id}`)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold
-                                       text-white bg-dark-blue
-                                       hover:bg-dark-blue/90 hover:shadow-sm transition-all duration-200 cursor-pointer"
+                        {application.interview_session_id && (
+                            <button
+                                onClick={() => navigate(`/candidate-report/${application.interview_session_id}`)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold
+                                           text-white bg-dark-blue
+                                           hover:bg-dark-blue/90 hover:shadow-sm transition-all duration-200 cursor-pointer"
                         >
                             <Eye size={14} />
-                            View Candidate Report
+                            View Interview Report
                         </button>
+                        )}
                     </div>
                 )}
             </div>

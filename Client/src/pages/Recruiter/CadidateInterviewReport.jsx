@@ -406,25 +406,88 @@ const CandidateInterviewReport = () => {
 
         {/* ── Tab 3: Executive Summary ── */}
         {activeTab === "summary" && (
-          <div className="space-y-8 animate-in fade-in">
-             <div className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col items-center text-center max-w-3xl mx-auto">
-                <ClipboardCheck size={40} className="text-emerald-500 mb-4" />
-                <h2 className="text-2xl font-black mb-2">Final Evaluation Summary</h2>
-                <p className="text-gray-400 text-sm mb-8 italic">"{techSummary.summary_for_recruiter}"</p>
-                <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                  <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100"><h4 className="text-[10px] font-black text-gray-400 uppercase mb-4 tracking-widest px-2">Overall Strengths</h4><BulletList items={techSummary.overall_strengths} icon="✓" color={C.success} /></div>
-                  <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100"><h4 className="text-[10px] font-black text-gray-400 uppercase mb-4 tracking-widest px-2">Overall Weaknesses</h4><BulletList items={techSummary.overall_weaknesses} icon="✗" color={C.error} /></div>
+          <div className="space-y-12 animate-in fade-in">
+            
+            <div className="bg-white p-10 rounded-[3rem] border border-gray-200 shadow-md flex flex-col items-center text-center max-w-4xl mx-auto">
+              <ClipboardCheck size={40} className="text-[#10B981] mb-4" />
+              <h2 className="text-2xl font-black mb-2 text-[#1B3C53]">Final Evaluation Summary</h2>
+              <p className="text-[#456882] text-sm mb-8 italic font-medium">"{techSummary.summary_for_recruiter}"</p>
+              
+              <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div className="p-6 bg-emerald-50/50 rounded-3xl border border-emerald-100">
+                  <h4 className="text-[10px] font-black text-emerald-700 uppercase mb-4 tracking-widest px-2">Overall Strengths</h4>
+                  <BulletList items={techSummary.overall_strengths} icon="✓" color={C.success} />
                 </div>
-                <div className="mt-8 pt-8 border-t border-gray-100 w-full flex items-center justify-between bg-[#1B3C53] p-6 rounded-2xl text-white">
-                   <div className="text-left font-black"><p className="text-[10px] text-gray-400 uppercase mb-1">HR Recommendation</p><p className="text-xl text-[#FF914D]">{reportData.personality?.overall?.hr_view?.decision || "Consider"}</p></div>
-                   <Tag label="HireVision AI Verified" color={C.teal} />
+                <div className="p-6 bg-red-50/50 rounded-3xl border border-red-100">
+                  <h4 className="text-[10px] font-black text-red-700 uppercase mb-4 tracking-widest px-2">Overall Weaknesses</h4>
+                  <BulletList items={techSummary.overall_weaknesses} icon="✗" color={C.error} />
                 </div>
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {Object.entries(techSummary.skill_assessment || {}).map(([skill, comment]) => (
-                  <div key={skill} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm"><p className="text-[10px] font-black text-gray-400 uppercase mb-3">{skill.replace(/_/g, " ")}</p><p className="text-xs font-bold leading-relaxed">{comment}</p></div>
-                ))}
-             </div>
+              </div>
+              
+              <div className="mt-8 pt-8 border-t border-gray-100 w-full flex items-center justify-between bg-[#1B3C53] p-6 rounded-2xl text-white shadow-lg">
+                <div className="text-left font-black">
+                  <p className="text-[10px] text-blue-200 uppercase mb-1">HR Recommendation</p>
+                  <p className="text-xl text-[#FF914D]">{reportData.personality?.overall?.hr_view?.decision || "Consider"}</p>
+                </div>
+                <Tag label="HireVision AI Verified" color={C.teal} />
+              </div>
+            </div>
+
+            <div className="w-full">
+              <div className="flex items-center gap-3 mb-6 px-2">
+                <h3 className="text-lg font-black text-[#1B3C53]">Detailed Skill Assessment</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {Object.entries(techSummary.skill_assessment || {}).map(([skill, assessmentData]) => {
+                  const level = assessmentData?.understanding || assessmentData?.rating;
+                  const details = assessmentData?.evidence || assessmentData?.remarks;
+
+                  return (
+                    <div
+                      key={skill}
+                      className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col hover:shadow-lg transition-all duration-300"
+                    >
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="p-2 bg-[#E8F6F5] rounded-lg">
+                          <span className="block w-2 h-2 rounded-full bg-[#5BBFBA]" />
+                        </div>
+                        <h4 className="text-xs font-black text-[#1B3C53] uppercase tracking-wider">
+                          {skill.replace(/_/g, " ")}
+                        </h4>
+                      </div>
+
+                      <div className="flex flex-col gap-4 flex-1">
+                        {level && (
+                          <div className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-xl border border-gray-200">
+                            <span className="text-[10px] font-black text-[#456882] uppercase tracking-widest">Rating</span>
+                            <span 
+                              className={`text-xs font-black uppercase tracking-wider ${
+                                level === "None" || level === "Poor" ? "text-[#EF5350]" : 
+                                level === "Good" || level === "Excellent" ? "text-[#10B981]" : 
+                                "text-[#F59E0B]"
+                              }`}
+                            >
+                              {level}
+                            </span>
+                          </div>
+                        )}
+
+                        {details && (
+                          <div className="bg-[#F7F9FB] p-5 rounded-2xl border border-gray-100 flex-1">
+                            <p className="text-[10px] font-black text-[#456882] uppercase tracking-widest mb-2">Remarks</p>
+                            <p className="text-sm font-semibold text-[#1B3C53] leading-relaxed">
+                              {details}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
           </div>
         )}
       </div>

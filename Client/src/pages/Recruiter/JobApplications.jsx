@@ -302,7 +302,7 @@ const JobApplications = () => {
                             }`}>{applications.length}</span>
                         </button>
 
-                        {interviewsEnded ? (
+                        {/* {interviewsEnded ? ( */}
                             <button
                                 id="tab-interview-results"
                                 onClick={() => setActiveTab('interview')}
@@ -315,7 +315,7 @@ const JobApplications = () => {
                                 <Video className="w-4 h-4" />
                                 Interview Results
                             </button>
-                        ) : (
+                        {/* ) : (
                             <div
                                 title={interviewDate
                                     ? `Available after ${interviewDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`
@@ -331,7 +331,7 @@ const JobApplications = () => {
                                     </span>
                                 )}
                             </div>
-                        )}
+                        )} */}
                     </div>
                     
                     {/* Top section: Title + Filter button — CV tab only */}

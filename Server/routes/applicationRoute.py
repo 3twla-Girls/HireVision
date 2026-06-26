@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 import logging
 from bson.errors import InvalidId
+from pydantic import BaseModel
 from .schemes.appRequest import MatchingUpdateRequest
 from ..controllers.ApplicationController import ApplicationController
 from ..models.db_schemes.Application import Application
@@ -200,5 +201,66 @@ async def get_applications_by_candidate(request: Request, candidate_id: str):
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
+            content={"signal": str(e)}
+        )
+        
+# update interview session id for an application
+# @application_router.patch("/{application_id}/interview-session")
+# async def update_interview_session_id(
+#     request: Request,
+#     application_id: str,
+#     session_id: str
+# ):
+#     controller = await ApplicationController.create_instance(
+#         request.app.db_client
+#     )
+
+#     try:
+#         application = await controller.update_interview_session_id(
+#             application_id,
+#             session_id
+#         )
+
+#         return application
+
+#     except Exception as e:
+#         return JSONResponse(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             content={"signal": str(e)}
+#         )
+
+
+
+
+# 1. اعمل Model صغير للـ Body
+class SessionUpdateRequest(BaseModel):
+    session_id: str
+
+# 2. عدل الـ Endpoint
+@application_router.patch("/{application_id}/interview-session")
+async def update_interview_session_id(
+    request: Request,
+    application_id: str,
+    body: SessionUpdateRequest  # <--- استقبل الداتا هنا
+):
+    controller = await ApplicationController.create_instance(
+        request.app.db_client
+    )
+
+    try:
+        # ابعت الـ session_id من الـ body للـ controller
+        await controller.update_interview_session_id(
+            application_id,
+            body.session_id
+        )
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"signal": "SESSION_ID_UPDATED_SUCCESSFULLY"}
+        )
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
             content={"signal": str(e)}
         )

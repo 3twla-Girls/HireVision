@@ -19,6 +19,7 @@ class Application(BaseModel):
     missing_skills: Optional[List[str]] = Field(default=None)
     cv_feedback_url: Optional[str] = Field(default=None)
     cv_feedback_public_id: Optional[str] = Field(default=None)
+    interview_session_id: Optional[str] = Field(default=None)
     
     @classmethod
     def get_indexes(cls):

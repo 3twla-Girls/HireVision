@@ -94,7 +94,7 @@ const Applications = () => {
           }])
           return 
         }
-
+console.log("Fetched applications: ", appData)
         const enriched = await Promise.all(
           appData.map(async (app) => {
             let job = {}
@@ -116,6 +116,7 @@ const Applications = () => {
               missingSkills:    app.missing_skills  ?? [],
               feedbackFile:     app.cv_feedback_url ?? null,
               feedbackFileName: app.cv_feedback_url ? 'CV_Feedback.pdf' : null,
+              interview_session_id: app.interview_session_id ?? null
             }
           })
         )
@@ -135,7 +136,7 @@ const Applications = () => {
   const reviewCount   = applications.filter((a) => a.backendStatus === 'pending').length
   const rejectedCount = applications.filter((a) => a.backendStatus === 'rejected').length
   const feedbackCount = applications.filter(
-    (a) => a.feedbackFile && (a.backendStatus === 'accepted' || a.backendStatus === 'rejected')
+    (a) => a.feedbackFile 
   ).length
 
   const tabCounts = {
@@ -154,7 +155,7 @@ const Applications = () => {
   // ── Filtered list ───────────────────────────────────────────────────────────
   const filtered = applications.filter((a) => {
     if (activeTab === 'feedbacks') {
-      return a.feedbackFile && (a.backendStatus === 'accepted' || a.backendStatus === 'rejected')
+      return a.feedbackFile 
     }
     // Applications tab: apply status filter
     if (statusFilter !== 'all' && a.backendStatus !== statusFilter) return false

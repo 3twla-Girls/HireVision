@@ -662,6 +662,7 @@ export default function HireVision() {
                     placeholder="Password"
                     value={pwd}
                     onChange={(e) => setPwd(e.target.value)}
+                    maxLength={72}
                   />
                   <EyeToggle
                     open={showP}

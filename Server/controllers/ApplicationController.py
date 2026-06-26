@@ -162,6 +162,20 @@ class ApplicationController(BaseController):
         )
         return result.modified_count
 
+    async def update_interview_session_id(
+        self,
+        application_id: str,
+        session_id: str
+    ) -> None:
+        """
+        Write the interview session ID onto an application document.
+        This is used to link the application to the live interview session.
+        """
+        await self.collection.update_one(
+            {"_id": ObjectId(application_id)},
+            {"$set": {"interview_session_id": session_id}}
+        )
+        
     async def update_interview_schedule(
         self,
         application_id: str,

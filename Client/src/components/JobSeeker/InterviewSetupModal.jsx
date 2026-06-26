@@ -289,6 +289,10 @@ export default function InterviewSetupModal({ setShowSetup, isMock = false, jobI
           toast.error('Could not start session. Please try again.');
           return;
         }
+
+        await api.patch(`/application/${applicantId_to_use}/interview-session`, {
+          session_id: sessionResponse.data.session_id 
+        });
         
         sessionId = sessionResponse.data.session_id;
       }

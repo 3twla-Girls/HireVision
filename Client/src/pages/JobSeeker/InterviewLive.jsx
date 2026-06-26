@@ -593,7 +593,8 @@ export default function InterviewLive() {
       toast.error('Error generating summary, but your answers are saved.', { id: 'summary' });
       navigate('/interviews');
     }
-  }, [currentStep, questions.length, stopCamera, stopMic, cleanup, navigate, location.state?.sessionId, postSummary]);
+  // }, [currentStep, questions.length, stopCamera, stopMic, cleanup, navigate, location.state?.sessionId, postSummary]);
+  }, [currentStep, questions, timeLeft, stopCamera, stopMic, cleanup, navigate, location.state, postSummary]);
 
   // ── Question timer ────────────────────────────────────────────
   useEffect(() => {
