@@ -51,7 +51,7 @@ class JobController(BaseController):
 
     async def get_jobs_by_recruiter(self, recruiter_id: str):
         records = await self.job_model.find_by_recruiter(ObjectId(recruiter_id))
-
+        records.sort(key=lambda x: x["_id"], reverse=True)
         jobs = []
         for doc in records:
             doc["id"] = str(doc["_id"])  # map Mongo _id → id
@@ -122,6 +122,7 @@ class JobController(BaseController):
     # ------------------------------
     async def get_all_jobs(self):
         records = await self.job_model.find_all_jobs()
+        records.sort(key=lambda x: x["_id"], reverse=True)
         jobs = []
         for doc in records:
             if doc.get("status") != "open":
@@ -138,6 +139,7 @@ class JobController(BaseController):
     # ------------------------------
     async def get_jobs_by_cluster(self, cluster_id: int):
         records = await self.job_model.find_jobs_by_cluster(cluster_id)
+        records.sort(key=lambda x: x["_id"], reverse=True)
         jobs = []
         for doc in records:
             if doc.get("status") != "open":
@@ -187,6 +189,7 @@ class JobController(BaseController):
                         seen_job_ids.add(job_id_str)
                         recommended_jobs.append(job)
 
+            recommended_jobs.sort(key=lambda x: x.id, reverse=True)
             logger.info(f"[recommended_jobs] returning {len(recommended_jobs)} deduplicated jobs")
             return recommended_jobs
 

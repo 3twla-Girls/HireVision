@@ -145,33 +145,16 @@ const Interviews = () => {
         setLoading(true)
         const res = await fetch(`/api/v1/interview/candidate/${candidateId}`)
         console.log("Raw sessions data:", res.body)
+        
         if (!res.ok) throw new Error(`Server error: ${res.status}`)
-          let data = await res.json()
-          if (!data || data.length === 0) {
-            data = [
-              {
-                _id: { $oid: "demo-session-id" },
-                job_id: "demo-job-1",
-                is_mock: false,
-                job_title: "Demo Software Engineer",
-                company: "HireVision AI",
-                city: "San Francisco",
-                country: "USA",
-                session_date: { $date: new Date(Date.now() - 86400000).toISOString() }, // 1 day ago
-                final_summary: { technical: { final_score: 8.5 } },
-                answers: [{ evaluation: { score: 4 } }, { evaluation: { score: 4 } }, { evaluation: { score: 1 } }, { evaluation: { score: 5 } }] // 3 correct out of 4
-              },
-              {
-                _id: { $oid: "demo-mock-id" },
-                is_mock: true,
-                job_title: "Mock Practice",
-                session_date: { $date: new Date(Date.now() - 172800000).toISOString() }, // 2 days ago
-                final_summary: { technical: { final_score: 7.5 } },
-                answers: [{ evaluation: { score: 5 } }, { evaluation: { score: 2 } }, { evaluation: { score: 4 } }]
-              }
-            ]
-          }
-        console.log("Raw sessions data:",data)
+        
+        let data = await res.json()
+        
+        if (!data || !Array.isArray(data)) {
+          data = []
+        }
+        
+        console.log("Raw sessions data:", data)
         
         const uniqueJobIds = [...new Set(
           data.filter((s) => !s.is_mock && s.job_id).map((s) => s.job_id)
