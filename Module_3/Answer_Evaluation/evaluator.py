@@ -44,16 +44,22 @@ def evaluate_single_answer(question, correct_answer, candidate_answer):
         return {"error": "Invalid JSON", "raw": raw_output}
 
 import json
+import re
 
 def clean_llm_json(text: str):
     text = text.strip()
 
-    # remove ```json or ``` wrappers
-    if text.startswith("```"):
-        text = text.replace("```json", "")
-        text = text.replace("```", "")
+    # Try to extract JSON from a ```json ... ``` code block anywhere in the text
+    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
 
-    return text.strip()
+    # Fallback: find the first { ... } block
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if match:
+        return match.group(0).strip()
+
+    return text
 
 
 def generate_final_summary(evaluations_list):
