@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Eye, MessageSquare, MapPin, Pencil, Trash2, Building2, Users, Video } from 'lucide-react'
+import { Eye, MessageSquare, MapPin, Pencil, Trash2, Building2, Users, Video, XCircle, CheckCircle } from 'lucide-react'
 
 import JOBS         from '../../database/jobs'
 import APPLICATIONS from '../../database/applications'
@@ -106,7 +106,26 @@ const JobApplications = () => {
         return () => { isMounted = false; }; // Cleanup function
     }, [jobId, navigate]);
 
+    const isOpen = job?.status?.toLowerCase() === 'open';
 
+    const toggleStatus = async () => { 
+        if (!job) return;
+
+        const newStatus = job.status.toLowerCase() === "open" ? "closed" : "open";
+
+        try {
+            const res = await api.patch(`/job/${jobId}/status`, { status: newStatus });
+
+            if (res.status === 200) {
+                setJob((prev) => ({ ...prev, status: newStatus }));
+                toast.success(`Job status updated to ${newStatus}`);
+            }
+        } catch (err) {
+            console.error("Could not update job status:", err);
+            const errorMsg = err.response?.data?.signal || "Failed to update status";
+            toast.error(`Error: ${errorMsg}`);
+        }
+    };
 
     // const job = useMemo(
     //     () => JOBS.find(j => j._id === jobId) ?? JOBS[0],
@@ -205,10 +224,16 @@ const JobApplications = () => {
                         </div>
                     </div>
                 </td>
-                <td className="px-6 py-4">
-                    <span className={`inline-block px-3 py-1 rounded-full text-white text-xs font-bold ${getScoreColor(app.matching_score)}`}>
-                        {Math.round(app.matching_score)}%
-                    </span>
+<td className="px-6 py-4">
+                    {app.matching_score == null ? (
+                        <span className="text-gray-400 text-xs font-medium italic">
+                            No match score
+                        </span>
+                    ) : (
+                        <span className={`inline-block px-3 py-1 rounded-full text-white text-xs font-bold ${getScoreColor(app.matching_score)}`}>
+                            {Math.round(app.matching_score)}%
+                        </span>
+                    )}
                 </td>
                 <td className={`px-6 py-4 text-sm ${getStatusColor(app.status)}`}>{STATUS_LABEL[app.status] ?? app.status}</td>
                 <td className="px-6 py-4 text-sm text-gray-500">{timeAgo(app.created_at)}</td>
@@ -376,12 +401,31 @@ const JobApplications = () => {
                             </div>
                             <div className="col-span-4 flex flex-col items-end gap-2">
                                 <span className="text-sm font-bold text-gray-900">Manage Job</span>
-                                <div className="flex gap-2">
+                                <div className="grid grid-cols-2 gap-2 ">
                                     <button onClick={()=> navigate(`/edit-job/${jobId}`)} className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-white bg-dark-orange rounded-lg hover:scale-105 font-medium text-sm transition">
                                         <Pencil className="w-3.5 h-3.5" /> Edit Job
                                     </button>
                                     <button onClick={() => deleteJob(jobId)} className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-white bg-light-blue hover:scale-105 rounded-lg font-medium text-sm transition">
                                         <Trash2 className="w-3.5 h-3.5" /> Delete Job
+                                    </button>
+                                    <button
+                                        onClick={() => navigate(`/job-preview/${jobId}`)} 
+                                        className="flex items-center gap-2 bg-gray-50 text-[#1B3C53] hover:bg-[#1B3C53] hover:text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all border border-gray-200 hover:border-[#1B3C53]"
+                                    >
+                                        <Eye size={16} /> Preview
+                                    </button>
+
+                                    <button
+                                        onClick={toggleStatus} 
+                                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border
+                                            ${
+                                            isOpen
+                                                ? "bg-red-50 text-red-600 border-red-100 hover:bg-red-600 hover:text-white hover:border-red-600"
+                                                : "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-600 hover:text-white hover:border-emerald-600"
+                                            }`}
+                                    >
+                                        {isOpen ? <XCircle size={16} /> : <CheckCircle size={16} />}
+                                        {isOpen ? "Close Job" : "Reopen"}
                                     </button>
                                 </div>
                             </div>

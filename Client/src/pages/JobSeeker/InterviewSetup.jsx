@@ -25,7 +25,7 @@ const InterviewSetup = () => {
   const displayTitle = isMock ? "Mock Interview" : `Interview for: ${decodeURIComponent(jobName ?? '')}`;
 
   const [formData, setFormData] = useState({
-    job_title: "",
+    job_title: jobName ?? '',
     required_skills: [],
     experience_level: "Mid-level",
     num_questions: 5, 
