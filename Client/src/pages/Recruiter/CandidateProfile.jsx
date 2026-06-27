@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import api from '../../api/axios';
 
+import { useSendBulkInterviewEmails } from "../../hooks/useSendInterviewEmail"
 /* ─── Circular Progress ─────────────────────────────────────── */
 const CircularScore = ({ score, color, size = 120 }) => {
   const [animated, setAnimated] = useState(0);
@@ -84,6 +85,13 @@ const CandidateProfile = () => {
   const [saving, setSaving]     = useState(false);
   const [interviewSession, setInterviewSession] = useState(null);
 
+
+  const {
+    sendBulkEmails,
+    loading: loadingEmail,
+    error: emailError,
+  } = useSendBulkInterviewEmails();
+  
   // ── Fetch application + candidate + job ──────────────────────
   // useEffect(() => {
   //   if (!applicationId) return;
@@ -226,6 +234,29 @@ const CandidateProfile = () => {
   const missingSkills = app.missing_skills  ?? [];
   const cvUrl         = app.cv_feedback_url ?? null;
 
+
+  const handleSendEmail = async () => {
+    const success = await sendBulkEmails(
+      [
+        {
+          name: candidateName,
+          email: candidateEmail,
+          jobTitle: job?.job_title || "Position",
+        },
+      ],
+      // {
+      //   interview_date: "2026-07-01",
+      //   interview_time: "10:00 AM",
+      //   interview_link: "https://hirevision.com/interview",
+      // }
+    );
+  
+    if (success) {
+      alert("Email sent successfully");
+    } else {
+      alert("Failed to send email");
+    }
+  };
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-24">
       <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-10 py-8 space-y-5">
@@ -438,11 +469,22 @@ const CandidateProfile = () => {
                   <Download size={16} /> No CV Report
                 </div>
               )}
-              <a
+              {/* <a
                 href={`mailto:${candidateEmail}`}
                 className="flex-1 flex items-center justify-center gap-2 bg-[#FF914D] hover:bg-[#e07d3c] text-white font-black py-3.5 rounded-2xl text-sm transition-all shadow-md hover:shadow-lg">
                 <Send size={16} /> Send Email
-              </a>
+              </a> */}
+
+            <button
+              onClick={handleSendEmail}
+              disabled={loadingEmail}
+              className="flex-1 flex items-center justify-center gap-2 bg-[#FF914D] hover:bg-[#e07d3c] text-white font-black py-3.5 rounded-2xl text-sm transition-all shadow-md hover:shadow-lg"
+            >
+              <Send size={16} />
+              {loadingEmail ? "Sending..." : "Send Email"}
+            </button>
+
+
             </div>
             {/* <div className="flex gap-3">
               {appStatus === 'accepted_for_interview' || appStatus === 'pending' ? (
