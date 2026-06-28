@@ -140,9 +140,20 @@ function ScoreRing({ score, size = 80 }) {
 //   };
 // };
 
+// Renders a skill_assessment value safely regardless of its shape.
+// Backend may emit either a flat primitive (number/string) or a nested
+// object (e.g. { understanding: 3, overall: "..." }). Rendering an object
+// directly crashes React, so normalize it to a readable string here.
 const parseSkill = (value) => {
-  if (!value) return "No data available";
-  return value;
+  if (value === null || value === undefined || value === "")
+    return "No data available";
+  if (typeof value === "object") {
+    const parts = Object.entries(value).map(
+      ([k, v]) => `${k.replace(/_/g, " ")}: ${v}`,
+    );
+    return parts.length ? parts.join(" · ") : "No data available";
+  }
+  return String(value);
 };
 
 function Tag({ label, color }) {
