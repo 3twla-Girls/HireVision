@@ -176,14 +176,14 @@ export default function Navbar() {
               style={{ height: "40px", width: "auto" }}
             />
             <span
+              className="text-light-blue"
               style={{
                 fontSize: "22px",
                 fontWeight: 800,
                 letterSpacing: "-0.03em",
-                color: "#0F2C59",
               }}
             >
-              Hire<span style={{ color: "#FF6B35" }}>Vision</span>
+              Hire<span className="text-dark-orange">Vision</span>
             </span>
           </div>
 
