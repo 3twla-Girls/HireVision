@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -9,6 +10,7 @@ import {
 import { useCheatingDetection } from '../../components/JobSeeker/useCheatingDetection';
 import { useAuth } from '../../context/AuthContext';
 import useTabCheatingDetection from "../../hooks/useCheatingDetection";
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const QUESTION_TIME = 120;
 const GAP_TIME = 5;
@@ -243,28 +245,22 @@ export default function InterviewLive() {
   const { userData } = useAuth();
   const candidateId = userData?._id;
 
-  // Target ID depends on interview type:
-  // - mock: candidateId (used to fetch mock questions)
-  // - real: jobId passed via location.state (falls back to hardcoded for dev/testing)
-  // const targetID = isMock
-  //   ? '69aa315763b720c25373f035'                       // candidateId for mock
-  //   : (location.state?.jobId ?? '69b1e7b711c65e4fb7ec2f55'); // real job_id
   const targetID = isMock
-    ? candidateId                      // candidateId for mock
-    : (location.state?.jobId); // real job_id
+    ? candidateId
+    : (location.state?.jobId);
+
   useEffect(() => {
-    //if (!sessionId) return;
     const enterFullscreen = async () => {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
       }
     };
-
     enterFullscreen();
   }, []);
+
   const sId = location.state?.sessionId || localStorage.getItem('sessionId');
-  // console.log("Session ID:", sId);
   useTabCheatingDetection(sId);
+
   // ── Refs ──────────────────────────────────────────────────────
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -274,8 +270,7 @@ export default function InterviewLive() {
   const mediaRecorderRef = useRef(null);
   const videoChunksRef = useRef([]);
   const questionsRef = useRef([]);
-  const stepRef = useRef(0);
-  const selectedOptionRef = useRef(null);
+  const isSubmittingRef = useRef(false);     // ← NEW: double-click guard
 
   // ── State ─────────────────────────────────────────────────────
   const [questions, setQuestions] = useState([]);
@@ -288,12 +283,7 @@ export default function InterviewLive() {
   const [gapTime, setGapTime] = useState(GAP_TIME);
   const [selectedOption, setSelectedOption] = useState(null);
 
-  // Keep stepRef in sync (used inside async callbacks)
-  useEffect(() => { stepRef.current = currentStep; }, [currentStep]);
-
   // ── Cheating detection ────────────────────────────────────────
-
-  // ── Fetch questions ───────────────────────────────────────────
   const passedQuestions = location.state?.questions;
   const sessionIDFromState = location.state?.sessionId;
   const {
@@ -309,6 +299,7 @@ export default function InterviewLive() {
 
   const showNudges = !isCalibrating;
 
+  // ── Fetch questions ───────────────────────────────────────────
   useEffect(() => {
     const fetchQuestions = async () => {
       setQuestions([]);
@@ -366,95 +357,144 @@ export default function InterviewLive() {
     tick();
   }, [stopAudioAnalyser]);
 
-  // ── Recording ─────────────────────────────────────────────────
+  // ── Recording — fully decoupled from question state ───────────
   const startRecording = useCallback((stream) => {
     videoChunksRef.current = [];
-    // const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
     const recorder = new MediaRecorder(stream, {
       mimeType: 'video/webm;codecs=vp8,opus'
     });
 
     recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) videoChunksRef.current.push(e.data);
-    };
-
-    recorder.onstop = async () => {
-      if (videoChunksRef.current.length === 0) return;
-
-      const videoBlob = new Blob(videoChunksRef.current, { type: 'video/webm' });
-      const sId = location.state?.sessionId || localStorage.getItem('sessionId');
-      const activeStep = stepRef.current;
-      const currentQuestion = questionsRef.current[activeStep];
-      const qId = currentQuestion?.question_id || currentQuestion?._id || currentQuestion?.id;
-
-      if (!qId || !sId) return;
-
-      const sendRequest = async (endpoint, isPhoneLog = false) => {
-        const formData = new FormData();
-        formData.append('file', videoBlob, `video_${qId}.webm`);
-
-        const requestParams = {
-          session_id: sId,
-          question_id: qId
-        };
-
-        if (currentQuestion.type === 'mcq') {
-          const currentSelection = selectedOptionRef.current;
-          if (currentSelection) {
-            requestParams.selected_option = currentSelection;
-          }
-        }
-
-        return api.post(endpoint, formData, {
-          params: requestParams,
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-      };
-
-      try {
-        const formData = new FormData();
-        formData.append('file', videoBlob, `video_${qId}.webm`);
-
-        const requestParams = {
-          session_id: sId,
-          question_id: qId
-        };
-
-        if (currentQuestion.type === 'mcq') {
-          const currentSelection = selectedOptionRef.current;
-          if (currentSelection) {
-            requestParams.selected_option = currentSelection;
-          }
-        }
-
-        const [resAnswer, resPhone, resPersonality] = await Promise.allSettled([
-          api.post('/interview/submit-answer', formData, { params: requestParams }),
-          api.post('/interview/analyze-phone-usage', formData, { params: requestParams }),
-          api.post(`personality/predict/${sId}`, formData)
-        ]);
-
-        if (resAnswer.status === 'fulfilled')
-          console.log('✅ Answer & Video Uploaded');
-        else
-          console.error('❌ Answer Upload Failed:', resAnswer.reason?.response?.data);
-
-        if (resPhone.status === 'fulfilled')
-          console.log('✅ Phone Detection Done');
-        else
-          console.error('❌ Phone Detection Failed:', resPhone.reason?.response?.data);
-
-        if (resPersonality.status === 'fulfilled') {
-          console.log('✅ Personality traits captured');
-        } else {
-          console.error('❌ Personality Predict Failed:', resPersonality.reason?.response?.data);
-        }
-      } catch (err) {
-        console.error('❌ Critical Error during submission:', err);
+      if (e.data.size > 0) {
+        videoChunksRef.current.push(e.data);
+        console.log(`🎥 Chunk captured: ${e.data.size} bytes (total chunks: ${videoChunksRef.current.length})`);
       }
     };
-    recorder.start();
+
+    recorder.onerror = (e) => {
+      console.error('❌ MediaRecorder error:', e.error);
+    };
+
+    // NOTE: onstop is intentionally left as a no-op here.
+    // The actual upload is handled by stopRecordingAndGetBlob(),
+    // which collects the blob via a Promise.
+    recorder.onstop = () => {};
+
+    // Use timeslice (1s) so ondataavailable fires continuously,
+    // not just once at stop(). This ensures data is captured even if
+    // stop() has issues, and gives us incremental chunks.
+    recorder.start(1000);
+    console.log(`🎬 MediaRecorder started (state: ${recorder.state})`);
     mediaRecorderRef.current = recorder;
-  }, [location, questions, currentStep, selectedOption, selectedOptionRef]);
+  }, []);
+
+  // ── Stop recording and return the video blob via Promise ──────
+  const stopRecordingAndGetBlob = useCallback(() => {
+    return new Promise((resolve) => {
+      const recorder = mediaRecorderRef.current;
+
+      if (!recorder || recorder.state === 'inactive') {
+        console.warn('⚠️ stopRecordingAndGetBlob: recorder inactive or missing');
+        // Even if recorder is inactive, we might have chunks from ondataavailable
+        const chunks = videoChunksRef.current;
+        if (chunks.length > 0) {
+          console.log(`📦 Using ${chunks.length} pre-existing chunks despite inactive recorder`);
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          videoChunksRef.current = [];
+          resolve(blob);
+        } else {
+          resolve(null);
+        }
+        return;
+      }
+
+      console.log(`⏹️ Stopping recorder (state: ${recorder.state}, chunks so far: ${videoChunksRef.current.length})`);
+
+      // Flush any pending data before stopping
+      try {
+        if (recorder.state === 'recording') {
+          recorder.requestData();
+        }
+      } catch (e) {
+        console.warn('⚠️ requestData() failed (non-critical):', e.message);
+      }
+
+      recorder.onstop = () => {
+        const chunks = videoChunksRef.current;
+        console.log(`⏹️ Recorder stopped — collected ${chunks.length} chunks`);
+        if (chunks.length === 0) {
+          console.error('❌ No video chunks captured!');
+          resolve(null);
+          return;
+        }
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        console.log(`✅ Video blob created: ${(blob.size / 1024).toFixed(1)} KB`);
+        videoChunksRef.current = [];
+        resolve(blob);
+      };
+
+      recorder.stop();
+    });
+  }, []);
+
+  // ── Upload answer with snapshotted data (no refs/state reads) ─
+  const uploadAnswer = useCallback(async (snapshot) => {
+    const { videoBlob, sessionId, questionId, questionType, selectedMcqOption } = snapshot;
+
+    if (!questionId || !sessionId) {
+      console.error('❌ Missing questionId or sessionId — skipping upload');
+      return;
+    }
+
+    const formData = new FormData();
+    if (videoBlob) {
+      formData.append('file', videoBlob, `video_${questionId}.webm`);
+    }
+
+    const requestParams = {
+      session_id: sessionId,
+      question_id: questionId,
+    };
+
+    // MCQ: attach the selected option from the snapshot
+    if (questionType === 'mcq' && selectedMcqOption) {
+      requestParams.selected_option = selectedMcqOption;
+    }
+
+    try {
+      // IMPORTANT: Do NOT set Content-Type header manually for FormData!
+      // The browser must set it automatically so it includes the multipart
+      // boundary parameter. Setting it manually causes:
+      //   "Did not find CR at end of boundary" → 400 Bad Request
+      const [resAnswer, resPhone, resPersonality] = await Promise.allSettled([
+        api.post('/interview/submit-answer', formData, {
+          params: requestParams,
+        }),
+        api.post('/interview/analyze-phone-usage', formData, {
+          params: { session_id: sessionId, question_id: questionId },
+        }),
+        api.post(`personality/predict/${sessionId}`, formData),
+      ]);
+
+      if (resAnswer.status === 'fulfilled')
+        console.log(`✅ Answer & Video Uploaded for Q:${questionId}`);
+      else
+        console.error('❌ Answer Upload Failed:', resAnswer.reason?.response?.data || resAnswer.reason);
+
+      if (resPhone.status === 'fulfilled')
+        console.log('✅ Phone Detection Done');
+      else
+        console.error('❌ Phone Detection Failed:', resPhone.reason?.response?.data || resPhone.reason);
+
+      if (resPersonality.status === 'fulfilled')
+        console.log('✅ Personality traits captured');
+      else
+        console.error('❌ Personality Predict Failed:', resPersonality.reason?.response?.data || resPersonality.reason);
+
+    } catch (err) {
+      console.error('❌ Critical Error during submission:', err);
+    }
+  }, []);
 
   // ── Camera ────────────────────────────────────────────────────
   const stopCamera = useCallback(() => {
@@ -534,69 +574,119 @@ export default function InterviewLive() {
     };
   }, [questions.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── handleNext ────────────────────────────────────────────────
+  // ── handleNext — the core fix ─────────────────────────────────
   const handleNext = useCallback(async () => {
-    // Validate MCQ
-    const currentQuestion = questions[currentStep];
-    if (currentQuestion?.type === 'mcq' && !selectedOptionRef.current && timeLeft > 0) {
-      toast.error('Please select an option before proceeding.');
+    // ▶ Guard: prevent double-clicks / double-invocations from timer
+    if (isSubmittingRef.current) {
+      console.log('⏳ handleNext blocked — already submitting');
       return;
     }
+    isSubmittingRef.current = true;
 
-    // We need to wait for the recording to stop and the upload to finish
-    let uploadPromise = Promise.resolve();
+    try {
+      const currentQuestion = questionsRef.current[currentStep];
+      const qId = currentQuestion?.question_id || currentQuestion?._id || currentQuestion?.id;
+      const sessionId = location.state?.sessionId || localStorage.getItem('sessionId');
 
-    if (mediaRecorderRef.current?.state !== 'inactive') {
-      uploadPromise = new Promise((resolve) => {
-        // Store the original onstop to call it, but intercept it to resolve our promise
-        const originalOnStop = mediaRecorderRef.current.onstop;
-        mediaRecorderRef.current.onstop = async (e) => {
-          if (originalOnStop) {
-            await originalOnStop(e);
-          }
-          resolve();
-        };
-        mediaRecorderRef.current.stop();
-      });
-    }
+      console.log(`\n━━━ handleNext Q${currentStep + 1}/${questions.length} ━━━`);
+      console.log(`  qId: ${qId}`);
+      console.log(`  type: ${currentQuestion?.type}`);
+      console.log(`  sessionId: ${sessionId}`);
+      console.log(`  selectedOption: ${selectedOption}`);
+      console.log(`  timeLeft: ${timeLeft}`);
+      console.log(`  recorder state: ${mediaRecorderRef.current?.state ?? 'NO RECORDER'}`);
+      console.log(`  chunks in buffer: ${videoChunksRef.current.length}`);
 
-    const isLastQuestion = currentStep === questions.length - 1;
+      // Validate MCQ (only if time hasn't run out — allow skipping on timeout)
+      if (currentQuestion?.type === 'mcq' && !selectedOption && timeLeft > 0) {
+        toast.error('Please select an option before proceeding.');
+        isSubmittingRef.current = false;
+        return;
+      }
 
-    if (!isLastQuestion) {
+      // ▶ STEP 1: Snapshot ALL answer data RIGHT NOW, before any async work
+      const answerSnapshot = {
+        videoBlob: null,             // will be filled after recorder stops
+        sessionId,
+        questionId: qId,
+        questionType: currentQuestion?.type || 'open',
+        selectedMcqOption: selectedOption,   // captured from state NOW
+      };
+
+      // ▶ STEP 2: Stop recorder and collect the video blob
       toast.loading('Saving answer...', { id: 'save-answer' });
-      await uploadPromise;
+
+      const videoBlob = await stopRecordingAndGetBlob();
+      answerSnapshot.videoBlob = videoBlob;
+
+      if (!videoBlob) {
+        console.error(`❌ Q${currentStep + 1}: No video blob captured! Upload will proceed without video.`);
+      } else {
+        console.log(`📦 Q${currentStep + 1}: Video blob ready (${(videoBlob.size / 1024).toFixed(1)} KB)`);
+      }
+
+      // ▶ STEP 3: Upload with the snapshotted data
+      await uploadAnswer(answerSnapshot);
       toast.dismiss('save-answer');
 
-      stopCamera();
-      stopMic();
+      console.log(`✅ Q${currentStep + 1} fully uploaded\n`);
 
-      setGapTime(GAP_TIME);
-      setShowGap(true);
-      return;
-    }
+      // ▶ STEP 4: Determine what happens next
+      const isLastQuestion = currentStep === questions.length - 1;
 
-    // Last question — wrap up interview. Wait for the final answer to upload first!
-    try {
-      toast.loading('Saving your final answer...', { id: 'summary' });
-      await uploadPromise;
+      if (!isLastQuestion) {
+        // Stop camera/mic for the gap
+        stopCamera();
+        stopMic();
 
+        // Reset MCQ selection AFTER upload is complete
+        setSelectedOption(null);
+
+        // Show gap screen, then transition
+        setGapTime(GAP_TIME);
+        setShowGap(true);
+        return;
+      }
+
+      // ▶ Last question — wrap up interview
       toast.loading('Generating your interview summary...', { id: 'summary' });
-      const sId = location.state?.sessionId || localStorage.getItem('sessionId');
-      await postSummary();
 
-      await api.post(`/personality/process/${sId}`);
+      // Run post-interview tasks independently so one failure doesn't block others.
+      // postSummary (eye-gaze) can run in parallel with personality.
+      // final-summary MUST run last because it reads the saved answers.
+      const [resSummary, resPersonality] = await Promise.allSettled([
+        postSummary(),
+        api.post(`/personality/process/${sessionId}`).catch(e => {
+          console.warn('⚠️ personality/process failed (non-critical):', e?.response?.data || e.message);
+        }),
+      ]);
 
-      await api.post(`/interview/final-summary/${sId}`);
+      if (resSummary.status === 'rejected') {
+        console.error('❌ postSummary (eye-gaze) failed:', resSummary.reason);
+      }
+
+      // final-summary must run after answers are saved (they are by now)
+      try {
+        await api.post(`/interview/final-summary/${sessionId}`);
+        console.log('✅ Final summary generated');
+      } catch (e) {
+        console.error('❌ final-summary failed:', e?.response?.data || e.message);
+      }
+
       toast.success('Interview completed! Redirecting...', { id: 'summary' });
       cleanup();
       navigate('/interviews');
     } catch (err) {
-      console.error('Summary generation failed:', err);
+      console.error('❌ handleNext failed:', err);
       toast.error('Error generating summary, but your answers are saved.', { id: 'summary' });
+      // Navigate away even on error to prevent infinite timer retries
+      cleanup();
       navigate('/interviews');
+    } finally {
+      // ALWAYS reset the guard, no matter what happened
+      isSubmittingRef.current = false;
     }
-  // }, [currentStep, questions.length, stopCamera, stopMic, cleanup, navigate, location.state?.sessionId, postSummary]);
-  }, [currentStep, questions, timeLeft, stopCamera, stopMic, cleanup, navigate, location.state, postSummary]);
+  }, [currentStep, questions.length, selectedOption, timeLeft, stopCamera, stopMic, cleanup, navigate, location.state, postSummary, stopRecordingAndGetBlob, uploadAnswer]);
 
   // ── Question timer ────────────────────────────────────────────
   useEffect(() => {
@@ -621,9 +711,9 @@ export default function InterviewLive() {
     return () => clearInterval(id);
   }, [showGap, gapTime, startCamera, startMic]);
 
+  // Reset MCQ selection when step changes (safety net — main reset is in handleNext)
   useEffect(() => {
     setSelectedOption(null);
-    selectedOptionRef.current = null;
   }, [currentStep]);
 
   // ── Derived values ────────────────────────────────────────────
@@ -682,7 +772,6 @@ export default function InterviewLive() {
                       key={idx}
                       onClick={() => {
                         setSelectedOption(optionLetter);
-                        selectedOptionRef.current = optionLetter;
                       }}
                       className={`w-fit text-left p-4 pr-6 rounded-xl border-2 transition-all ${selectedOption === optionLetter
                           ? 'border-dark-blue bg-dark-blue/5 shadow-md'
@@ -787,7 +876,7 @@ export default function InterviewLive() {
           {/* Next / Submit button */}
           <button
             onClick={handleNext}
-            disabled={!canProceed}
+            disabled={!canProceed || isSubmittingRef.current}
             className={`self-end px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 shadow-lg
               ${!canProceed
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-70'

@@ -68,23 +68,50 @@ class PersonalityPredictor:
         self.mean = torch.tensor([0.43216, 0.394666, 0.37645]).view(3, 1, 1, 1).to(self.device)
         self.std = torch.tensor([0.22803, 0.22145, 0.216989]).view(3, 1, 1, 1).to(self.device)
 
-    def process_video(self, video_path):
+    def _count_frames(self, video_path):
+        # CAP_PROP_FRAME_COUNT is unreliable for streamed WebM produced by the
+        # browser's MediaRecorder (it often returns 0 or a bogus value because
+        # the container has no duration/frame-count header). Count frames by
+        # walking the stream with grab(), which advances without decoding —
+        # cheap and memory-safe even for long clips.
         cap = cv2.VideoCapture(video_path)
-        v_len = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        # Select 16 evenly spaced frames
-        indices = np.linspace(0, v_len - 1, 16).astype(int)
-        
-        faces = []
-        for i in range(v_len):
+        count = 0
+        while cap.grab():
+            count += 1
+        cap.release()
+        return count
+
+    def process_video(self, video_path):
+        v_len = self._count_frames(video_path)
+        if v_len == 0:
+            raise ValueError(f"No readable frames in video: {video_path}")
+
+        # Select 16 evenly spaced frame indices. When the clip is shorter than
+        # 16 frames, indices repeat so we always end up with exactly 16 frames
+        # (required for the R3D tensor shape).
+        order = np.linspace(0, v_len - 1, 16).astype(int)
+        wanted = set(order.tolist())
+
+        # Second pass: decode only the frames we actually need.
+        cap = cv2.VideoCapture(video_path)
+        faces_by_index = {}
+        i = 0
+        while True:
             success, frame = cap.read()
-            if not success: break
-            if i in indices:
+            if not success:
+                break
+            if i in wanted:
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 face = self.mtcnn(frame_rgb)
-                if face is None: # Fallback if no face detected
+                if face is None:  # Fallback if no face detected
                     face = torch.zeros((3, 112, 112))
-                faces.append(face)
+                faces_by_index[i] = face
+            i += 1
         cap.release()
+
+        # Build exactly 16 frames following the sampled order (handles repeats).
+        zero = torch.zeros((3, 112, 112))
+        faces = [faces_by_index.get(int(idx), zero) for idx in order]
 
         # Stack to (C, T, H, W) -> (3, 16, 112, 112)
         video_tensor = torch.stack(faces).permute(1, 0, 2, 3).to(self.device)

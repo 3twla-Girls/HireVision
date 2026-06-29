@@ -440,8 +440,19 @@ const CandidateInterviewReport = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {Object.entries(techSummary.skill_assessment || {}).map(([skill, assessmentData]) => {
-                  const level = assessmentData?.understanding || assessmentData?.rating;
-                  const details = assessmentData?.evidence || assessmentData?.remarks;
+                  // Backend emits either a nested object ({ understanding, overall, ... })
+                  // or a flat primitive (a raw score/string). Normalize both shapes so
+                  // neither crashes nor renders an empty card.
+                  const isObject =
+                    assessmentData !== null && typeof assessmentData === "object";
+                  const level = isObject
+                    ? assessmentData.understanding ?? assessmentData.rating
+                    : assessmentData;
+                  const details = isObject
+                    ? assessmentData.evidence ??
+                      assessmentData.remarks ??
+                      assessmentData.overall
+                    : null;
 
                   return (
                     <div
@@ -458,7 +469,7 @@ const CandidateInterviewReport = () => {
                       </div>
 
                       <div className="flex flex-col gap-4 flex-1">
-                        {level && (
+                        {level !== undefined && level !== null && level !== "" && (
                           <div className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-xl border border-gray-200">
                             <span className="text-[10px] font-black text-[#456882] uppercase tracking-widest">Rating</span>
                             <span 
