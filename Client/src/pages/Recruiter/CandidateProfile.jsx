@@ -342,7 +342,7 @@ const CandidateProfile = () => {
                 {/* Technical Interview Score - only if there's an interview session */}
                 {interviewSession && (
                   <div className="flex flex-col items-center gap-2">
-                    <CircularScore score={interviewSession?.final_summary?.technical?.final_score} color="orange" />
+                    <CircularScore score={interviewSession?.final_summary?.technical?.final_score * 10} color="orange" />
                     <span className="text-xs font-bold text-[#456882]">Interview Score</span>
                   </div>
                 )}

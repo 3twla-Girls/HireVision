@@ -7,7 +7,6 @@ import {
   ClipboardCheck, Eye, Copy, Maximize, Layout, UserPlus, UserMinus
 } from "lucide-react";
 import api from "../../api/axios";
-import CircularScore from "../../components/shared/CircularScore";
 
 const C = {
   darkBlue: "#1B3C53",
@@ -25,7 +24,7 @@ const C = {
 // ─── Helper Components ────────────────────────────────────────────────────────
 
 const Tag = ({ label, color }) => (
-  <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border" 
+  <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border whitespace-nowrap" 
         style={{ backgroundColor: `${color}10`, color: color, borderColor: `${color}30` }}>
     {label}
   </span>
@@ -37,12 +36,12 @@ const StatCard = ({ icon: Icon, label, value, color, isActive, onClick }) => (
     className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center gap-4 ${isActive ? 'bg-white shadow-md border-b-4' : 'bg-gray-50/50 border-transparent opacity-70 hover:opacity-100'}`}
     style={{ borderBottomColor: isActive ? color : 'transparent' }}
   >
-    <div className={`p-2.5 rounded-xl`} style={{ backgroundColor: `${color}15`, color: color }}>
+    <div className={`p-2.5 rounded-xl shrink-0`} style={{ backgroundColor: `${color}15`, color: color }}>
       <Icon size={20} />
     </div>
     <div>
-      <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">{label}</p>
-      <p className="text-sm font-black text-[#1B3C53]">{value}</p>
+      <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider line-clamp-1">{label}</p>
+      <p className="text-sm font-black text-[#1B3C53] line-clamp-1">{value}</p>
     </div>
   </div>
 );
@@ -62,6 +61,13 @@ const BulletList = ({ items, icon, color }) => {
   );
 };
 
+// ─── Formatter ───────────────────────────────────────────────────────────────
+const formatDate = (dateObj) => {
+  if (!dateObj) return "Unknown Date";
+  const d = new Date(dateObj.$date || dateObj);
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+};
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 const CandidateInterviewReport = () => {
   const { sessionId } = useParams(); 
@@ -71,7 +77,7 @@ const CandidateInterviewReport = () => {
   const [questionsWithAnswers, setQuestionsWithAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("responses"); 
-  const [activeSubTab, setActiveSubTab] = useState("personality"); // personality | eye | phone | proctoring | face
+  const [activeSubTab, setActiveSubTab] = useState("personality"); 
   const [selectedQuestionIdx, setSelectedQuestionIdx] = useState(0);
 
   useEffect(() => {
@@ -117,7 +123,6 @@ const CandidateInterviewReport = () => {
   const proctoring = reportData.tab_proctoring || { counts: {} };
   const currentAnswer = reportData.answers[selectedQuestionIdx];
   const currentQuestionData = questionsWithAnswers[selectedQuestionIdx];
-  const overallScore = Number(techSummary.final_score) * 20;
 
   return (
     <div className="min-h-screen bg-[#F7F9FB] pb-20 font-sans text-[#1B3C53]">
@@ -131,9 +136,15 @@ const CandidateInterviewReport = () => {
             </button>
             <div>
               <h1 className="text-xl font-black leading-tight">Interview Report</h1>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-3 mt-1">
                 <Tag label={reportData.is_mock ? "Mock Session" : "Live Interview"} color={reportData.is_mock ? C.warning : C.success} />
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">ID: ...{sessionId.slice(-8)}</span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest border-l border-gray-200 pl-3">
+                  ID: ...{sessionId.slice(-8)}
+                </span>
+                {/* 1. Missing Data: Session Date */}
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest border-l border-gray-200 pl-3 hidden sm:inline">
+                  {formatDate(reportData.session_date)}
+                </span>
               </div>
             </div>
           </div>
@@ -143,7 +154,6 @@ const CandidateInterviewReport = () => {
               <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Tech Score</p>
               <p className="text-2xl font-black text-[#1B3C53]">{techSummary.final_score}<span className="text-xs text-gray-400">/10</span></p>
             </div>
-
           </div>
         </div>
       </div>
@@ -151,7 +161,7 @@ const CandidateInterviewReport = () => {
       <div className="max-w-7xl mx-auto px-6 mt-8">
         
         {/* ── Tabs Navigation ── */}
-        <div className="flex p-1 bg-gray-200/50 rounded-2xl w-fit mb-8 shadow-inner">
+        <div className="flex flex-wrap p-1 bg-gray-200/50 rounded-2xl w-fit mb-8 shadow-inner">
           {[
             { id: "responses", label: "Technical Detail", icon: MessageSquare },
             { id: "behavioral", label: "Behavior & Integrity", icon: ShieldAlert },
@@ -178,52 +188,141 @@ const CandidateInterviewReport = () => {
                     className={`p-4 rounded-2xl cursor-pointer transition-all border-2 ${selectedQuestionIdx === idx ? "bg-white border-[#1B3C53] shadow-lg" : "bg-white/50 border-transparent hover:border-gray-200"}`}>
                     <div className="flex justify-between items-center mb-1">
                       <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${selectedQuestionIdx === idx ? "bg-[#1B3C53] text-white" : "bg-gray-100 text-gray-400"}`}>Q{idx + 1}</span>
-                      <span className="text-[10px] font-black text-[#5BBFBA]">Score: {ans.evaluation?.score}/10</span>
+                      <span className="text-[10px] font-black text-[#5BBFBA]">
+                        {ans.type === "mcq" 
+                          ? (ans.evaluation?.is_correct ? "✅ Correct" : "❌ Incorrect")
+                          : `Score: ${ans.evaluation?.score || "0"}/10`
+                        }
+                      </span>
                     </div>
                     <p className="text-xs font-bold text-gray-600 line-clamp-1">{questionsWithAnswers[idx]?.question || "Question Text"}</p>
                   </div>
                 ))}
               </div>
             </div>
+            
             <div className="lg:col-span-8 space-y-6">
               <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
-                <Tag label={currentQuestionData?.type || "Short"} color={C.teal} />
-                <h2 className="text-lg font-black mt-3 mb-6 leading-relaxed">{currentQuestionData?.question}</h2>
-                <div className="p-6 bg-[#F7F9FB] rounded-2xl border-l-4 border-[#FF914D] mb-8">
-                  <p className="text-[10px] font-black text-[#FF914D] uppercase mb-2">Candidate Answer</p>
-                  <p className="text-sm font-medium italic text-[#456882]">"{currentAnswer?.speech_to_text?.transcription || "No response recorded."}"</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
-                  <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
-                    <h4 className="text-[10px] font-black text-emerald-700 uppercase mb-3 flex items-center gap-1"><CheckCircle2 size={14} /> Strengths</h4>
-                    <BulletList items={currentAnswer?.evaluation?.strengths} icon="•" color={C.success} />
+                <Tag label={currentAnswer?.type || "Short"} color={C.teal} />
+                <h2 className="text-lg font-black mt-3 mb-6 leading-relaxed">{currentQuestionData?.question || "Question Text Missing"}</h2>
+                
+                {currentAnswer?.type === "mcq" ? (
+                  // --- MCQ UI Block ---
+                  <div className="space-y-6 mt-4 border-t border-gray-100 pt-6">
+                    
+                    {/* Displaying Options Above result */}
+                    {currentQuestionData?.options && currentQuestionData.options.length > 0 && (
+                      <div className="mb-6 space-y-3">
+                        <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest px-1">Candidate Options</p>
+                        <div className="grid grid-cols-1 gap-2">
+                          {currentQuestionData.options.map((opt, i) => {
+                            const char = String.fromCharCode(65 + i);
+                            const isSelected = char === (currentAnswer.selected_option || currentAnswer.evaluation?.selected_answer);
+                            const isCorrect = char === currentAnswer.evaluation?.correct_answer;
+                            
+                            // Determine visual style based on selection and correctness
+                            let optionStyle = "border-gray-200 bg-gray-50/50 text-gray-600";
+                            let icon = null;
+                            if (isSelected && isCorrect) {
+                              optionStyle = "border-emerald-500 bg-emerald-50 text-emerald-800 font-bold ring-1 ring-emerald-500";
+                              icon = <CheckCircle2 size={16} className="text-emerald-500" />;
+                            } else if (isSelected && !isCorrect) {
+                              optionStyle = "border-red-400 bg-red-50 text-red-800 font-bold ring-1 ring-red-400";
+                              icon = <XCircle size={16} className="text-red-500" />;
+                            } else if (!isSelected && isCorrect) {
+                              optionStyle = "border-emerald-500 bg-white text-emerald-700 font-bold border-dashed";
+                              icon = <CheckCircle2 size={16} className="text-emerald-500 opacity-50" />;
+                            }
+
+                            return (
+                              <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border ${optionStyle}`}>
+                                <span className="w-6 h-6 shrink-0 rounded-md bg-white border border-inherit flex items-center justify-center text-xs font-black shadow-sm">
+                                  {char}
+                                </span>
+                                <span className="flex-1 text-sm">{opt}</span>
+                                {icon}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Result Block */}
+                    <div className={`p-6 rounded-2xl border-l-4 ${currentAnswer.evaluation?.is_correct ? 'border-emerald-500 bg-emerald-50/50' : 'border-red-500 bg-red-50/50'}`}>
+                      <div className="flex justify-between items-center mb-6">
+                        <p className="text-xs font-black uppercase tracking-widest text-gray-500">Evaluation</p>
+                        <Tag 
+                          label={currentAnswer.evaluation?.is_correct ? "Correct Answer" : "Incorrect Answer"} 
+                          color={currentAnswer.evaluation?.is_correct ? C.success : C.error} 
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-white rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                          <span className="text-[10px] uppercase font-black text-gray-400">Selected</span>
+                          <span className={`text-lg font-black ${currentAnswer.evaluation?.is_correct ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {currentAnswer.selected_option || currentAnswer.evaluation?.selected_answer || "N/A"}
+                          </span>
+                        </div>
+                        <div className="p-4 bg-white rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                          <span className="text-[10px] uppercase font-black text-gray-400">Correct Option</span>
+                          <span className="text-lg font-black text-emerald-600">
+                            {currentAnswer.evaluation?.correct_answer || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-red-50/50 p-5 rounded-2xl border border-red-100">
-                    <h4 className="text-[10px] font-black text-red-700 uppercase mb-3 flex items-center gap-1"><XCircle size={14} /> Weaknesses</h4>
-                    <BulletList items={currentAnswer?.evaluation?.weaknesses} icon="•" color={C.error} />
-                  </div>
-                </div>
-                <div className="mt-6 p-5 bg-purple-50/50 rounded-2xl border border-purple-100">
-                   <h4 className="text-[10px] font-black text-purple-700 uppercase mb-2">Technical Feedback</h4>
-                   <p className="text-xs font-medium leading-relaxed text-purple-900/80">
-                     {currentAnswer?.evaluation?.overall_feedback}
-                   </p>
-                </div>
+                ) : (
+                  // --- Conceptual / Short UI Block ---
+                  <>
+                    <div className="p-6 bg-[#F7F9FB] rounded-2xl border-l-4 border-[#FF914D] mb-8">
+                      <p className="text-[10px] font-black text-[#FF914D] uppercase mb-2">Candidate Audio Transcription</p>
+                      <p className="text-sm font-medium italic text-[#456882]">"{currentAnswer?.speech_to_text?.transcription || "No response recorded."}"</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
+                      <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
+                        <h4 className="text-[10px] font-black text-emerald-700 uppercase mb-3 flex items-center gap-1"><CheckCircle2 size={14} /> Strengths</h4>
+                        <BulletList items={currentAnswer?.evaluation?.strengths} icon="+" color={C.success} />
+                      </div>
+                      <div className="bg-red-50/50 p-5 rounded-2xl border border-red-100">
+                        <h4 className="text-[10px] font-black text-red-700 uppercase mb-3 flex items-center gap-1"><XCircle size={14} /> Weaknesses</h4>
+                        <BulletList items={currentAnswer?.evaluation?.weaknesses} icon="-" color={C.error} />
+                      </div>
+                    </div>
+
+                    {/* 2. Missing Data: Missing Points from evaluation */}
+                    {currentAnswer?.evaluation?.missing_points?.length > 0 && (
+                      <div className="bg-amber-50/50 p-5 rounded-2xl border border-amber-100 mt-6">
+                        <h4 className="text-[10px] font-black text-amber-700 uppercase mb-3 flex items-center gap-1"><AlertTriangle size={14} /> Missed Key Points</h4>
+                        <BulletList items={currentAnswer.evaluation.missing_points} icon="•" color={C.warning} />
+                      </div>
+                    )}
+
+                    <div className="mt-6 p-5 bg-purple-50/50 rounded-2xl border border-purple-100">
+                        <h4 className="text-[10px] font-black text-purple-700 uppercase mb-2">Overall Technical Feedback</h4>
+                        <p className="text-xs font-medium leading-relaxed text-purple-900/80">
+                          {currentAnswer?.evaluation?.overall_feedback || "No feedback provided."}
+                        </p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* ── Tab 2: Behavior & Integrity (The Detailed One) ── */}
+        {/* ── Tab 2: Behavior & Integrity ── */}
         {activeTab === "behavioral" && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
             
             {/* Clickable Sub-Tabs Cards */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              <StatCard icon={Brain} label="Personality" value="Full Analysis" color={C.cta} isActive={activeSubTab === 'personality'} onClick={() => setActiveSubTab('personality')} />
+              <StatCard icon={Brain} label="Personality" value="Analysis" color={C.cta} isActive={activeSubTab === 'personality'} onClick={() => setActiveSubTab('personality')} />
               <StatCard icon={Eye} label="Eye Gaze" value={integrity.eye_gaze?.status} color={integrity.eye_gaze?.status === "Passed" ? C.success : C.warning} isActive={activeSubTab === 'eye'} onClick={() => setActiveSubTab('eye')} />
               <StatCard icon={Smartphone} label="Phone" value={Object.values(reportData.phone_detection || {}).some(d => d.is_cheating) ? "Suspicious" : "Clean"} color={Object.values(reportData.phone_detection || {}).some(d => d.is_cheating) ? C.error : C.success} isActive={activeSubTab === 'phone'} onClick={() => setActiveSubTab('phone')} />
-              <StatCard icon={Layout} label="Tab Proctoring" value={`${proctoring.counts?.TAB_SWITCH || 0} Switches`} color={proctoring.counts?.TAB_SWITCH > 0 ? C.error : C.success} isActive={activeSubTab === 'proctoring'} onClick={() => setActiveSubTab('proctoring')} />
+              <StatCard icon={Layout} label="Tab Proctor" value={`${proctoring.counts?.TAB_SWITCH || 0} Switches`} color={proctoring.counts?.TAB_SWITCH > 0 ? C.error : C.success} isActive={activeSubTab === 'proctoring'} onClick={() => setActiveSubTab('proctoring')} />
               <StatCard icon={UserCheck} label="Face Auth" value={integrity.face_auth?.status} color={integrity.face_auth?.status === "Passed" ? C.success : C.error} isActive={activeSubTab === 'face'} onClick={() => setActiveSubTab('face')} />
             </div>
 
@@ -233,47 +332,56 @@ const CandidateInterviewReport = () => {
               {/* 1. Personality Traits */}
               {activeSubTab === 'personality' && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Personality Profile */}
-              <div className="lg:col-span-7 bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3 mb-8">
-                   <Brain className="text-[#FF914D]" size={28} />
-                   <h3 className="text-lg font-black">AI Personality Profile (Big Five)</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                  {Object.entries(reportData.personality?.overall?.traits || {}).map(([key, trait]) => (
-                    <div key={key} className="space-y-3">
-                      <div className="flex justify-between items-end">
-                        <span className="text-xs font-black text-[#1B3C53] uppercase">{key}</span>
-                        <span className="text-[10px] font-black px-2 py-0.5 bg-gray-100 rounded-md text-gray-500">{Math.round(trait.score * 100)}%</span>
+                  <div className="lg:col-span-7 bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-8 border-b border-gray-100 pb-6">
+                      <div className="flex items-center gap-3">
+                         <Brain className="text-[#FF914D]" size={28} />
+                         <h3 className="text-lg font-black">AI Personality Profile</h3>
                       </div>
-                      <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-[#1B3C53] to-[#FF914D]" style={{ width: `${trait.score * 100}%` }}></div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[10px] font-black text-[#FF914D] uppercase">{trait.label}</span>
-                        <p className="text-[11px] text-gray-400 font-medium leading-relaxed">{trait.hr_report}</p>
-                      </div>
+                      {/* 3. Missing Data: Dominant Traits */}
+                      {reportData.personality?.overall?.summary?.dominant_traits && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Dominant:</span>
+                          {reportData.personality.overall.summary.dominant_traits.map(t => (
+                            <Tag key={t} label={t} color="#9333ea" />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Integrity Incident Log */}
-              <div className="lg:col-span-5 space-y-6">
-                 <div className="bg-[#1B3C53] p-8 rounded-[2.5rem] text-white shadow-xl">
-                    <h3 className="text-sm font-black mb-6 uppercase tracking-widest text-[#FF914D] flex items-center gap-2">
-                       <Lightbulb size={16} /> Candidate Personality Insights
-                    </h3>
-                    <ul className="space-y-4">
-                      {reportData.personality?.overall?.hr_view?.summary?.map((s, i) => (
-                        <li key={i} className="text-xs flex items-start gap-3 font-medium opacity-90 leading-relaxed border-b border-white/10 pb-3 last:border-0">
-                          <div className="w-2 h-2 rounded-full bg-[#FF914D] mt-1 shrink-0 shadow-[0_0_8px_#FF914D]" /> {s}
-                        </li>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+                      {Object.entries(reportData.personality?.overall?.traits || {}).map(([key, trait]) => (
+                        <div key={key} className="space-y-3">
+                          <div className="flex justify-between items-end">
+                            <span className="text-xs font-black text-[#1B3C53] uppercase">{key}</span>
+                            <span className="text-[10px] font-black px-2 py-0.5 bg-gray-100 rounded-md text-gray-500">{Math.round(trait.score * 100)}%</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-[#1B3C53] to-[#FF914D]" style={{ width: `${trait.score * 100}%` }}></div>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-black text-[#FF914D] uppercase">{trait.label}</span>
+                            <p className="text-[11px] text-gray-500 font-medium leading-relaxed">{trait.hr_report}</p>
+                          </div>
+                        </div>
                       ))}
-                    </ul>
-                 </div>
-              </div>
-            </div>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-5 space-y-6">
+                     <div className="bg-[#1B3C53] p-8 rounded-[2.5rem] text-white shadow-xl h-full">
+                        <h3 className="text-sm font-black mb-6 uppercase tracking-widest text-[#FF914D] flex items-center gap-2">
+                           <Lightbulb size={16} /> HR Actionable Insights
+                        </h3>
+                        <ul className="space-y-4">
+                          {reportData.personality?.overall?.hr_view?.summary?.map((s, i) => (
+                            <li key={i} className="text-xs flex items-start gap-3 font-medium opacity-90 leading-relaxed border-b border-white/10 pb-3 last:border-0">
+                              <div className="w-2 h-2 rounded-full bg-[#FF914D] mt-1 shrink-0 shadow-[0_0_8px_#FF914D]" /> {s}
+                            </li>
+                          ))}
+                        </ul>
+                     </div>
+                  </div>
+                </div>
               )}
 
               {/* 2. Eye Gaze Details */}
@@ -291,7 +399,7 @@ const CandidateInterviewReport = () => {
                     <div className="p-6 rounded-3xl bg-amber-50/50 border border-amber-100">
                       <p className="text-xs font-black text-amber-600 uppercase mb-4 tracking-widest">Gaze Alerts</p>
                       <div className="space-y-2">
-                        <div className="flex justify-between font-bold text-sm"><span>Total Duration:</span><span className="text-amber-700">{integrity.eye_gaze?.total_duration} Seconds</span></div>
+                        <div className="flex justify-between font-bold text-sm"><span>Total Alert Duration:</span><span className="text-amber-700">{integrity.eye_gaze?.total_duration} Seconds</span></div>
                         <div className="flex justify-between font-bold text-sm"><span>Total Warnings Issued:</span><span className="text-amber-700">{integrity.eye_gaze?.total_warnings} Warnings</span></div>
                       </div>
                     </div>
@@ -306,24 +414,39 @@ const CandidateInterviewReport = () => {
                   <div className="overflow-hidden rounded-2xl border border-gray-100">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-gray-50 text-[10px] font-black uppercase text-gray-400 tracking-wider">
-                          <th className="px-6 py-4">Question Index</th>
-                          <th className="px-6 py-4">Detection Status</th>
+                        <tr className="bg-gray-50 text-[10px] font-black uppercase text-gray-400 tracking-wider border-b border-gray-100">
+                          <th className="px-6 py-4">Question</th>
+                          <th className="px-6 py-4">Status</th>
                           <th className="px-6 py-4">Severity</th>
-                          <th className="px-6 py-4">Total Duration (s)</th>
+                          {/* 4. Missing Data: Detailed Phone cheating events */}
+                          <th className="px-6 py-4">Detected Timestamps</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {reportData.answers.map((ans, idx) => {
                           const phone = reportData.phone_detection[ans.question_id?.$oid || ans.question_id];
                           return (
-                            <tr key={idx} className={phone?.is_cheating ? "bg-red-50/30" : ""}>
-                              <td className="px-6 py-4 text-xs font-bold">Question 0{idx+1}</td>
+                            <tr key={idx} className={phone?.is_cheating ? "bg-red-50/30" : "hover:bg-gray-50/50"}>
+                              <td className="px-6 py-4 text-xs font-bold">Q 0{idx+1}</td>
                               <td className="px-6 py-4">
-                                {phone?.is_cheating ? <Tag label="Device Detected" color={C.error} /> : <Tag label="No Device" color={C.success} />}
+                                {phone?.is_cheating ? <Tag label="Device Detected" color={C.error} /> : <Tag label="Clean" color={C.success} />}
                               </td>
-                              <td className={`px-6 py-4 text-xs font-black uppercase ${phone?.is_cheating ? "text-red-600" : "text-emerald-600"}`}>{phone?.severity || "Clean"}</td>
-                              <td className="px-6 py-4 text-xs font-medium">{phone?.summary?.total_cheating_sec?.toFixed(1) || 0}s</td>
+                              <td className={`px-6 py-4 text-xs font-black uppercase ${phone?.is_cheating ? "text-red-600" : "text-emerald-600"}`}>
+                                {phone?.severity || "Normal"}
+                              </td>
+                              <td className="px-6 py-4">
+                                {phone?.is_cheating && phone.cheating_events?.length > 0 ? (
+                                  <div className="space-y-1">
+                                    {phone.cheating_events.map((ev, i) => (
+                                      <p key={i} className="text-[10px] font-bold text-red-600 bg-red-100/50 px-2 py-1 rounded w-fit">
+                                        {ev.start_time_sec}s - {ev.end_time_sec}s <span className="opacity-70 font-medium">({ev.duration_sec.toFixed(1)}s)</span>
+                                      </p>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-gray-400 font-medium">-</span>
+                                )}
+                              </td>
                             </tr>
                           );
                         })}
@@ -353,13 +476,15 @@ const CandidateInterviewReport = () => {
                   </div>
                   {proctoring.events?.length > 0 ? (
                     <div className="space-y-3">
-                       <p className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Incident Timeline</p>
-                       {proctoring.events.map((ev, idx) => (
-                         <div key={idx} className="p-4 rounded-xl bg-red-50 border border-red-100 flex justify-between items-center">
-                           <span className="text-xs font-bold text-red-700">{ev.type.replace(/_/g, ' ')}</span>
-                           <span className="text-[10px] font-black text-red-400">{new Date(ev.timestamp).toLocaleTimeString()}</span>
-                         </div>
-                       ))}
+                       <p className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Violation Timeline</p>
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                         {proctoring.events.map((ev, idx) => (
+                           <div key={idx} className="p-4 rounded-xl bg-red-50 border border-red-100 flex justify-between items-center">
+                             <span className="text-[10px] font-bold text-red-700 uppercase tracking-wider">{ev.type.replace(/_/g, ' ')}</span>
+                             <span className="text-[10px] font-black text-red-400">{new Date(ev.timestamp.$date || ev.timestamp).toLocaleTimeString()}</span>
+                           </div>
+                         ))}
+                       </div>
                     </div>
                   ) : (
                     <div className="p-10 text-center bg-emerald-50 rounded-3xl border-2 border-dashed border-emerald-100">
@@ -374,6 +499,15 @@ const CandidateInterviewReport = () => {
               {activeSubTab === 'face' && (
                 <div className="animate-in fade-in duration-300">
                   <div className="flex items-center gap-3 mb-8"><UserCheck className="text-emerald-600" size={28} /><h3 className="text-lg font-black">Identity Verification (Face Auth)</h3></div>
+                  
+                  <div className="p-6 mb-8 rounded-[2rem] bg-[#1B3C53] text-white flex flex-wrap gap-4 justify-between items-center shadow-lg">
+                     <div>
+                       <p className="text-xs font-black text-blue-200 uppercase tracking-widest mb-1">Final Auth Decision</p>
+                       <p className="text-2xl font-black text-[#FF914D]">{integrity.face_auth?.status}</p>
+                     </div>
+                     <Tag label={`${integrity.face_auth?.incidents_count || 0} Total Incidents`} color="#FF914D" />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                      <div className="p-6 rounded-3xl bg-gray-50 border border-gray-100 text-center">
                         <UserMinus size={24} className="mx-auto mb-3 text-red-400" />
@@ -391,13 +525,24 @@ const CandidateInterviewReport = () => {
                         <p className="text-xl font-black">{integrity.face_auth?.counts?.multiple_faces || 0}</p>
                      </div>
                   </div>
-                  <div className="p-6 rounded-[2rem] bg-[#1B3C53] text-white flex justify-between items-center">
-                     <div>
-                       <p className="text-xs font-black text-blue-200 uppercase tracking-widest mb-1">Final Auth Decision</p>
-                       <p className="text-xl font-black text-[#FF914D]">{integrity.face_auth?.status}</p>
+
+                  {/* 5. Missing Data: Detailed Face Auth Incidents Timeline */}
+                  {integrity.face_auth?.incidents?.length > 0 && (
+                     <div className="space-y-3">
+                        <p className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Incident Timeline</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {integrity.face_auth.incidents.map((inc, i) => (
+                            <div key={i} className="p-3 rounded-xl bg-white border border-red-100 shadow-sm flex flex-col gap-1">
+                              <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider">{inc.alert_type.replace(/_/g, ' ')}</span>
+                              <div className="flex justify-between items-end">
+                                <span className="text-[10px] text-gray-400 font-medium">{new Date(inc.timestamp).toLocaleTimeString()}</span>
+                                <span className="text-[9px] text-gray-300">Frame {inc.frame_index}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                      </div>
-                     <Tag label={`${integrity.face_auth?.incidents_count || 0} Total Incidents`} color="#FF914D" />
-                  </div>
+                  )}
                 </div>
               )}
             </div>
@@ -440,9 +585,6 @@ const CandidateInterviewReport = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {Object.entries(techSummary.skill_assessment || {}).map(([skill, assessmentData]) => {
-                  // Backend emits either a nested object ({ understanding, overall, ... })
-                  // or a flat primitive (a raw score/string). Normalize both shapes so
-                  // neither crashes nor renders an empty card.
                   const isObject =
                     assessmentData !== null && typeof assessmentData === "object";
                   const level = isObject
