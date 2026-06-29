@@ -704,12 +704,12 @@ export default function InterviewLive() {
       setCurrentStep((p) => p + 1);
       setTimeLeft(QUESTION_TIME);
       startCamera();
-      startMic();
+      // startMic();
       return;
     }
     const id = setInterval(() => setGapTime((p) => p - 1), 1000);
     return () => clearInterval(id);
-  }, [showGap, gapTime, startCamera, startMic]);
+  }, [showGap, gapTime, startCamera]);
 
   // Reset MCQ selection when step changes (safety net — main reset is in handleNext)
   useEffect(() => {
