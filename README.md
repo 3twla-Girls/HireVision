@@ -1,6 +1,6 @@
 
 <div align="center">
-  <img src="/Client/public/HireVision_full_logo.png" alt="HireVision Logo" width="250" />
+  <img src="/Client/public/HireVision_full_logo.png" alt="HireVision Logo" width="300" />
   
   <h3>Intelligent Recruitment Platform with CV Analysis and Video Interview Evaluation</h3>
   <br>
@@ -41,18 +41,12 @@ On the job seeker side, candidates upload a CV, get matched to relevant job post
 
 Results from the QnA and Video Analysis modules are merged per question into a unified technical feedback report, which feeds back into the recruiter's candidate ranking and final selection step — closing the loop between interview performance and hiring decisions.
 
+---
 ## System Architecture
 
-After registration and role selection:
+![HireVision System Architecture](./Client/public/system-architecture.png)
 
-- **Job Seeker Path:** CV upload → skill extraction → candidate clustering → job recommendation → job application.
-- **Recruiter Path:** job posting → job clustering → receiving applications → candidate ranking.
-
-Both paths share the same clustering and matching logic (Module 1). Once a job is posted or a mock interview is started, the system transitions into an **Interview Session**, running two modules concurrently per question:
-
-- The **QnA Module**, which generates questions, captures and transcribes answers, and evaluates them.
-- The **Video Interview Analysis Module**, which processes the submitted video for personality assessment and proctoring (face authentication, eye gaze/head pose, phone detection).
-
+---
 ## Core Modules
 
 ### 1. CV Ranking & Job Recommendation
@@ -94,6 +88,8 @@ Processes each interview's video submission for behavioral and integrity signals
 
 Outputs from all three checks are consolidated into an Interview Feedback Report for recruiters.
 
+---
+
 ## Results & Evaluation
 
 | Component | Metric | Result |
@@ -104,6 +100,7 @@ Outputs from all three checks are consolidated into an Interview Feedback Report
 | Interview Q&A Framework | Overall System Score | 8.50 / 10 |
 | Personality Prediction | 1 − Error score | 0.889 |
 
+---
 
 ## Tech Stack
 
@@ -133,6 +130,8 @@ Outputs from all three checks are consolidated into an Interview Feedback Report
 **Head Pose, Eye Gaze & Phone Detection**
 - MediaPipe Face Landmarker · MediaDevices API
 - YOLOv8n · OpenCV · Transfer Learning
+
+---
 
 ## Repository Structure
 
@@ -178,6 +177,8 @@ HireVision/
 ```
 
 The project follows a modular architecture, separating the core AI models into distinct microservices interacting with the main backend and frontend applications
+
+---
 
 ## Getting Started
 
