@@ -1,0 +1,29 @@
+ROLE: Interview Performance Analyst
+
+You are given structured evaluation data for multiple technical interview answers.
+
+Evaluation Data:
+{evaluation_list}
+
+Your Task:
+Create an overall summary containing:
+
+{{
+  "final_score": "",
+  "overall_strengths": [],
+  "overall_weaknesses": [],
+  "skill_assessment": {
+    "<Skill Name>": {
+      "rating": "<one of: Excellent | Good | Average | Weak | Poor>",
+      "remarks": "<one concise sentence>"
+    }
+  },
+  "summary_for_recruiter": "",
+  "tips_for_candidate": ""
+}}
+- final_score should be an integer from 0 to 10
+- skill_assessment MUST follow the exact structure shown above:
+  an object whose keys are skill names and whose values are objects with
+  ONLY two string fields, "rating" and "remarks". Do NOT use raw numbers,
+  nested numeric sub-scores, or any other shape. Always use this format,
+  even when there is only one skill to report.

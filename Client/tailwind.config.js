@@ -1,0 +1,38 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        'dark-blue': '#1B3C53',
+        'light-blue': '#456882',
+        'light-gray1': '#F7F9FB',
+        'light-gray2': '#D3D3D3',
+        'dark-gray3': '#5F5F5F',
+        'dark-gray4': '#303030',
+        'orange': '#FF914D',
+        'light-orange': '#FAB95B',
+        'dark-orange': '#EE6C4D',
+        'teal': '#5BBFBA',
+        'light-teal': '#E8F6F5',
+        'logo-blue': '#063192',
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
+      keyframes: {
+        fadeInScale: {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+      },
+      animation: {
+        'fade-in-scale': 'fadeInScale 0.25s ease-out',
+      },
+    },
+  },
+  plugins: [],
+}

@@ -1,4 +1,5 @@
 # HireVision - AI-Powered Intelligent Recruitment Platform
+python -m uvicorn Server.main:app
 
 ## Overview
 
