@@ -1,9 +1,7 @@
 import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-
 // Job Seeker Pages
-import Home from "./pages/JobSeeker/Home";
 import Job from "./pages/JobSeeker/Job";
 import Applications from "./pages/JobSeeker/Applications";
 import Interviews from "./pages/JobSeeker/Interviews";
@@ -11,7 +9,6 @@ import InterviewLive from "./pages/JobSeeker/InterviewLive";
 import InterviewSetup from "./pages/JobSeeker/InterviewSetup";
 import Profile from "./pages/JobSeeker/Profile";
 import CandidateReport from "./pages/JobSeeker/candidateReport";
-
 // Recruiter Pages
 import CandidateProfile from "./pages/Recruiter/CandidateProfile";
 import Dashboard from "./pages/Recruiter/Dashboard";
@@ -21,34 +18,59 @@ import JobPreview from "./pages/Recruiter/JobPreview";
 import JobApplications from "./pages/Recruiter/JobApplications";
 import RecruiterProfile from "./pages/Recruiter/RecruiterProfile";
 import EditJob from "./pages/Recruiter/EditJob";
-
+import CandidateInterviewReport from "./pages/Recruiter/CadidateInterviewReport";
 // Shared
 import Layout from "./pages/shared/Layout";
 import Login from "./pages/shared/Login";
 import Register from "./pages/shared/Register";
+// Landing page (public)
+import Home from "./pages/shared/Home";
 import { useAuth } from "./context/AuthContext";
-import CandidateInterviewReport from "./pages/Recruiter/CadidateInterviewReport";
 
 const App = () => {
-  // const userData = JSON.parse(sessionStorage.getItem("user"));
   const { userData, loading } = useAuth();
-  console.log("USER: ",userData)
-  const userRole = userData?.role
+  console.log("USER: ", userData);
+  const userRole = userData?.role;
+
   if (loading) {
-    return <div className="h-screen w-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="h-screen w-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
+
   return (
     <>
       <Toaster />
       <Routes>
-        {/* Top-level public routes */}
+        {/* ── Public landing page ── */}
+        <Route
+          path="/"
+          element={
+            userData
+              ? <Navigate to="/app" replace />  // already logged in → skip landing
+              : <Home />
+          }
+        />
+
+        {/* ── Auth routes ── */}
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Protected / Layout route */}
-        <Route path="/" element={userData ? <Layout/> : <Navigate to="/register" replace />}>
+        {/* ── Protected app routes ── */}
+        <Route
+          path="/app"
+          element={userData ? <Layout /> : <Navigate to="/" replace />}
+        >
+          {/* Default dashboard by role */}
+          <Route
+            index
+            element={
+              userRole === "jobseeker" ? <Applications /> : <JobManagement />
+            }
+          />
           {/* Job Seeker */}
-          <Route index element={userRole === "jobseeker" ? <Home /> : <JobManagement/>} />
           <Route path="job/:jobId" element={<Job />} />
           <Route path="applications" element={<Applications />} />
           <Route path="interviews" element={<Interviews />} />
@@ -68,7 +90,7 @@ const App = () => {
           <Route path="recruiter-profile" element={<RecruiterProfile />} />
         </Route>
 
-        {/* Catch-all redirect */}
+        {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
