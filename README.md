@@ -104,33 +104,18 @@ Outputs from all three checks are consolidated into an Interview Feedback Report
 
 ## Tech Stack
 
-**Frontend**
-- React.js
-- Tailwind CSS
-- react-router-dom · Axios · react-hot-toast · lucide-react
+<div align="center">
 
-**Backend**
-- FastAPI (REST API layer)
-- MongoDB (resumes, sessions, evaluation results, logs)
+| Module | Technologies |
+| :--- | :--- |
+| **Frontend** | React.js, Tailwind CSS, React Router, Axios, Lucide React |
+| **Backend** | FastAPI, MongoDB |
+| **CV & Recommendation** | PyMuPDF, SkillNER, FAISS, Sentence Transformers, BM25, Cross-Encoder |
+| **Interview Q&A** | Groq API, OpenAI GPT-OSS-120B, Whisper (STT), FFmpeg |
+| **Personality Prediction** | PyTorch, TorchVision (R3D-18), MTCNN, MoviePy |
+| **Proctoring & Integrity** | MediaPipe, YOLOv8n, OpenCV |
 
-**CV Ranking & Job Recommendation**
-- PyMuPDF · SkillNER · Sentence Transformers (`mxbai-embed-large-v1`)
-- FAISS · BM25Okapi · rapidfuzz · Cross-Encoder (`ms-marco-MiniLM-L-6-v2`)
-- LLMs (candidate summaries & recommendation explanations)
-
-**Interview Q&A Generation & Evaluation**
-- Groq API · OpenAI GPT-OSS-120B
-- Whisper Large V3 Turbo (Speech-to-Text) · FFmpeg
-- Prompt engineering, JSON-constrained decoding & schema validation
-
-**Personality Prediction**
-- PyTorch · TorchVision (R3D-18, Kinetics-400 pretrained)
-- facenet-pytorch (MTCNN) · MoviePy · SciPy
-
-**Head Pose, Eye Gaze & Phone Detection**
-- MediaPipe Face Landmarker · MediaDevices API
-- YOLOv8n · OpenCV · Transfer Learning
-
+</div>
 ---
 
 ## Repository Structure
