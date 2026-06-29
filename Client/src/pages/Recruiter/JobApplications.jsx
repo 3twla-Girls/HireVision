@@ -237,7 +237,7 @@ const JobApplications = () => {
                 <td className="px-6 py-4">
                     <div className="flex gap-2">
                         <button 
-                        onClick={() => navigate(`/candidate-profile/${app._id}`)}
+                        onClick={() => navigate(`/candidate-profile/${app._id}?sessionId=${app.interview_session_id || ''}`)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-light-blue hover:scale-105 text-white text-xs font-semibold rounded-lg transition">
                             <Eye className="w-3.5 h-3.5" /> View 
                         </button>
@@ -282,7 +282,7 @@ const JobApplications = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     <button 
-                        onClick={() => navigate(`/candidate-profile/${app._id}`)}
+                        onClick={() => navigate(`/candidate-profile/${app._id}?sessionId=${app.interview_session_id || ''}`)}
                         className="inline-flex items-center justify-center gap-1 px-2 py-1.5 bg-light-blue text-white text-xs font-semibold rounded-lg transition">
                         <Eye className="w-2.5 h-2.5" /> View
                     </button>
