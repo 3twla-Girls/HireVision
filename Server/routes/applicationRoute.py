@@ -232,23 +232,20 @@ async def get_applications_by_candidate(request: Request, candidate_id: str):
 
 
 
-# 1. اعمل Model صغير للـ Body
 class SessionUpdateRequest(BaseModel):
     session_id: str
 
-# 2. عدل الـ Endpoint
 @application_router.patch("/{application_id}/interview-session")
 async def update_interview_session_id(
     request: Request,
     application_id: str,
-    body: SessionUpdateRequest  # <--- استقبل الداتا هنا
+    body: SessionUpdateRequest
 ):
     controller = await ApplicationController.create_instance(
         request.app.db_client
     )
 
     try:
-        # ابعت الـ session_id من الـ body للـ controller
         await controller.update_interview_session_id(
             application_id,
             body.session_id

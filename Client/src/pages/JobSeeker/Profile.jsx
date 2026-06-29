@@ -21,8 +21,6 @@ import { assets } from '../../assets/assets';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import FeedbackModal from '../../components/JobSeeker/FeedbackModal';
-import safwaResume from '../../data/Safwa Ibrahim Resume (1).pdf';
-
 
 const normalizeSkill = (skill) => {
   return skill
@@ -38,7 +36,6 @@ const normalizeSkill = (skill) => {
 };
 
 const SkillBadge = ({ label }) => {
-
   const iconName = normalizeSkill(label);
 
   const isRestApi =
@@ -46,7 +43,6 @@ const SkillBadge = ({ label }) => {
 
   return (
     <div className="flex items-center gap-2 bg-light-gray1 px-4 py-2 rounded-full border border-light-gray2/40">
-
       {isRestApi ? (
         <Database size={16} className="text-logo-blue" />
       ) : (
@@ -55,15 +51,12 @@ const SkillBadge = ({ label }) => {
           style={{ fontSize: "16px" }}
         />
       )}
-
       <span className="text-[13px] font-semibold text-dark-blue/80">
         {label}
       </span>
-
     </div>
   );
 };
-
 
 const Profile = () => {
   const { userData } = useAuth();
@@ -186,15 +179,15 @@ const Profile = () => {
 
   const handleDownloadResume = (resumeId, resumeName) => {
     const resumeToDownload = resumes.find((r) => r.id === resumeId);
-    let hrefToUse = safwaResume; // fallback to the static one
 
-    if (resumeToDownload?.url) {
-      hrefToUse = resumeToDownload.url;
+    if (!resumeToDownload?.url) {
+      toast.error("Resume file not found.");
+      return;
     }
 
     const link = document.createElement("a");
-    link.href = hrefToUse;
-    link.download = resumeName;
+    link.href = resumeToDownload.url;
+    link.download = resumeName || "Resume.pdf";
     link.target = "_blank";
     document.body.appendChild(link);
     link.click();
@@ -344,6 +337,7 @@ const Profile = () => {
     setUploadName("");
     setUploadJobRole(""); // 👈 reset
   };
+
   if (loadingProfile) {
     return (
       <div className="min-h-screen py-8 flex items-center justify-center">
@@ -467,7 +461,6 @@ const Profile = () => {
                       className="text-red-500 hover:text-red-600 p-1"
                     >
                       <Eye size={16} className="hidden" />{" "}
-                      {/* Using a text fallback, or just an 'x' since X icon isn't imported from lucide */}
                       <span className="font-bold text-[14px] leading-none px-1">
                         ×
                       </span>
@@ -475,7 +468,6 @@ const Profile = () => {
                   </div>
                 )}
               </div>
-
 
               {skills.length > SKILLS_LIMIT && (
                 <button
@@ -487,7 +479,6 @@ const Profile = () => {
                     : `+${skills.length - SKILLS_LIMIT} more`}
                 </button>
               )}
-
             </div>
 
             {/* Education 1 */}
@@ -517,7 +508,7 @@ const Profile = () => {
                 setIsResumeModalOpen(false);
                 setSelectedResume(null);
               }}
-              feedbackFile={selectedResume?.url || safwaResume}
+              feedbackFile={selectedResume?.url || ""}
               jobTitle={selectedResume?.name || "Resume"}
               modalTitle="Resume:"
               downloadName={selectedResume?.name || "Resume.pdf"}
@@ -537,7 +528,7 @@ const Profile = () => {
                     Upload Resume
                   </h3>
 
-                  {/* Name field — unchanged */}
+                  {/* Name field */}
                   <label className="block text-[13px] font-semibold text-dark-gray3 mb-1">
                     Resume Name
                   </label>
@@ -553,7 +544,7 @@ const Profile = () => {
                     className="w-full border border-light-gray2 rounded-lg px-3 py-2 text-dark-blue mb-4 outline-none focus:border-orange focus:ring-1 focus:ring-orange transition-all"
                   />
 
-                  {/* 👇 New Job Role field */}
+                  {/* Job Role field */}
                   <label className="block text-[13px] font-semibold text-dark-gray3 mb-1">
                     Target Job Role
                   </label>

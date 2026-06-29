@@ -82,7 +82,6 @@ const Applications = () => {
         if (!appRes.ok) throw new Error(`Failed (${appRes.status})`)
         const appData = await appRes.json()
         
-        // التعديل هنا: لو الداتا فاضية، هنرجع مصفوفة فاضية ونوقف الدالة بدل الداتا الوهمية
         if (!Array.isArray(appData) || appData.length === 0) { 
           setApplications([])
           return 

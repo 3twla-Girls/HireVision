@@ -24,7 +24,6 @@ import {
   Send,
   Loader2,
 } from "lucide-react";
-import { JOBS } from "../../data/jobs";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 

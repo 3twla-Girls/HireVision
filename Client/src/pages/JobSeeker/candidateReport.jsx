@@ -107,7 +107,7 @@ function PersonalityTrait({ traitKey, traitData }) {
           lineHeight: "1.4",
         }}
       >
-        {traitData?.hr_report || "No description available"}
+        {traitData?.candidate_feedback || traitData?.hr_report || "No description available"}
       </div>
     </div>
   );
@@ -124,26 +124,6 @@ function ScoreRing({ score, size = 80 }) {
   );
 }
 
-// const parseSkill = (value) => {
-//   if (!value) return { score: 0, max: 5, comment: "No data" };
-
-//   const match = value.match(/^(\d+)\/(\d+)\s*–\s*(.*)$/);
-
-//   if (!match) {
-//     return { score: 0, max: 5, comment: value };
-//   }
-
-//   return {
-//     score: parseInt(match[1]),
-//     max: parseInt(match[2]),
-//     comment: match[3],
-//   };
-// };
-
-// Renders a skill_assessment value safely regardless of its shape.
-// Backend may emit either a flat primitive (number/string) or a nested
-// object (e.g. { understanding: 3, overall: "..." }). Rendering an object
-// directly crashes React, so normalize it to a readable string here.
 const parseSkill = (value) => {
   if (value === null || value === undefined || value === "")
     return "No data available";
@@ -161,7 +141,7 @@ function Tag({ label, color }) {
     <span
       style={{
         display: "inline-block",
-        padding: "2px 10px",
+        padding: "3px 12px",
         borderRadius: 999,
         background: color + "18",
         color,
@@ -169,6 +149,8 @@ function Tag({ label, color }) {
         fontSize: 11,
         border: `1px solid ${color}44`,
         marginRight: 6,
+        textTransform: "uppercase",
+        letterSpacing: "0.5px"
       }}
     >
       {label}
@@ -258,6 +240,7 @@ function BulletList({ items, icon, iconColor }) {
               fontSize: 14,
               marginTop: 2,
               flexShrink: 0,
+              fontWeight: 900
             }}
           >
             {icon}
@@ -278,7 +261,7 @@ export default function CandidateReport() {
   const { sessionId } = useParams();
 
   const [reportData, setReportData] = useState(null);
-  const [questionsWithAnswers, setQuestionsWithAnswers] = useState([]); // ✅ FIX
+  const [questionsWithAnswers, setQuestionsWithAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -288,17 +271,12 @@ export default function CandidateReport() {
     const fetchData = async () => {
       try {
         if (!sessionId) return;
-
         setLoading(true);
 
-        // 🔥 fetch both APIs in parallel (better performance)
         const [sessionRes, questionsRes] = await Promise.all([
           api.get(`/interview/session/${sessionId}`),
           api.get(`/interview/session-questions/${sessionId}`),
         ]);
-        console.log("Session:", sessionRes.data);
-        console.log("Questions:", questionsRes.data);
-
         setReportData(sessionRes.data);
         setQuestionsWithAnswers(questionsRes.data.questions);
       } catch (err) {
@@ -320,6 +298,7 @@ export default function CandidateReport() {
           alignItems: "center",
           height: "100vh",
           fontFamily: "sans-serif",
+          color: C.darkBlue
         }}
       >
         <h3>Loading Candidate Report...</h3>
@@ -347,36 +326,31 @@ export default function CandidateReport() {
   const activeAnswer = reportData.answers[activeIdx];
   const activeQuestion =
     questionsWithAnswers.find(
-      (q) => q.question_id === activeAnswer?.question_id,
+      (q) => q.question_id === activeAnswer?.question_id || q._id === activeAnswer?.question_id?.$oid,
     ) || questionsWithAnswers[activeIdx];
 
   const score = Number(technicalData?.final_score);
   const overallScore = isNaN(score) ? 0 : score * 10;
-  console.log("Calculated overall score:", overallScore);
-  // Get color for a specific question index (for sidebar dots)
+  
   const getQuestionDotColor = (index, isActive) => {
     if (isActive) return C.logoBlue;
     return questionColors[index % questionColors.length];
   };
 
-  // Get background color for the question card when active
   const getActiveCardBackground = (isActive, index) => {
     if (!isActive) return "transparent";
     return `${questionColors[index % questionColors.length]}08`;
   };
 
-  // Get border color for the question card when active
   const getActiveCardBorder = (isActive, index) => {
     if (!isActive) return "transparent";
     return questionColors[index % questionColors.length];
   };
 
-  // Format tips for candidate to ensure each is on its own line
   const formatTips = (tips) => {
     if (!tips) return [];
     if (Array.isArray(tips)) return tips;
     if (typeof tips === "string") {
-      // Split by numbers, bullet points, or newlines
       return tips
         .split(/\d+\.\s*|\n\s*[•\-]\s*|\n+/)
         .filter((tip) => tip.trim().length > 0);
@@ -384,10 +358,10 @@ export default function CandidateReport() {
     return [];
   };
 
-  const status =
-  reportData.final_summary?.integrity?.face_auth?.status || "N/A";
-
-  const statusColor = status === "Failed" ? C.error : C.success;
+  const faceStatus = reportData.final_summary?.integrity?.face_auth?.status || "N/A";
+  const eyeStatus = reportData.final_summary?.integrity?.eye_gaze?.status || "N/A";
+  const hasPhoneCheating = Object.values(reportData.phone_detection || {}).some(d => d.is_cheating);
+  const tabSwitches = reportData.tab_proctoring?.counts?.TAB_SWITCH || 0;
 
   return (
     <div
@@ -427,10 +401,10 @@ export default function CandidateReport() {
             Candidate Interview Report
           </h1>
           <p
-            style={{ margin: "4px 0 0", color: C.secondaryText, fontSize: 13 }}
+            style={{ margin: "8px 0 0", color: C.secondaryText, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}
           >
-            Session: {new Date(reportData.session_date).toLocaleString()}{" "}
-            &nbsp;·&nbsp;
+            <span>Session: {new Date(reportData.session_date?.$date || reportData.session_date).toLocaleString()}</span>
+            <span>·</span>
             <Tag
               label={reportData.is_mock ? "Mock" : "Live"}
               color={reportData.is_mock ? C.warning : C.success}
@@ -445,6 +419,7 @@ export default function CandidateReport() {
                 color: C.secondaryText,
                 marginBottom: 4,
                 fontWeight: 600,
+                textTransform: "uppercase"
               }}
             >
               Overall Score
@@ -476,6 +451,7 @@ export default function CandidateReport() {
                 tab === t.key
                   ? `0 2px 8px ${C.darkBlue}44`
                   : "0 1px 3px rgba(0,0,0,0.07)",
+              transition: "all 0.2s"
             }}
           >
             {t.label}
@@ -488,7 +464,7 @@ export default function CandidateReport() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "210px 1fr 220px",
+            gridTemplateColumns: "230px 1fr 240px",
             gap: 20,
             alignItems: "start",
           }}
@@ -502,7 +478,7 @@ export default function CandidateReport() {
               boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
             }}
           >
-            <h3 style={{ margin: "0 0 14px", fontSize: 14, fontWeight: 700 }}>
+            <h3 style={{ margin: "0 0 14px", fontSize: 14, fontWeight: 800, color: C.darkBlue }}>
               Interview Flow
             </h3>
             <div style={{ position: "relative" }}>
@@ -520,16 +496,24 @@ export default function CandidateReport() {
               {reportData.answers.map((ans, i) => {
                 const q =
                   questionsWithAnswers.find(
-                    (qw) => qw.question_id === ans.question_id,
+                    (qw) => qw.question_id === ans.question_id || qw._id === ans.question_id?.$oid,
                   ) || questionsWithAnswers[i];
+                
                 let sc = ans.evaluation?.score * 10 || 0;
-                if (!ans.evaluation.score && ans.evaluation.type === "mcq") {
-                  ans.evaluation.is_correct ? (sc = 100) : (sc = 0);
+                let statusText = `Score: ${sc}/100`;
+                let scColor = scoreColor(sc);
+
+                if (ans.type === "mcq" || ans.evaluation?.type === "mcq") {
+                  const isCorr = ans.evaluation?.is_correct;
+                  statusText = isCorr ? "✅ Correct" : "❌ Incorrect";
+                  scColor = isCorr ? C.success : C.error;
                 }
+
                 const isActive = i === activeIdx;
                 const dotColor = getQuestionDotColor(i, isActive);
                 const cardBg = getActiveCardBackground(isActive, i);
                 const cardBorderColor = getActiveCardBorder(isActive, i);
+
                 return (
                   <div
                     key={i}
@@ -567,27 +551,28 @@ export default function CandidateReport() {
                         background: cardBg,
                         border: `1.5px solid ${isActive ? cardBorderColor : "transparent"}`,
                         borderRadius: 8,
-                        padding: "4px 8px",
+                        padding: "6px 8px",
                         transition: "all 0.2s ease",
                       }}
                     >
                       <div
                         style={{
                           fontSize: 12,
-                          fontWeight: 700,
+                          fontWeight: 800,
                           color: isActive ? dotColor : C.primaryText,
+                          marginBottom: 2
                         }}
                       >
-                        Q{i + 1}: {q?.question?.slice(0, 22)}…
+                        Q{i + 1}: {q?.question?.slice(0, 18)}…
                       </div>
                       <div
                         style={{
                           fontSize: 11,
-                          color: scoreColor(sc),
-                          fontWeight: 600,
+                          color: scColor,
+                          fontWeight: 700,
                         }}
                       >
-                        Score: {sc}/100
+                        {statusText}
                       </div>
                     </div>
                   </div>
@@ -601,7 +586,7 @@ export default function CandidateReport() {
             style={{
               background: "#fff",
               borderRadius: 16,
-              padding: 22,
+              padding: 24,
               boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
             }}
           >
@@ -614,156 +599,173 @@ export default function CandidateReport() {
               }}
             >
               <div style={{ flex: 1, paddingRight: 16 }}>
-                <div style={{ marginBottom: 8 }}>
+                <div style={{ marginBottom: 12 }}>
                   <Tag
-                    label={`Q${activeIdx + 1}`}
+                    label={`Q ${activeIdx + 1}`}
                     color={questionColors[activeIdx % questionColors.length]}
                   />
                   <Tag
-                    label={activeQuestion?.type?.toUpperCase() || "SHORT"}
+                    label={activeQuestion?.type?.toUpperCase() || activeAnswer?.type?.toUpperCase() || "SHORT"}
                     color={C.teal}
                   />
                 </div>
                 <h3
                   style={{
                     margin: 0,
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: 800,
                     color: C.darkBlue,
-                    lineHeight: 1.45,
+                    lineHeight: 1.5,
                   }}
                 >
                   {activeQuestion?.question || "Question not found"}
                 </h3>
               </div>
-              <ScoreRing
-                score={
-                  activeAnswer.evaluation?.score !== undefined &&
-                  activeAnswer.evaluation?.score !== null
-                    ? activeAnswer.evaluation.score * 10
-                    : activeAnswer.evaluation?.type === "mcq"
-                      ? activeAnswer.evaluation?.is_correct
-                        ? 100
-                        : 0
+              
+              {activeAnswer?.type !== "mcq" && (
+                <ScoreRing
+                  score={
+                    activeAnswer.evaluation?.score !== undefined &&
+                    activeAnswer.evaluation?.score !== null
+                      ? activeAnswer.evaluation.score * 10
                       : 0
-                }
-                size={78}
-              />
+                  }
+                  size={78}
+                />
+              )}
             </div>
-            {activeQuestion?.type === "mcq" && activeQuestion?.options && (
-              <div style={{ marginBottom: 16 }}>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: C.secondaryBlue,
-                    marginBottom: 8,
-                  }}
-                >
-                  Options
-                </div>
 
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
-                >
-                  {activeQuestion.options.map((opt, idx) => (
-                    <div
-                      key={idx}
+            {/* Render Based on Type */}
+            {activeAnswer?.type === "mcq" ? (
+              // --- MCQ RENDER ---
+              <div style={{ marginTop: 24 }}>
+                {activeQuestion?.options && (
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: C.secondaryText, textTransform: 'uppercase', marginBottom: 12 }}>
+                      Question Options
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {activeQuestion.options.map((opt, idx) => {
+                        const char = String.fromCharCode(65 + idx);
+                        const isSelected = char === (activeAnswer.selected_option || activeAnswer.evaluation?.selected_answer);
+                        const isCorrect = char === activeAnswer.evaluation?.correct_answer;
+                        
+                        let bg = "#f9f9f9";
+                        let border = `1px solid ${C.border}`;
+                        let textColor = C.primaryText;
+                        let icon = null;
+
+                        if (isSelected && isCorrect) {
+                          bg = `${C.success}15`; border = `2px solid ${C.success}`; textColor = C.success; icon = "✅";
+                        } else if (isSelected && !isCorrect) {
+                          bg = `${C.error}15`; border = `2px solid ${C.error}`; textColor = C.error; icon = "❌";
+                        } else if (!isSelected && isCorrect) {
+                          bg = `${C.success}08`; border = `2px dashed ${C.success}`; textColor = C.success; icon = "✓ (Correct)";
+                        }
+
+                        return (
+                          <div
+                            key={idx}
+                            style={{
+                              padding: "12px 16px",
+                              borderRadius: 10,
+                              border,
+                              background: bg,
+                              fontSize: 14,
+                              fontWeight: isSelected || isCorrect ? 700 : 500,
+                              color: textColor,
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              transition: "all 0.2s ease"
+                            }}
+                          >
+                            <span>
+                              <span style={{ 
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 24, height: 24, borderRadius: 6, background: '#fff', 
+                                border: 'inherit', marginRight: 12, fontSize: 12, fontWeight: 900 
+                              }}>{char}</span> 
+                              {opt}
+                            </span>
+                            {icon && <span style={{ fontSize: 16 }}>{icon}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
+                <div style={{ 
+                  background: activeAnswer.evaluation?.is_correct ? `${C.success}10` : `${C.error}10`, 
+                  borderLeft: `4px solid ${activeAnswer.evaluation?.is_correct ? C.success : C.error}`,
+                  padding: "16px 20px", 
+                  borderRadius: 8 
+                }}>
+                  <strong style={{ color: activeAnswer.evaluation?.is_correct ? C.success : C.error, fontSize: 16 }}>
+                    {activeAnswer.evaluation?.is_correct ? "You answered correctly!" : "Incorrect Answer."}
+                  </strong>
+                </div>
+              </div>
+            ) : (
+              // --- CONCEPTUAL/SHORT RENDER ---
+              <>
+                <div style={{ marginBottom: 20 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <span
                       style={{
-                        padding: "10px 12px",
-                        borderRadius: 8,
-                        border: "1px solid #eee",
-                        background: "#f9f9f9",
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: C.primaryText,
+                        fontSize: 12,
+                        fontWeight: 800,
+                        color: C.secondaryBlue,
+                        textTransform: 'uppercase'
                       }}
                     >
-                      {opt}
-                    </div>
-                  ))}
+                      Your Answer
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      background: "#FFFBF5",
+                      border: `1px solid ${C.cta}44`,
+                      borderLeft: `4px solid ${C.cta}`,
+                      borderRadius: 8,
+                      padding: "16px",
+                      fontSize: 14,
+                      color: C.primaryText,
+                      lineHeight: 1.7,
+                      fontStyle: "italic"
+                    }}
+                  >
+                    "{activeAnswer.speech_to_text?.transcription || "No transcription available"}"
+                  </div>
                 </div>
-              </div>
-            )}
-            {/* Answer & Reference */}
-            <div style={{ marginBottom: 16 }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 8,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: C.secondaryBlue,
-                  }}
-                >
-                  Candidate's Answer
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: "2px 10px",
-                    borderRadius: 999,
-                    fontWeight: 700,
-                    background:
-                      activeAnswer.speech_to_text?.status === "success"
-                        ? C.success + "18"
-                        : C.error + "18",
-                    color:
-                      activeAnswer.speech_to_text?.status === "success"
-                        ? C.success
-                        : C.error,
-                  }}
-                >
-                  {activeAnswer.speech_to_text?.status}
-                </span>
-              </div>
-              <div
-                style={{
-                  background: "#FFFBF5",
-                  border: `1.5px solid ${C.cta}44`,
-                  borderLeft: `4px solid ${C.cta}`,
-                  borderRadius: 10,
-                  padding: "14px 16px",
-                  fontSize: 14,
-                  color: C.primaryText,
-                  lineHeight: 1.75,
-                }}
-              >
-                {activeAnswer.type === "mcq"
-                  ? activeAnswer.selected_option
-                  : activeAnswer.speech_to_text?.transcription ||
-                    "No transcription available"}
-              </div>
-            </div>
 
-            {activeQuestion?.type !== "mcq" && (
-              <>
                 <div
                   style={{
                     background: C.lightTeal,
-                    border: `1.5px solid ${C.teal}44`,
-                    borderRadius: 10,
-                    padding: "10px 14px",
-                    marginBottom: 16,
-                    fontSize: 13,
+                    border: `1px solid ${C.teal}44`,
+                    borderRadius: 8,
+                    padding: "14px",
+                    marginBottom: 20,
+                    fontSize: 14,
                     color: C.darkBlue,
                     lineHeight: 1.6,
                   }}
                 >
-                  💬 <strong>Evaluator Feedback:</strong>{" "}
-                  {activeAnswer.evaluation?.overall_feedback ||
-                    "No feedback available"}
+                  <span style={{fontWeight: 800}}>💡 Evaluator Feedback:</span>{" "}
+                  {activeAnswer.evaluation?.overall_feedback || "No feedback available"}
                 </div>
 
                 <CollapsibleSection
                   title="Positive Indicators"
-                  icon="✓"
+                  icon="✅"
                   color={C.success}
                 >
                   <BulletList
@@ -786,8 +788,8 @@ export default function CandidateReport() {
                 </CollapsibleSection>
 
                 <CollapsibleSection
-                  title="Knowledge Gaps"
-                  icon="✖"
+                  title="Missed Key Points"
+                  icon="❌"
                   color={C.error}
                 >
                   <BulletList
@@ -799,25 +801,29 @@ export default function CandidateReport() {
               </>
             )}
 
+            {/* Navigation Buttons */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                marginTop: 20,
+                marginTop: 24,
+                paddingTop: 16,
+                borderTop: `1px solid ${C.border}`
               }}
             >
               <button
                 onClick={() => setActiveIdx((i) => Math.max(0, i - 1))}
                 disabled={activeIdx === 0}
                 style={{
-                  padding: "10px 28px",
+                  padding: "10px 24px",
                   borderRadius: 999,
-                  border: `1.5px solid ${C.border}`,
+                  border: `1.5px solid ${activeIdx === 0 ? C.border : C.darkBlue}`,
                   background: "#fff",
-                  fontWeight: 600,
-                  fontSize: 14,
+                  fontWeight: 700,
+                  fontSize: 13,
                   cursor: activeIdx === 0 ? "not-allowed" : "pointer",
-                  color: activeIdx === 0 ? C.border : C.primaryText,
+                  color: activeIdx === 0 ? C.border : C.darkBlue,
+                  transition: "all 0.2s"
                 }}
               >
                 ← Previous
@@ -830,7 +836,7 @@ export default function CandidateReport() {
                 }
                 disabled={activeIdx === reportData.answers.length - 1}
                 style={{
-                  padding: "10px 28px",
+                  padding: "10px 32px",
                   borderRadius: 999,
                   border: "none",
                   background:
@@ -838,12 +844,13 @@ export default function CandidateReport() {
                       ? C.border
                       : C.cta,
                   color: "#fff",
-                  fontWeight: 600,
-                  fontSize: 14,
+                  fontWeight: 700,
+                  fontSize: 13,
                   cursor:
                     activeIdx === reportData.answers.length - 1
                       ? "not-allowed"
                       : "pointer",
+                  transition: "all 0.2s"
                 }}
               >
                 Next →
@@ -852,39 +859,44 @@ export default function CandidateReport() {
           </div>
 
           {/* Snapshot Sidebar */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>
-              Report Snapshot
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <h3 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 800, color: C.darkBlue }}>
+              Quick Snapshot
             </h3>
             {reportData.answers.map((ans, i) => {
               let sc = ans.evaluation?.score * 10 || 0;
-              if (!ans.evaluation.score && ans.evaluation.type === "mcq") {
-                ans.evaluation.is_correct ? (sc = 100) : (sc = 0);
+              let isMCQ = ans.type === "mcq" || ans.evaluation?.type === "mcq";
+              
+              if (isMCQ) {
+                ans.evaluation?.is_correct ? (sc = 100) : (sc = 0);
               }
+
               const questionColor = questionColors[i % questionColors.length];
+              
               return (
                 <div
                   key={i}
                   onClick={() => setActiveIdx(i)}
                   style={{
                     background: i === activeIdx ? `${questionColor}10` : "#fff",
-                    border: `1.5px solid ${i === activeIdx ? questionColor : C.border}`,
+                    border: `1.5px solid ${i === activeIdx ? questionColor : "transparent"}`,
                     borderRadius: 12,
-                    padding: "12px 14px",
+                    padding: "14px",
                     cursor: "pointer",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                     transition: "all 0.2s ease",
                   }}
                 >
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 700,
+                      fontWeight: 800,
                       color: questionColor,
-                      marginBottom: 6,
+                      marginBottom: 8,
+                      textTransform: "uppercase"
                     }}
                   >
-                    Q{i + 1}: Question {i + 1}
+                    Question 0{i + 1}
                   </div>
                   <div
                     style={{
@@ -893,30 +905,22 @@ export default function CandidateReport() {
                       justifyContent: "space-between",
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: 22,
-                        fontWeight: 800,
-                        color: scoreColor(sc),
-                      }}
-                    >
-                      {sc}
-                    </span>
-                    <span style={{ fontSize: 11, color: C.secondaryText }}>
-                      /100
-                    </span>
-                    <Tag
-                      label={
-                        sc >= 80
-                          ? "Strong"
-                          : sc >= 60
-                            ? "Good"
-                            : sc >= 40
-                              ? "Weak"
-                              : "Poor"
-                      }
-                      color={scoreColor(sc)}
-                    />
+                    {isMCQ ? (
+                      <span style={{ fontSize: 14, fontWeight: 800, color: sc === 100 ? C.success : C.error }}>
+                        {sc === 100 ? "Correct ✅" : "Incorrect ❌"}
+                      </span>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                          <span style={{ fontSize: 24, fontWeight: 800, color: scoreColor(sc), lineHeight: 1 }}>{sc}</span>
+                          <span style={{ fontSize: 11, color: C.secondaryText, marginLeft: 2 }}>/100</span>
+                        </div>
+                        <Tag
+                          label={sc >= 80 ? "Strong" : sc >= 60 ? "Good" : sc >= 40 ? "Weak" : "Poor"}
+                          color={scoreColor(sc)}
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
               );
@@ -927,92 +931,86 @@ export default function CandidateReport() {
 
       {/* ── Summary Tab ── */}
       {tab === "summary" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          
           {/* Integrity Dashboard */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 20,
-            }}
-          >
-            <div
-              style={{
-                background: "#fff",
-                padding: 20,
-                borderRadius: 16,
-                borderTop: `4px solid ${
-                  reportData.final_summary?.integrity?.eye_gaze?.status ===
-                  "High Alerts"
-                    ? C.error
-                    : C.success
-                }`,
-              }}
-            >
-              <h4 style={{ margin: "0 0 8px", color: C.secondaryText }}>
-                Eye Gaze Status
-              </h4>
-              <div
-                style={{
-                  fontSize: 20,
-                  fontWeight: 800,
-                  color:
-                    reportData.final_summary?.integrity?.eye_gaze?.status ===
-                    "High Alerts"
-                      ? C.error
-                      : C.success,
-                }}
-              >
-                {reportData.final_summary?.integrity?.eye_gaze?.status || "N/A"}
-              </div>
-              <p style={{ margin: "8px 0 0", fontSize: 13 }}>
-                Warnings:{" "}
-                {reportData.final_summary?.integrity?.eye_gaze
-                  ?.total_warnings || 0}
-              </p>
-            </div>
-            <div
-              style={{
-                background: "#fff",
-                padding: 20,
-                borderRadius: 16,
-                borderTop: `4px solid ${statusColor}`,
-              }}
-            >
-              <h4 style={{ margin: "0 0 8px", color: C.secondaryText }}>
-                Face Auth
-              </h4>
+          <div style={{ marginBottom: 8 }}>
+             <h3 style={{ fontSize: 18, fontWeight: 800, color: C.darkBlue, margin: "0 0 16px" }}>Session Integrity & Proctoring</h3>
+             <div
+               style={{
+                 display: "grid",
+                 gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                 gap: 16,
+               }}
+             >
+               {/* Eye Gaze */}
+               <div
+                 style={{
+                   background: "#fff", padding: "20px 24px", borderRadius: 16,
+                   borderTop: `4px solid ${eyeStatus === "High Alerts" ? C.error : C.success}`,
+                   boxShadow: "0 1px 4px rgba(0,0,0,0.05)"
+                 }}
+               >
+                 <h4 style={{ margin: "0 0 8px", color: C.secondaryText, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Eye Gaze</h4>
+                 <div style={{ fontSize: 18, fontWeight: 900, color: eyeStatus === "High Alerts" ? C.error : C.success }}>
+                   {eyeStatus}
+                 </div>
+                 <p style={{ margin: "8px 0 0", fontSize: 12, fontWeight: 600, color: C.secondaryText }}>
+                   {reportData.final_summary?.integrity?.eye_gaze?.total_warnings || 0} Warnings
+                 </p>
+               </div>
+               
+               {/* Face Auth */}
+               <div
+                 style={{
+                   background: "#fff", padding: "20px 24px", borderRadius: 16,
+                   borderTop: `4px solid ${faceStatus === "Failed" ? C.error : C.success}`,
+                   boxShadow: "0 1px 4px rgba(0,0,0,0.05)"
+                 }}
+               >
+                 <h4 style={{ margin: "0 0 8px", color: C.secondaryText, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Face Auth</h4>
+                 <div style={{ fontSize: 18, fontWeight: 900, color: faceStatus === "Failed" ? C.error : C.success }}>
+                   {faceStatus}
+                 </div>
+                 <p style={{ margin: "8px 0 0", fontSize: 12, fontWeight: 600, color: C.secondaryText }}>
+                   {reportData.final_summary?.integrity?.face_auth?.incidents_count || 0} Incidents
+                 </p>
+               </div>
 
-              <div style={{ fontSize: 20, fontWeight: 800, color: statusColor }}>
-                {status}
-              </div>
+               {/* Phone Detection */}
+               <div
+                 style={{
+                   background: "#fff", padding: "20px 24px", borderRadius: 16,
+                   borderTop: `4px solid ${hasPhoneCheating ? C.error : C.success}`,
+                   boxShadow: "0 1px 4px rgba(0,0,0,0.05)"
+                 }}
+               >
+                 <h4 style={{ margin: "0 0 8px", color: C.secondaryText, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Phone Detection</h4>
+                 <div style={{ fontSize: 18, fontWeight: 900, color: hasPhoneCheating ? C.error : C.success }}>
+                   {hasPhoneCheating ? "Suspicious" : "Clean"}
+                 </div>
+                 <p style={{ margin: "8px 0 0", fontSize: 12, fontWeight: 600, color: C.secondaryText }}>
+                   AI Visual Scan
+                 </p>
+               </div>
 
-              <p style={{ margin: "8px 0 0", fontSize: 13 }}>
-                Incidents:{" "}
-                {reportData.final_summary?.integrity?.face_auth?.incidents_count || 0}
-              </p>
-            </div>
-            <div
-              style={{
-                background: "#fff",
-                padding: 20,
-                borderRadius: 16,
-                borderTop: `4px solid ${C.secondaryBlue}`,
-              }}
-            >
-              <h4 style={{ margin: "0 0 8px", color: C.secondaryText }}>
-                Personality Status
-              </h4>
-              <div
-                style={{
-                  fontSize: 20,
-                  fontWeight: 800,
-                  color: C.secondaryBlue,
-                }}
-              >
-                {reportData.personality?.status || "N/A"}
-              </div>
-            </div>
+               {/* Browser Proctoring */}
+               <div
+                 style={{
+                   background: "#fff", padding: "20px 24px", borderRadius: 16,
+                   borderTop: `4px solid ${tabSwitches > 0 ? C.warning : C.success}`,
+                   boxShadow: "0 1px 4px rgba(0,0,0,0.05)"
+                 }}
+               >
+                 <h4 style={{ margin: "0 0 8px", color: C.secondaryText, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Browser Focus</h4>
+                 <div style={{ fontSize: 18, fontWeight: 900, color: tabSwitches > 0 ? C.warning : C.success }}>
+                   {tabSwitches > 0 ? "Tab Switches" : "Stayed in Tab"}
+                 </div>
+                 <p style={{ margin: "8px 0 0", fontSize: 12, fontWeight: 600, color: C.secondaryText }}>
+                   {tabSwitches} Events
+                 </p>
+               </div>
+             </div>
           </div>
 
           {/* Full Personality Analysis */}
@@ -1020,32 +1018,44 @@ export default function CandidateReport() {
             <div
               style={{
                 background: "#fff",
-                padding: 24,
-                borderRadius: 16,
+                padding: 32,
+                borderRadius: 20,
                 boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
               }}
             >
-              <h3
-                style={{
-                  margin: "0 0 20px",
-                  fontSize: 18,
-                  fontWeight: 800,
-                  color: C.darkBlue,
-                  borderBottom: `2px solid ${C.teal}`,
-                  paddingBottom: 8,
-                  display: "inline-block",
-                }}
-              >
-                Personality Profile Analysis
-              </h3>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", marginBottom: 24 }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: 20,
+                    fontWeight: 800,
+                    color: C.darkBlue,
+                    borderBottom: `3px solid ${C.teal}`,
+                    paddingBottom: 8,
+                    display: "inline-block",
+                  }}
+                >
+                  Personality Profile Analysis
+                </h3>
+
+                {/* Dominant Traits Display */}
+                {reportData.personality?.overall?.summary?.dominant_traits && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f5f5f5', padding: '8px 16px', borderRadius: 999 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: C.secondaryText, textTransform: 'uppercase' }}>Dominant Traits:</span>
+                    {reportData.personality.overall.summary.dominant_traits.map(t => 
+                      <Tag key={t} label={t} color="#9c27b0" />
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* All Personality Traits Grid */}
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                  gap: 16,
-                  marginBottom: 24,
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: 20,
+                  marginBottom: 32,
                 }}
               >
                 {Object.entries(
@@ -1059,21 +1069,22 @@ export default function CandidateReport() {
               {reportData.personality?.overall?.candidate_view?.summary && (
                 <div
                   style={{
-                    background: `${C.teal}10`,
-                    padding: 16,
-                    borderRadius: 12,
-                    borderLeft: `3px solid ${C.teal}`,
+                    background: `${C.teal}08`,
+                    padding: 24,
+                    borderRadius: 16,
+                    border: `1px solid ${C.teal}33`,
+                    borderLeft: `4px solid ${C.teal}`,
                   }}
                 >
                   <h4
                     style={{
-                      margin: "0 0 12px",
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: C.teal,
+                      margin: "0 0 16px",
+                      fontSize: 15,
+                      fontWeight: 800,
+                      color: C.darkBlue,
                     }}
                   >
-                    💡 Candidate Insights
+                    💡 Your AI Behavioral Insights
                   </h4>
                   <BulletList
                     items={
@@ -1089,18 +1100,18 @@ export default function CandidateReport() {
 
           {/* Strengths & Weaknesses */}
           <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}
           >
             <div
               style={{
                 background: "#f8fff8",
-                padding: 22,
-                borderRadius: 16,
+                padding: 28,
+                borderRadius: 20,
                 border: `1px solid ${C.success}33`,
               }}
             >
               <h3
-                style={{ margin: "0 0 12px", color: C.success, fontSize: 15 }}
+                style={{ margin: "0 0 16px", color: C.success, fontSize: 16, fontWeight: 800 }}
               >
                 Overall Strengths
               </h3>
@@ -1113,12 +1124,12 @@ export default function CandidateReport() {
             <div
               style={{
                 background: "#fff8f8",
-                padding: 22,
-                borderRadius: 16,
+                padding: 28,
+                borderRadius: 20,
                 border: `1px solid ${C.error}33`,
               }}
             >
-              <h3 style={{ margin: "0 0 12px", color: C.error, fontSize: 15 }}>
+              <h3 style={{ margin: "0 0 16px", color: C.error, fontSize: 16, fontWeight: 800 }}>
                 Overall Weaknesses
               </h3>
               <BulletList
@@ -1131,78 +1142,32 @@ export default function CandidateReport() {
 
           {/* Skill Assessment & Tips */}
           <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}
           >
             {/* Skill Assessment */}
-            <div style={{ background: "#fff", padding: 22, borderRadius: 16 }}>
-              <h3 style={{ margin: "0 0 16px", fontSize: 15 }}>
-                Skill Assessment
+            <div style={{ background: "#fff", padding: 28, borderRadius: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+              <h3 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 800, color: C.darkBlue }}>
+                Detailed Skill Assessment
               </h3>
 
-              {/* {Object.entries(technicalData.skill_assessment || {}).map(
-                ([skill, value]) => {
-                  const parsed = parseSkill(value);
-
-                  return (
-                    <div
-                      key={skill}
-                      style={{
-                        border: `1px solid ${C.border}`,
-                        borderRadius: 12,
-                        padding: "14px",
-                        marginBottom: 12,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <span style={{ fontWeight: 700, fontSize: 14 }}>
-                          {skill}
-                        </span>
-
-                        <span
-                          style={{
-                            fontSize: 18,
-                            fontWeight: 800,
-                            color: scoreColor((parsed.score / parsed.max) * 10),
-                          }}
-                        >
-                          {parsed.score}/{parsed.max}
-                        </span>
-                      </div>
-
-                      <p
-                        style={{
-                          margin: "8px 0 0",
-                          fontSize: 12,
-                          color: C.secondaryText,
-                        }}
-                      >
-                        {parsed.comment}
-                      </p>
-                    </div>
-                  );
-                },
-              )} */}
               {Object.entries(technicalData.skill_assessment || {}).map(([skill, value]) => (
                 <div
                   key={skill}
                   style={{
                     border: `1px solid ${C.border}`,
                     borderRadius: 12,
-                    padding: "14px",
-                    marginBottom: 12,
+                    padding: "16px",
+                    marginBottom: 16,
                     background: "#fff",
                   }}
                 >
-                  <div style={{ marginBottom: "6px" }}>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: C.darkBlue }}>
-                      {skill.replace(/_/g, " ")}:
+                  <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 800, fontSize: 14, color: C.darkBlue, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {skill.replace(/_/g, " ")}
                     </span>
+                    {typeof value === "object" && (value.rating || value.understanding) && (
+                       <Tag label={value.rating || value.understanding} color={scoreColor(value.rating === "Good"||value.rating === "Excellent"? 80 : value.rating === "Poor"||value.rating === "None"? 20 : 50)} />
+                    )}
                   </div>
 
                   <p
@@ -1210,26 +1175,30 @@ export default function CandidateReport() {
                       margin: 0,
                       fontSize: 13,
                       color: C.secondaryText,
-                      lineHeight: "1.5",
+                      lineHeight: "1.6",
                     }}
                   >
-                    {parseSkill(value)}
+                    {typeof value === "object" ? (value.remarks || value.evidence || value.overall || "No remarks") : parseSkill(value)}
                   </p>
                 </div>
               ))}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            
+            {/* Tips Section */}
+            <div style={{ display: "flex", flexDirection: "column" }}>
               <div
-                style={{ background: "#fff", padding: 22, borderRadius: 16 }}
+                style={{ background: "#fff", padding: 28, borderRadius: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.05)", height: '100%' }}
               >
-                <h3 style={{ margin: "0 0 12px", fontSize: 15 }}>
-                  Tips for Candidate
+                <h3 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 800, color: C.darkBlue }}>
+                  Next Steps & Tips for You
                 </h3>
-                <BulletList
-                  items={formatTips(technicalData.tips_for_candidate)}
-                  icon="•"
-                  iconColor={C.cta}
-                />
+                <div style={{ background: `${C.cta}08`, border: `1px solid ${C.cta}33`, padding: 20, borderRadius: 16 }}>
+                  <BulletList
+                    items={formatTips(technicalData.tips_for_candidate)}
+                    icon="🚀"
+                    iconColor={C.cta}
+                  />
+                </div>
               </div>
             </div>
           </div>
