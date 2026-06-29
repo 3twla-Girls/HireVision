@@ -1,4 +1,10 @@
-# HireVision
+
+<div align="center">
+  <img src="/Client/public/HireVision_full_logo.png" alt="HireVision Logo" width="250" />
+  
+  <h3>Intelligent Recruitment Platform with CV Analysis and Video Interview Evaluation</h3>
+  <br>
+</div>
 
 **HireVision** is an AI-powered recruitment platform that automates and enhances the hiring process end-to-end — from candidate–job matching, to AI-driven technical interviews, to interview integrity monitoring — by integrating Natural Language Processing, Large Language Models, Computer Vision, Machine Learning, and Speech Processing.
 
