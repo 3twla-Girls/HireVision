@@ -28,3 +28,5 @@ myenv
 Module_1/faiss_store/
 Module_1/faiss_store/candidate_clusters.pkl
 logs/cheating
+
+.env
